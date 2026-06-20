@@ -1,6 +1,26 @@
 -- Appwrite Collection Setup for Content Planner
--- Run this in your Appwrite Console or use the API to create the collection
+-- 
+-- OPTION 1: Use the automated migration script (RECOMMENDED)
+-- ---------------------------------------------------------
+-- Run: node migrate-to-appwrite.js
+-- This will:
+--   1. Create the database and collection via API
+--   2. Create all required attributes
+--   3. Create indexes
+--   4. Migrate data from Turso (if TURSO_DATABASE_URL is set)
+--   5. Seed sample data if no migration source exists
 --
+-- Required environment variables:
+--   APPWRITE_ENDPOINT    e.g. https://cloud.appwrite.io/v1
+--   APPWRITE_PROJECT_ID  your Appwrite project ID
+--   APPWRITE_API_KEY     your Appwrite API key (with database/admin permissions)
+--
+-- Optional for migration:
+--   TURSO_DATABASE_URL   If set, will migrate data from Turso
+--   TURSO_AUTH_TOKEN     Turso authentication token
+--
+-- OPTION 2: Manual setup via Appwrite Console
+-- --------------------------------------------
 -- 1. Create a Database in your Appwrite project (or use default)
 -- 2. Create a Collection named "content_items" with these attributes:
 --
