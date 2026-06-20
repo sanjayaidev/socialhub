@@ -691,15 +691,8 @@
     }
 
     // ================================================================
-    // DEMO DATA (unchanged baseline so the planner isn't empty on first run)
+    // NO DEMO DATA - Data loads from planner table only
     // ================================================================
-    function addDemoData() {
-        return [
-            { id: 'd1', day: 1, audience: 'client', raw: "WhatsApp tools cost too much every month", refined: "Why Pay ₹3,000+/Month for WATI or AiSensy When You Can Own It for ₹2,500 Once?", platforms: ["ig","yt","li"], hook: "Coaches and clinics are renting WhatsApp automation for ₹3,000+/month. I sell the same thing for ₹2,500 — once.", description: "GOwa is a self-hosted WhatsApp server: bulk messages, auto-replies, CRM hooks. No subscription, no lock-in. You own the server.", cta: "DM 'WHATSAPP' or message me directly for a free quote.", hashtags: "#whatsappautomation #smallbusiness #saas" },
-            { id: 'd2', day: 2, audience: 'student', raw: "People want to learn how I build all this", refined: "I'm Opening My Full-Stack Build System to Students — Here's What's Inside", platforms: ["yt","li"], hook: "Everything I sell to clients, I now teach. Android, Web, Windows, Infra — one unified system.", description: "Build with Sanjay isn't pre-recorded fluff. It's the exact stack I use for client work.", cta: "Full curriculum + pricing in bio.", hashtags: "#learntobuild #fullstack #buildwithsanjay" },
-            { id: 'd3', day: 3, audience: 'client', raw: "Agencies overquote simple apps", refined: "An Agency Quoted a Client ₹80,000 and 3 Months. I Did It in 5 Days.", platforms: ["ig","yt","li"], hook: "₹80,000. Three months. That's what an agency quoted. I build the same thing in 3–7 days.", description: "React, Flutter, Supabase — one codebase for web, Android and iOS.", cta: "Tell me your problem on WhatsApp — free consultation.", hashtags: "#webdev #appdevelopment #startupindia" }
-        ];
-    }
 
     async function loadData() {
         const dbCfg = await storageGet('dbConfig', null);
@@ -708,12 +701,7 @@
         if (useRemoteDb()) {
             try {
                 const { items } = await dbFetch('', { method: 'GET' });
-                if (items && items.length) {
-                    contentData = items;
-                } else {
-                    contentData = addDemoData();
-                    await dbFetch('?bulk=1', { method: 'POST', body: JSON.stringify({ items: contentData }) });
-                }
+                contentData = items || [];
                 designImages = {};
                 contentData.forEach(item => { if (item.designImage) designImages[item.id] = item.designImage; });
             } catch (err) {
@@ -731,12 +719,7 @@
 
     async function loadLocalData() {
         const stored = await storageGet('contentData', null);
-        if (stored && Array.isArray(stored) && stored.length) {
-            contentData = stored;
-        } else {
-            contentData = addDemoData();
-            await storageSet('contentData', stripImages(contentData));
-        }
+        contentData = (stored && Array.isArray(stored)) ? stored : [];
         designImages = {};
         try {
             const list = await window.storage.list('design:', false);
