@@ -590,7 +590,7 @@
 
         <label style="margin-top:20px;">Database Endpoint <span class="text-muted">(optional)</span></label>
         <input type="text" id="settingsDbUrl" placeholder="https://smagents.vercel.app/api/content" />
-        <div class="hint">Leave blank to keep using this chat's built-in storage. Set this to your deployed Turso-backed endpoint to use a real, shareable database instead.</div>
+        <div class="hint">Leave blank to keep using this chat's built-in storage. Set this to your deployed Appwrite-backed endpoint to use a real, shareable database instead.</div>
         <label>Database Secret <span class="text-muted">(optional)</span></label>
         <input type="text" id="settingsDbSecret" placeholder="shared secret, only if your endpoint requires one" />
 
@@ -640,7 +640,7 @@
     const FONTS = ['Inter','DM Sans','Space Mono','Bebas Neue','Playfair Display','Oswald','Montserrat','Raleway','Syne'];
     const DEFAULT_API = { baseUrl: 'https://smagents.vercel.app/api/chat', model: 'deepseek-ai/deepseek-v4-flash' };
     // Leave baseUrl blank to keep using Claude's built-in artifact storage.
-    // Point it at your deployed pages/api/content.js endpoint to switch to the real Turso DB.
+    // Point it at your deployed pages/api/content.js endpoint to switch to the Appwrite DB.
     const DEFAULT_DB = { baseUrl: '', secret: '' };
 
     let contentData = [];
