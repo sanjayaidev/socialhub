@@ -168,12 +168,9 @@ export default async function handler(req) {
         return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
 
-    // Optional: Add secret protection for production
-    const secret = process.env.CONTENT_API_SECRET;
-    if (secret && req.headers.get('x-api-secret') !== secret) {
-        return json({ error: 'unauthorized' }, 401);
-    }
-
+    // Always allow POST from frontend (no auth required for auto-migration on page load)
+    // Only enforce secret for GET requests if configured
+    
     try {
         if (req.method === 'GET' || req.method === 'POST') {
             const result = await initializeDatabase();

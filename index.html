@@ -372,13 +372,30 @@
 
     // Initialize data from database or fallback to localStorage
     async function loadData() {
+        // First, trigger auto-migration if needed and wait for it to complete
+        try {
+            const migrationResponse = await fetch(`${API_BASE}/init-db`, { method: 'POST' });
+            if (!migrationResponse.ok) {
+                console.warn('Migration endpoint returned non-OK status');
+            }
+            const migrationResult = await migrationResponse.json();
+            console.log('Migration result:', migrationResult);
+        } catch (err) {
+            console.warn('Auto-migration trigger failed:', err);
+        }
+        
+        // Wait for migration to fully complete (Neon cold start + SQL execution)
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         // Try to fetch from database first
         const dbData = await fetchFromDatabase();
+        console.log('Database fetch result:', dbData);
         
         if (dbData !== null && dbData.length > 0) {
             // Use database data
             contentData = dbData;
             persistOnly();
+            console.log(`Loaded ${contentData.length} items from database`);
         } else {
             // Fallback to localStorage for backward compatibility
             const stored = localStorage.getItem('contentPlannerData');
@@ -386,7 +403,6 @@
                 try {
                     contentData = JSON.parse(stored);
                     if (!contentData || contentData.length === 0) {
-                        // No data anywhere - will be populated by init-db endpoint
                         contentData = [];
                         persistOnly();
                     }
@@ -398,6 +414,7 @@
                 contentData = [];
                 persistOnly();
             }
+            console.log(`Loaded ${contentData.length} items from localStorage fallback`);
         }
     }
 
@@ -407,8 +424,10 @@
         localStorage.setItem('contentPlannerData', JSON.stringify(contentData));
     }
 
-    function saveData() {
+    async function saveData() {
         persistOnly();
+        // Also save to database
+        await saveToDatabase(contentData);
         renderCalendar();
     }
 
@@ -416,22 +435,22 @@
         return contentData.filter(item => item.day === day);
     }
 
-    function addContent(item) {
+    async function addContent(item) {
         contentData.push(item);
-        saveData();
+        await saveData();
     }
 
-    function updateContent(id, updated) {
+    async function updateContent(id, updated) {
         const index = contentData.findIndex(item => item.id === id);
         if (index !== -1) {
             contentData[index] = { ...contentData[index], ...updated };
-            saveData();
+            await saveData();
         }
     }
 
-    function deleteContent(id) {
+    async function deleteContent(id) {
         contentData = contentData.filter(item => item.id !== id);
-        saveData();
+        await saveData();
     }
 
     function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
@@ -620,7 +639,7 @@
         document.getElementById('modalOverlay').classList.remove('show');
     }
 
-    function saveFromModal() {
+    async function saveFromModal() {
         const day = parseInt(document.getElementById('formDay').value) || 1;
         const raw = document.getElementById('formRaw').value.trim();
         const refined = document.getElementById('formRefined').value.trim();
@@ -672,14 +691,14 @@
         URL.revokeObjectURL(url);
     }
 
-    function importData(file) {
+    async function importData(file) {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             try {
                 const imported = JSON.parse(e.target.result);
                 if (Array.isArray(imported)) {
                     contentData = imported;
-                    saveData();
+                    await saveData();
                     alert('Import successful!');
                 } else {
                     alert('Invalid JSON format. Expected an array.');
@@ -691,8 +710,8 @@
         reader.readAsText(file);
     }
 
-    function refreshData() {
-        loadData();
+    async function refreshData() {
+        await loadData();
         weekOffset = 0;
         dayOffset = 0;
         renderCalendar();
@@ -713,9 +732,9 @@
     // ================================================================
     // INIT
     // ================================================================
-    document.addEventListener('DOMContentLoaded', function() {
-        loadData();
-        renderCalendar(); // fixed: always paint on first load, not just when demo data is seeded
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadData();
+        renderCalendar();
 
         document.querySelectorAll('.view-toggle .btn').forEach(btn => {
             btn.addEventListener('click', () => setView(btn.dataset.view));
