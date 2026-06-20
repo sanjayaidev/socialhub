@@ -290,7 +290,7 @@
             </div>
             <div class="nav-controls">
                 <button class="btn btn-outline" id="navPrev"><i class="fas fa-chevron-left"></i></button>
-                <span class="nav-label" id="navLabel">Day 1-31</span>
+                <span class="nav-label" id="navLabel">January 2025</span>
                 <button class="btn btn-outline" id="navNext"><i class="fas fa-chevron-right"></i></button>
             </div>
             <button class="btn btn-refresh" id="refreshData"><i class="fas fa-sync-alt"></i></button>
@@ -342,10 +342,14 @@
     const API_BASE = '/api';
 
     // Fetch data from Neon database
-    async function fetchFromDatabase() {
+    async function fetchFromDatabase(month = null, year = null) {
         try {
-            const response = await fetch(`${API_BASE}/content`);
-            if (!response.ok) throw new Error('Failed to fetch from database');
+            let url = `${API_BASE}/content?table=planner`;
+            if (month !== null && year !== null) {
+                url += `&month=${month}&year=${year}`;
+            }
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Failed to fetch from database: ${response.status}`);
             const data = await response.json();
             return data.items || [];
         } catch (err) {
@@ -357,7 +361,7 @@
     // Save data to Neon database
     async function saveToDatabase(items) {
         try {
-            const response = await fetch(`${API_BASE}/content?bulk=1`, {
+            const response = await fetch(`${API_BASE}/content?table=planner&bulk=1`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ items }),
@@ -395,7 +399,7 @@
             // Use database data
             contentData = dbData;
             persistOnly();
-            console.log(`Loaded ${contentData.length} items from database`);
+            console.log(`Loaded ${contentData.length} items from database (planner table)`);
         } else {
             // Fallback to localStorage for backward compatibility
             const stored = localStorage.getItem('contentPlannerData');
@@ -432,7 +436,23 @@
     }
 
     function getDayData(day) {
-        return contentData.filter(item => item.day === day);
+        // Filter content for the current month/year and specific day
+        return contentData.filter(item => {
+            const itemMonth = item.month !== undefined ? item.month : null;
+            const itemYear = item.year !== undefined ? item.year : null;
+            const itemDay = item.day_of_month !== undefined ? item.day_of_month : (item.day || null);
+            
+            // Match by day of month and optionally by month/year if available
+            if (itemDay === day) {
+                // If item has month/year, check they match current selection
+                if (itemMonth !== null && itemYear !== null) {
+                    return itemMonth === currentMonth + 1 && itemYear === currentYear;
+                }
+                // Legacy items without month/year just match by day
+                return true;
+            }
+            return false;
+        });
     }
 
     async function addContent(item) {
@@ -461,6 +481,14 @@
     let currentView = 'month';
     let weekOffset = 0;
     let dayOffset = 0;
+    let currentMonth = 0; // January (0-indexed)
+    let currentYear = 2025;
+
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    function getDaysInMonth(month, year) {
+        return new Date(year, month + 1, 0).getDate();
+    }
 
     function renderCalendar() {
         const grid = document.getElementById('calendarGrid');
@@ -469,21 +497,22 @@
 
         let daysToShow = [];
         const label = document.getElementById('navLabel');
+        const daysInMonth = getDaysInMonth(currentMonth, currentYear);
 
         if (currentView === 'month') {
-            for (let d = 1; d <= 31; d++) daysToShow.push(d);
-            label.textContent = 'Day 1-31';
+            for (let d = 1; d <= daysInMonth; d++) daysToShow.push(d);
+            label.textContent = `${monthNames[currentMonth]} ${currentYear}`;
         } else if (currentView === 'week') {
-            const today = new Date().getDate();
-            const start = Math.max(1, Math.min(25, today + weekOffset * 7));
-            const end = Math.min(31, start + 6);
-            for (let d = start; d <= end; d++) daysToShow.push(d);
-            label.textContent = `Day ${start}-${end}`;
+            const startDay = 1 + weekOffset * 7;
+            const endDay = Math.min(daysInMonth, startDay + 6);
+            for (let d = startDay; d <= endDay && d <= daysInMonth; d++) daysToShow.push(d);
+            label.textContent = `${monthNames[currentMonth]} ${currentYear} (Days ${daysToShow[0]}-${daysToShow[daysToShow.length-1]})`;
         } else {
-            const today = new Date().getDate();
-            let day = Math.max(1, Math.min(31, today + dayOffset));
+            let day = 1 + dayOffset;
+            if (day > daysInMonth) day = daysInMonth;
+            if (day < 1) day = 1;
             daysToShow = [day];
-            label.textContent = `Day ${day}`;
+            label.textContent = `${monthNames[currentMonth]} ${currentYear}, Day ${day}`;
         }
 
         daysToShow.forEach(day => {
@@ -667,14 +696,32 @@
     // NAVIGATION
     // ================================================================
     function navPrev() {
-        if (currentView === 'week') weekOffset--;
-        else if (currentView === 'day') dayOffset--;
+        if (currentView === 'month') {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+        } else if (currentView === 'week') {
+            weekOffset--;
+        } else if (currentView === 'day') {
+            dayOffset--;
+        }
         renderCalendar();
     }
 
     function navNext() {
-        if (currentView === 'week') weekOffset++;
-        else if (currentView === 'day') dayOffset++;
+        if (currentView === 'month') {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+        } else if (currentView === 'week') {
+            weekOffset++;
+        } else if (currentView === 'day') {
+            dayOffset++;
+        }
         renderCalendar();
     }
 
