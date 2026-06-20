@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Content Planner · 31 Day Calendar</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&family=Bebas+Neue&family=Playfair+Display:wght@600;700&family=Oswald:wght@400;600&family=Montserrat:wght@500;700;800&family=Raleway:wght@500;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -16,7 +16,7 @@
             min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
         }
         .app {
             max-width: 1440px;
@@ -47,7 +47,11 @@
             align-items: center;
             gap: 10px;
         }
-        .header h1 i { font-size: 28px; background: none; -webkit-text-fill-color: #2563eb; }
+        .header h1 i {
+            font-size: 28px;
+            background: none;
+            -webkit-text-fill-color: #2563eb;
+        }
         .controls {
             display: flex;
             flex-wrap: wrap;
@@ -70,15 +74,62 @@
             align-items: center;
             gap: 6px;
         }
-        .btn-primary { background: #2563eb; color: white; border: none; box-shadow: 0 4px 12px rgba(37,99,235,0.25); }
-        .btn-primary:hover { background: #1d4ed8; transform: scale(0.97); }
-        .btn-outline { background: transparent; border: 1px solid #cbd5e1; }
-        .btn-outline:hover { background: #f1f5f9; }
-        .btn-success { background: #059669; color: white; border: none; }
-        .btn-danger { background: #dc2626; color: white; border: none; }
-        .btn-sm { padding: 4px 14px; font-size: 12px; }
-        .btn-refresh { background: #8b5cf6; color: white; border: none; }
-        .btn-refresh:hover { background: #7c3aed; }
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(37,99,235,0.25);
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: scale(0.97);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #cbd5e1;
+        }
+        .btn-outline:hover {
+            background: #f1f5f9;
+        }
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+            border: none;
+        }
+        .btn-sm {
+            padding: 4px 14px;
+            font-size: 12px;
+        }
+        .btn-refresh {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+        }
+        .btn-refresh:hover {
+            background: #7c3aed;
+        }
+        .btn-ai {
+            background: linear-gradient(135deg, #7c3aed, #ec4899);
+            color: white;
+            border: none;
+        }
+        .btn-ai:hover {
+            opacity: 0.92;
+            transform: scale(0.97);
+        }
+        .btn-design {
+            background: #0f172a;
+            color: white;
+            border: none;
+        }
+        .btn-design:hover {
+            background: #1e293b;
+        }
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none !important;
+        }
 
         .view-toggle {
             display: flex;
@@ -122,9 +173,15 @@
             gap: 14px;
             margin-top: 12px;
         }
-        .month-view { grid-template-columns: repeat(5, 1fr); }
-        .week-view { grid-template-columns: repeat(7, 1fr); }
-        .day-view { grid-template-columns: 1fr; }
+        .month-view {
+            grid-template-columns: repeat(5, 1fr);
+        }
+        .week-view {
+            grid-template-columns: repeat(7, 1fr);
+        }
+        .day-view {
+            grid-template-columns: 1fr;
+        }
 
         .day-card {
             background: white;
@@ -135,7 +192,11 @@
             transition: all 0.25s ease;
             animation: fadeUp 0.3s ease forwards;
         }
-        .day-card:hover { border-color: #cbd5e1; box-shadow: 0 8px 24px rgba(0,0,0,0.04); transform: translateY(-3px); }
+        .day-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+            transform: translateY(-3px);
+        }
         .day-number {
             font-weight: 600;
             font-size: 18px;
@@ -145,7 +206,11 @@
             justify-content: space-between;
             align-items: center;
         }
-        .day-number small { font-weight: 400; font-size: 13px; color: #64748b; }
+        .day-number small {
+            font-weight: 400;
+            font-size: 13px;
+            color: #64748b;
+        }
         .topic-title {
             font-weight: 600;
             font-size: 15px;
@@ -170,10 +235,22 @@
             letter-spacing: 0.3px;
             margin: 4px 4px 4px 0;
         }
-        .tag-ig { background: #fce4ec; color: #c62828; }
-        .tag-yt { background: #ffebee; color: #b71c1c; }
-        .tag-li { background: #e3f2fd; color: #0d47a1; }
-        .tag-all { background: #e8f5e9; color: #1b5e20; }
+        .tag-ig {
+            background: #fce4ec;
+            color: #c62828;
+        }
+        .tag-yt {
+            background: #ffebee;
+            color: #b71c1c;
+        }
+        .tag-li {
+            background: #e3f2fd;
+            color: #0d47a1;
+        }
+        .tag-all {
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
 
         .audience-tag {
             display: inline-block;
@@ -185,8 +262,16 @@
             letter-spacing: 0.3px;
             margin: 4px 4px 4px 0;
         }
-        .aud-client { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
-        .aud-student { background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
+        .aud-client {
+            background: #fff7ed;
+            color: #c2410c;
+            border: 1px solid #fed7aa;
+        }
+        .aud-student {
+            background: #eef2ff;
+            color: #4338ca;
+            border: 1px solid #c7d2fe;
+        }
 
         .hook-text {
             font-size: 13px;
@@ -219,17 +304,32 @@
             font-weight: 500;
         }
 
+        .design-thumb {
+            width: 100%;
+            border-radius: 14px;
+            margin: 8px 0;
+            border: 1px solid #eef2f6;
+            cursor: pointer;
+            display: block;
+        }
+
         .modal-overlay {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(0,0,0,0.3);
             backdrop-filter: blur(4px);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            padding: 20px;
         }
-        .modal-overlay.show { display: flex; }
+        .modal-overlay.show {
+            display: flex;
+        }
         .modal {
             background: white;
             border-radius: 32px;
@@ -241,8 +341,19 @@
             animation: fadeUp 0.25s ease;
             box-shadow: 0 30px 80px rgba(0,0,0,0.15);
         }
-        .modal h2 { margin-bottom: 20px; font-size: 22px; }
-        .modal label { font-weight: 500; font-size: 14px; display: block; margin: 12px 0 4px; }
+        .modal.wide {
+            max-width: 1080px;
+        }
+        .modal h2 {
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+        .modal label {
+            font-weight: 500;
+            font-size: 14px;
+            display: block;
+            margin: 12px 0 4px;
+        }
         .modal input, .modal textarea, .modal select {
             width: 100%;
             padding: 12px 16px;
@@ -252,13 +363,139 @@
             font-size: 14px;
             transition: 0.2s;
         }
-        .modal input:focus, .modal textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-        .modal textarea { min-height: 60px; resize: vertical; }
-        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+        .modal input:focus, .modal textarea:focus, .modal select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+        .modal textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
 
-        .flex { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-        .gap-1 { gap: 4px; }
-        .text-muted { color: #64748b; font-size: 13px; }
+        .flex {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .gap-1 {
+            gap: 4px;
+        }
+        .text-muted {
+            color: #64748b;
+            font-size: 13px;
+        }
+        .hint {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        /* Design studio layout */
+        .design-studio {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 760px) {
+            .design-studio {
+                grid-template-columns: 1fr;
+            }
+        }
+        .design-canvas-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .design-canvas-wrap canvas {
+            width: 100%;
+            max-width: 380px;
+            border-radius: 14px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            background: #111;
+        }
+        .design-fields {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+        .design-fields h4 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin: 16px 0 6px;
+        }
+        .design-fields h4:first-child {
+            margin-top: 0;
+        }
+        .field-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .field-row input[type="color"] {
+            width: 40px;
+            padding: 2px;
+            height: 36px;
+            flex: 0 0 40px;
+        }
+        .text-block-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .text-block-card .field-row input, .text-block-card .field-row select {
+            font-size: 12px;
+            padding: 8px 10px;
+        }
+        .remove-block {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: none;
+            border-radius: 10px;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .ai-status {
+            font-size: 12px;
+            color: #7c3aed;
+            min-height: 16px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #1e293b;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 2000;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.error {
+            background: #b91c1c;
+        }
 
         @keyframes fadeUp {
             0% { opacity: 0; transform: translateY(16px); }
@@ -293,7 +530,8 @@
                 <span class="nav-label" id="navLabel">Day 1-31</span>
                 <button class="btn btn-outline" id="navNext"><i class="fas fa-chevron-right"></i></button>
             </div>
-            <button class="btn btn-refresh" id="refreshData"><i class="fas fa-sync-alt"></i></button>
+            <button class="btn btn-refresh" id="refreshData" title="Reload from storage"><i class="fas fa-sync-alt"></i></button>
+            <button class="btn btn-outline" id="openSettings" title="API settings"><i class="fas fa-gear"></i></button>
             <button class="btn btn-primary" id="openAddModal"><i class="fas fa-plus"></i> Add</button>
             <button class="btn btn-outline" id="exportData"><i class="fas fa-download"></i> Export</button>
             <button class="btn btn-outline" id="importData"><i class="fas fa-upload"></i> Import</button>
@@ -304,7 +542,7 @@
     <div class="calendar-grid month-view" id="calendarGrid"></div>
 </div>
 
-<!-- MODAL -->
+<!-- ADD/EDIT CONTENT MODAL -->
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
         <h2 id="modalTitle">Add Content</h2>
@@ -334,126 +572,557 @@
     </div>
 </div>
 
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsOverlay">
+    <div class="modal">
+        <h2><i class="fas fa-gear"></i> Settings</h2>
+        <label>AI API Endpoint</label>
+        <input type="text" id="settingsBaseUrl" placeholder="https://smagents.vercel.app/api/chat" />
+        <div class="hint">This must be a POST endpoint accepting <code>{model, messages}</code> and returning an OpenAI-style chat completion. CORS must be open on the endpoint (yours already is).</div>
+        <label>Model</label>
+        <select id="settingsModel">
+            <option value="deepseek-ai/deepseek-v4-flash">deepseek-ai/deepseek-v4-flash (fast)</option>
+            <option value="deepseek-ai/deepseek-v4-pro">deepseek-ai/deepseek-v4-pro (higher quality)</option>
+            <option value="meta/llama-3.3-70b-instruct">meta/llama-3.3-70b-instruct</option>
+            <option value="moonshotai/kimi-k2.6">moonshotai/kimi-k2.6</option>
+            <option value="mistralai/mistral-large-3-675b-instruct-2512">mistralai/mistral-large-3-675b-instruct-2512</option>
+        </select>
+
+        <label style="margin-top:20px;">Database Endpoint <span class="text-muted">(optional)</span></label>
+        <input type="text" id="settingsDbUrl" placeholder="https://smagents.vercel.app/api/content" />
+        <div class="hint">Leave blank to keep using this chat's built-in storage. Set this to your deployed Appwrite-backed endpoint to use a real, shareable database instead.</div>
+        <label>Database Secret <span class="text-muted">(optional)</span></label>
+        <input type="text" id="settingsDbSecret" placeholder="shared secret, only if your endpoint requires one" />
+
+        <div class="modal-actions">
+            <button class="btn btn-outline" id="closeSettings">Cancel</button>
+            <button class="btn btn-primary" id="saveSettings">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- DESIGN STUDIO MODAL -->
+<div class="modal-overlay" id="designOverlay">
+    <div class="modal wide">
+        <h2><i class="fas fa-wand-magic-sparkles"></i> Design Studio <span id="designDayLabel" class="text-muted" style="font-size:14px;font-weight:400;"></span></h2>
+        <div class="flex" style="margin-bottom:10px;">
+            <button class="btn btn-ai btn-sm" id="aiGenerateDesign"><i class="fas fa-sparkles"></i> Generate with AI</button>
+            <span class="ai-status" id="designAiStatus"></span>
+        </div>
+        <div class="design-studio">
+            <div class="design-fields" id="designFields"></div>
+            <div class="design-canvas-wrap">
+                <canvas id="designCanvas" width="1080" height="1350"></canvas>
+                <div class="flex">
+                    <select id="canvasPreset" style="width:auto;">
+                        <option value="1080x1350">Portrait 4:5</option>
+                        <option value="1080x1080">Square 1:1</option>
+                        <option value="1080x1920">Story 9:16</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" id="closeDesign">Close</button>
+            <button class="btn btn-outline" id="addTextBlockBtn"><i class="fas fa-plus"></i> Text block</button>
+            <button class="btn btn-outline" id="exportDesignPng"><i class="fas fa-download"></i> Export PNG</button>
+            <button class="btn btn-design" id="saveDesignToCard"><i class="fas fa-save"></i> Save to card</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
     // ================================================================
-    // DATA LAYER - NEON DATABASE INTEGRATION
+    // CONSTANTS
     // ================================================================
+    const FONTS = ['Inter','DM Sans','Space Mono','Bebas Neue','Playfair Display','Oswald','Montserrat','Raleway','Syne'];
+    const DEFAULT_API = { baseUrl: 'https://smagents.vercel.app/api/chat', model: 'deepseek-ai/deepseek-v4-flash' };
+    // Leave baseUrl blank to keep using Claude's built-in artifact storage.
+    // Point it at your deployed pages/api/content.js endpoint to switch to the Appwrite DB.
+    const DEFAULT_DB = { baseUrl: '', secret: '' };
+
     let contentData = [];
-    const API_BASE = '/api';
+    let apiConfig = { ...DEFAULT_API };
+    let dbConfig = { ...DEFAULT_DB };
+    let designImages = {}; // { itemId: dataUrl }
 
-    // Fetch data from Neon database
-    async function fetchFromDatabase() {
-        try {
-            const response = await fetch(`${API_BASE}/content`);
-            if (!response.ok) throw new Error('Failed to fetch from database');
-            const data = await response.json();
-            return data.items || [];
-        } catch (err) {
-            console.error('Database fetch error:', err);
-            return null;
+    function useRemoteDb() { return !!dbConfig.baseUrl; }
+
+    async function dbFetch(query, options = {}) {
+        const url = dbConfig.baseUrl.replace(/\/$/, '') + query;
+        const headers = { 'Content-Type': 'application/json' };
+        if (dbConfig.secret) headers['x-api-secret'] = dbConfig.secret;
+        const res = await fetch(url, { ...options, headers });
+        if (!res.ok) {
+            let detail = '';
+            try { detail = JSON.stringify(await res.json()); } catch (e) {}
+            throw new Error(`DB error ${res.status} ${detail}`.slice(0, 200));
         }
+        return res.json();
     }
 
-    // Save data to Neon database
-    async function saveToDatabase(items) {
-        try {
-            const response = await fetch(`${API_BASE}/content?bulk=1`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ items }),
-            });
-            if (!response.ok) throw new Error('Failed to save to database');
-            return true;
-        } catch (err) {
-            console.error('Database save error:', err);
-            return false;
-        }
+    // Local artifact storage keeps base64 design images out of the main blob
+    // (single keys are capped at 5MB) — the remote DB doesn't need this split.
+    function stripImages(arr) { return arr.map(({ designImage, ...rest }) => rest); }
+
+    function toast(msg, type = 'success') {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.className = `toast show ${type === 'error' ? 'error' : ''}`;
+        setTimeout(() => el.className = 'toast', 3200);
     }
 
-    // Initialize data from database or fallback to localStorage
+    // ================================================================
+    // STORAGE (persistent artifact storage — no localStorage)
+    // ================================================================
+    async function storageGet(key, fallback = null) {
+        try {
+            const res = await window.storage.get(key, false);
+            return res ? JSON.parse(res.value) : fallback;
+        } catch (e) { return fallback; }
+    }
+    async function storageSet(key, value) {
+        try { await window.storage.set(key, JSON.stringify(value), false); } catch (e) { console.error('storage set failed', e); }
+    }
+    async function storageDelete(key) {
+        try { await window.storage.delete(key, false); } catch (e) {}
+    }
+
+    // ================================================================
+    // NO DEMO DATA - Data loads from planner table only
+    // ================================================================
+
     async function loadData() {
-        // First, trigger auto-migration if needed and wait for it to complete
-        try {
-            const migrationResponse = await fetch(`${API_BASE}/init-db`, { method: 'POST' });
-            if (!migrationResponse.ok) {
-                console.warn('Migration endpoint returned non-OK status');
+        const dbCfg = await storageGet('dbConfig', null);
+        dbConfig = dbCfg && typeof dbCfg.baseUrl === 'string' ? dbCfg : { ...DEFAULT_DB };
+
+        if (useRemoteDb()) {
+            try {
+                const { items } = await dbFetch('', { method: 'GET' });
+                contentData = items || [];
+                designImages = {};
+                contentData.forEach(item => { if (item.designImage) designImages[item.id] = item.designImage; });
+            } catch (err) {
+                console.error('DB load failed, falling back to local storage', err);
+                toast(`DB connection failed (${err.message}) — using local storage`, 'error');
+                await loadLocalData();
             }
-            const migrationResult = await migrationResponse.json();
-            console.log('Migration result:', migrationResult);
-        } catch (err) {
-            console.warn('Auto-migration trigger failed:', err);
-        }
-        
-        // Wait for migration to fully complete (Neon cold start + SQL execution)
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Try to fetch from database first
-        const dbData = await fetchFromDatabase();
-        console.log('Database fetch result:', dbData);
-        
-        if (dbData !== null && dbData.length > 0) {
-            // Use database data
-            contentData = dbData;
-            persistOnly();
-            console.log(`Loaded ${contentData.length} items from database`);
         } else {
-            // Fallback to localStorage for backward compatibility
-            const stored = localStorage.getItem('contentPlannerData');
-            if (stored) {
-                try {
-                    contentData = JSON.parse(stored);
-                    if (!contentData || contentData.length === 0) {
-                        contentData = [];
-                        persistOnly();
-                    }
-                } catch(e) {
-                    contentData = [];
-                    persistOnly();
-                }
-            } else {
-                contentData = [];
-                persistOnly();
-            }
-            console.log(`Loaded ${contentData.length} items from localStorage fallback`);
+            await loadLocalData();
         }
+
+        const cfg = await storageGet('apiConfig', null);
+        apiConfig = cfg && cfg.baseUrl ? cfg : { ...DEFAULT_API };
     }
 
-    // Writes to localStorage WITHOUT triggering a render (used during initial load,
-    // before the calendar grid exists in some call orders).
-    function persistOnly() {
-        localStorage.setItem('contentPlannerData', JSON.stringify(contentData));
+    async function loadLocalData() {
+        const stored = await storageGet('contentData', null);
+        contentData = (stored && Array.isArray(stored)) ? stored : [];
+        designImages = {};
+        try {
+            const list = await window.storage.list('design:', false);
+            if (list && list.keys) {
+                for (const key of list.keys) {
+                    const id = key.replace('design:', '');
+                    const res = await window.storage.get(key, false);
+                    if (res) designImages[id] = res.value;
+                }
+            }
+        } catch (e) { /* no designs yet */ }
     }
 
-    async function saveData() {
-        persistOnly();
-        // Also save to database
-        await saveToDatabase(contentData);
-        renderCalendar();
-    }
-
-    function getDayData(day) {
-        return contentData.filter(item => item.day === day);
-    }
+    function getDayData(day) { return contentData.filter(item => item.day === day); }
 
     async function addContent(item) {
+        if (useRemoteDb()) {
+            try { await dbFetch('', { method: 'POST', body: JSON.stringify(item) }); }
+            catch (err) { toast(`DB save failed: ${err.message}`, 'error'); }
+        }
         contentData.push(item);
-        await saveData();
+        if (!useRemoteDb()) await storageSet('contentData', stripImages(contentData));
+        renderCalendar();
     }
 
     async function updateContent(id, updated) {
         const index = contentData.findIndex(item => item.id === id);
-        if (index !== -1) {
-            contentData[index] = { ...contentData[index], ...updated };
-            await saveData();
+        if (index === -1) return;
+        contentData[index] = { ...contentData[index], ...updated };
+        if (useRemoteDb()) {
+            try { await dbFetch('', { method: 'POST', body: JSON.stringify(contentData[index]) }); }
+            catch (err) { toast(`DB save failed: ${err.message}`, 'error'); }
+        } else {
+            await storageSet('contentData', stripImages(contentData));
         }
+        renderCalendar();
     }
 
     async function deleteContent(id) {
         contentData = contentData.filter(item => item.id !== id);
-        await saveData();
+        delete designImages[id];
+        if (useRemoteDb()) {
+            try { await dbFetch(`?id=${encodeURIComponent(id)}`, { method: 'DELETE' }); }
+            catch (err) { toast(`DB delete failed: ${err.message}`, 'error'); }
+        } else {
+            await storageDelete(`design:${id}`);
+            await storageSet('contentData', stripImages(contentData));
+        }
+        renderCalendar();
     }
 
     function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+    // ================================================================
+    // AI CALLS
+    // ================================================================
+    async function callAI(messages, { temperature = 0.8, max_tokens = 900 } = {}) {
+        if (!apiConfig.baseUrl) throw new Error('No API endpoint configured — open Settings (gear icon)');
+        const res = await fetch(apiConfig.baseUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: apiConfig.model, messages, stream: false, temperature, max_tokens })
+        });
+        if (!res.ok) {
+            let detail = '';
+            try { detail = JSON.stringify(await res.json()); } catch (e) {}
+            throw new Error(`API error ${res.status} ${detail}`.slice(0, 200));
+        }
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (!text) throw new Error('Empty response from model');
+        return text;
+    }
+
+    function parseJsonFromModel(text) {
+        let cleaned = text.trim();
+        cleaned = cleaned.replace(/^```(json)?/i, '').replace(/```$/, '').trim();
+        const start = cleaned.indexOf('{');
+        const end = cleaned.lastIndexOf('}');
+        if (start !== -1 && end !== -1) cleaned = cleaned.slice(start, end + 1);
+        return JSON.parse(cleaned);
+    }
+
+    async function generateContentAI(id) {
+        const item = contentData.find(d => d.id === id);
+        if (!item) return;
+        if (!item.raw) { toast('Add a raw idea first', 'error'); return; }
+        const btn = document.querySelector(`[data-ai-write="${id}"]`);
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Writing...'; }
+        try {
+            const sys = `You are a senior short-form content strategist for social media. Given a raw idea, audience type, and target platforms, write scroll-stopping content. Output ONLY a single valid JSON object, no markdown, no commentary, no code fences, with exactly these keys: refined (string, a punchy title under 110 characters), hook (string, 1-2 sentences, the first line that grabs attention), description (string, 2-4 sentences, the post body), cta (string, one specific call to action), hashtags (string, 4-6 relevant hashtags separated by spaces).`;
+            const user = `Raw idea: ${item.raw}\nAudience: ${item.audience || 'general'}\nPlatforms: ${(item.platforms || []).join(', ') || 'all'}`;
+            const text = await callAI([{ role: 'system', content: sys }, { role: 'user', content: user }]);
+            const json = parseJsonFromModel(text);
+            await updateContent(id, {
+                refined: json.refined || item.refined,
+                hook: json.hook || item.hook,
+                description: json.description || item.description,
+                cta: json.cta || item.cta,
+                hashtags: json.hashtags || item.hashtags
+            });
+            toast('Content generated');
+        } catch (err) {
+            console.error(err);
+            toast(`AI write failed: ${err.message}`, 'error');
+        } finally {
+            renderCalendar();
+        }
+    }
+
+    // ================================================================
+    // DESIGN STUDIO
+    // ================================================================
+    let currentDesignItemId = null;
+    let designSpec = null;
+
+    function defaultDesignSpec(item) {
+        return {
+            canvasW: 1080, canvasH: 1350,
+            bg: { type: 'linear', color: '#111827', c1: '#1e1b4b', c2: '#312e81', angle: 135 },
+            textBlocks: [
+                { id: 't1', text: item.refined || item.raw || 'Headline', x: 50, y: 36, font: 'Syne', size: 60, weight: 700, color: '#ffffff', align: 'center', maxWidth: 86 },
+                { id: 't2', text: item.hook || '', x: 50, y: 56, font: 'Inter', size: 28, weight: 500, color: '#e5e7eb', align: 'center', maxWidth: 80 }
+            ],
+            icons: [],
+            brand: { text: '@yourhandle', color: '#a5b4fc', size: 22 }
+        };
+    }
+
+    function openDesignModal(itemId) {
+        const item = contentData.find(d => d.id === itemId);
+        if (!item) return;
+        currentDesignItemId = itemId;
+        designSpec = item.designSpec ? JSON.parse(JSON.stringify(item.designSpec)) : defaultDesignSpec(item);
+        document.getElementById('designDayLabel').textContent = `— Day ${item.day}`;
+        document.getElementById('designAiStatus').textContent = '';
+        document.getElementById('canvasPreset').value = `${designSpec.canvasW}x${designSpec.canvasH}`;
+        renderDesignFields();
+        redrawCanvas();
+        document.getElementById('designOverlay').classList.add('show');
+    }
+
+    function closeDesignModal() {
+        document.getElementById('designOverlay').classList.remove('show');
+        currentDesignItemId = null;
+        designSpec = null;
+    }
+
+    function fieldRowColor(label, value, onChange) {
+        return `<div class="field-row"><input type="color" value="${value}" data-field="${onChange}"><span class="text-muted" style="font-size:12px;align-self:center;">${label}</span></div>`;
+    }
+
+    function renderDesignFields() {
+        const wrap = document.getElementById('designFields');
+        let html = '';
+
+        html += `<h4>Background</h4>
+            <div class="field-row">
+                <select id="bgType" style="font-size:12px;">
+                    <option value="solid" ${designSpec.bg.type==='solid'?'selected':''}>Solid</option>
+                    <option value="linear" ${designSpec.bg.type==='linear'?'selected':''}>Linear gradient</option>
+                </select>
+            </div>`;
+        if (designSpec.bg.type === 'solid') {
+            html += `<div class="field-row"><input type="color" id="bgColor" value="${designSpec.bg.color}"></div>`;
+        } else {
+            html += `<div class="field-row">
+                <input type="color" id="bgC1" value="${designSpec.bg.c1}">
+                <input type="color" id="bgC2" value="${designSpec.bg.c2}">
+                <input type="number" id="bgAngle" value="${designSpec.bg.angle}" min="0" max="360" placeholder="angle" style="font-size:12px;">
+            </div>`;
+        }
+
+        html += `<h4>Text blocks</h4>`;
+        designSpec.textBlocks.forEach((b, i) => {
+            html += `<div class="text-block-card" data-block-index="${i}">
+                <textarea class="tb-text" rows="2" style="font-size:13px;">${b.text || ''}</textarea>
+                <div class="field-row">
+                    <select class="tb-font">${FONTS.map(f => `<option value="${f}" ${f===b.font?'selected':''}>${f}</option>`).join('')}</select>
+                    <input type="number" class="tb-size" value="${b.size}" min="12" max="120" title="size">
+                </div>
+                <div class="field-row">
+                    <input type="color" class="tb-color" value="${b.color}">
+                    <select class="tb-align">
+                        <option value="left" ${b.align==='left'?'selected':''}>Left</option>
+                        <option value="center" ${b.align==='center'?'selected':''}>Center</option>
+                        <option value="right" ${b.align==='right'?'selected':''}>Right</option>
+                    </select>
+                </div>
+                <div class="field-row">
+                    <input type="number" class="tb-x" value="${b.x}" min="0" max="100" title="X %">
+                    <input type="number" class="tb-y" value="${b.y}" min="0" max="100" title="Y %">
+                    <input type="number" class="tb-maxw" value="${b.maxWidth || 80}" min="20" max="95" title="max width %">
+                </div>
+                <button class="remove-block" data-remove-block="${i}">Remove</button>
+            </div>`;
+        });
+
+        html += `<h4>Icons (icons8 URLs, comma separated)</h4>
+            <textarea id="iconUrls" rows="2" style="font-size:12px;">${(designSpec.icons || []).map(ic => ic.url).join(', ')}</textarea>
+
+            <h4>Brand / watermark</h4>
+            <div class="field-row">
+                <input type="text" id="brandText" value="${designSpec.brand?.text || ''}" placeholder="@yourhandle">
+                <input type="color" id="brandColor" value="${designSpec.brand?.color || '#a5b4fc'}">
+            </div>`;
+
+        wrap.innerHTML = html;
+        attachDesignFieldListeners();
+    }
+
+    function attachDesignFieldListeners() {
+        const wrap = document.getElementById('designFields');
+
+        const bgType = document.getElementById('bgType');
+        if (bgType) bgType.addEventListener('change', () => { designSpec.bg.type = bgType.value; renderDesignFields(); redrawCanvas(); });
+        const bgColor = document.getElementById('bgColor');
+        if (bgColor) bgColor.addEventListener('input', () => { designSpec.bg.color = bgColor.value; redrawCanvas(); });
+        const bgC1 = document.getElementById('bgC1'), bgC2 = document.getElementById('bgC2'), bgAngle = document.getElementById('bgAngle');
+        if (bgC1) bgC1.addEventListener('input', () => { designSpec.bg.c1 = bgC1.value; redrawCanvas(); });
+        if (bgC2) bgC2.addEventListener('input', () => { designSpec.bg.c2 = bgC2.value; redrawCanvas(); });
+        if (bgAngle) bgAngle.addEventListener('input', () => { designSpec.bg.angle = parseFloat(bgAngle.value) || 0; redrawCanvas(); });
+
+        wrap.querySelectorAll('.text-block-card').forEach(card => {
+            const i = parseInt(card.dataset.blockIndex);
+            const b = designSpec.textBlocks[i];
+            card.querySelector('.tb-text').addEventListener('input', e => { b.text = e.target.value; redrawCanvas(); });
+            card.querySelector('.tb-font').addEventListener('change', e => { b.font = e.target.value; redrawCanvas(); });
+            card.querySelector('.tb-size').addEventListener('input', e => { b.size = parseFloat(e.target.value) || 30; redrawCanvas(); });
+            card.querySelector('.tb-color').addEventListener('input', e => { b.color = e.target.value; redrawCanvas(); });
+            card.querySelector('.tb-align').addEventListener('change', e => { b.align = e.target.value; redrawCanvas(); });
+            card.querySelector('.tb-x').addEventListener('input', e => { b.x = parseFloat(e.target.value) || 0; redrawCanvas(); });
+            card.querySelector('.tb-y').addEventListener('input', e => { b.y = parseFloat(e.target.value) || 0; redrawCanvas(); });
+            card.querySelector('.tb-maxw').addEventListener('input', e => { b.maxWidth = parseFloat(e.target.value) || 80; redrawCanvas(); });
+        });
+        wrap.querySelectorAll('[data-remove-block]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                designSpec.textBlocks.splice(parseInt(btn.dataset.removeBlock), 1);
+                renderDesignFields();
+                redrawCanvas();
+            });
+        });
+
+        const iconUrls = document.getElementById('iconUrls');
+        if (iconUrls) iconUrls.addEventListener('input', () => {
+            const urls = iconUrls.value.split(',').map(s => s.trim()).filter(Boolean);
+            designSpec.icons = urls.map((url, idx) => {
+                const existing = (designSpec.icons || [])[idx];
+                return existing && existing.url === url ? existing : { url, x: 15 + idx * 22, y: 14, size: 70 };
+            });
+            redrawCanvas();
+        });
+
+        const brandText = document.getElementById('brandText'), brandColor = document.getElementById('brandColor');
+        if (brandText) brandText.addEventListener('input', () => { designSpec.brand = designSpec.brand || {}; designSpec.brand.text = brandText.value; redrawCanvas(); });
+        if (brandColor) brandColor.addEventListener('input', () => { designSpec.brand = designSpec.brand || {}; designSpec.brand.color = brandColor.value; redrawCanvas(); });
+    }
+
+    function loadImage(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('image failed: ' + url));
+            img.src = url;
+        });
+    }
+
+    function wrapLines(ctx, text, maxWidthPx) {
+        const words = (text || '').split(/\s+/).filter(Boolean);
+        const lines = [];
+        let line = '';
+        for (const w of words) {
+            const test = line ? line + ' ' + w : w;
+            if (ctx.measureText(test).width > maxWidthPx && line) { lines.push(line); line = w; }
+            else line = test;
+        }
+        if (line) lines.push(line);
+        return lines.length ? lines : [''];
+    }
+
+    async function redrawCanvas() {
+        if (!designSpec) return;
+        const canvas = document.getElementById('designCanvas');
+        const W = designSpec.canvasW || 1080, H = designSpec.canvasH || 1350;
+        canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext('2d');
+
+        try { await document.fonts.ready; } catch (e) {}
+
+        // background
+        if (designSpec.bg.type === 'solid') {
+            ctx.fillStyle = designSpec.bg.color || '#111827';
+            ctx.fillRect(0, 0, W, H);
+        } else {
+            const angle = ((designSpec.bg.angle || 135) * Math.PI) / 180;
+            const x1 = W / 2 - Math.cos(angle) * W, y1 = H / 2 - Math.sin(angle) * H;
+            const x2 = W / 2 + Math.cos(angle) * W, y2 = H / 2 + Math.sin(angle) * H;
+            const grad = ctx.createLinearGradient(x1, y1, x2, y2);
+            grad.addColorStop(0, designSpec.bg.c1 || '#1e1b4b');
+            grad.addColorStop(1, designSpec.bg.c2 || '#312e81');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, W, H);
+        }
+
+        // icons
+        for (const icon of (designSpec.icons || [])) {
+            try {
+                const img = await loadImage(icon.url);
+                const s = icon.size || 70;
+                ctx.drawImage(img, (icon.x / 100) * W - s / 2, (icon.y / 100) * H - s / 2, s, s);
+            } catch (e) { /* skip broken icon */ }
+        }
+
+        // text blocks
+        for (const b of (designSpec.textBlocks || [])) {
+            const x = (b.x / 100) * W, y = (b.y / 100) * H;
+            const maxWidthPx = ((b.maxWidth || 80) / 100) * W;
+            ctx.font = `${b.weight || 600} ${b.size || 40}px "${b.font || 'Inter'}"`;
+            ctx.fillStyle = b.color || '#ffffff';
+            ctx.textAlign = b.align || 'center';
+            ctx.textBaseline = 'middle';
+            const lines = wrapLines(ctx, b.text, maxWidthPx);
+            const lineHeight = (b.size || 40) * 1.22;
+            const startY = y - ((lines.length - 1) * lineHeight) / 2;
+            lines.forEach((l, i) => ctx.fillText(l, x, startY + i * lineHeight));
+        }
+
+        // brand
+        if (designSpec.brand && designSpec.brand.text) {
+            ctx.font = `600 ${designSpec.brand.size || 22}px Inter`;
+            ctx.fillStyle = designSpec.brand.color || '#a5b4fc';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(designSpec.brand.text, 50, H - 40);
+        }
+    }
+
+    async function aiGenerateDesign() {
+        if (!currentDesignItemId) return;
+        const item = contentData.find(d => d.id === currentDesignItemId);
+        const statusEl = document.getElementById('designAiStatus');
+        statusEl.textContent = 'Designing...';
+        const btn = document.getElementById('aiGenerateDesign');
+        btn.disabled = true;
+        try {
+            const sys = `You are a social media graphic designer. Output ONLY a single valid JSON object, no markdown, no commentary, no code fences, matching exactly this schema:
+{
+ "bg": {"type":"solid"|"linear","color":"#hex","c1":"#hex","c2":"#hex","angle":number},
+ "textBlocks": [{"text":string,"x":number(0-100),"y":number(0-100),"font":one of [${FONTS.join(', ')}],"size":number(18-90),"weight":400|500|600|700|800,"color":"#hex","align":"left"|"center"|"right","maxWidth":number(40-95)}],
+ "icons": [{"url":"https://img.icons8.com/fluency/96/ICONNAME.png","x":number(0-100),"y":number(0-100),"size":number(40-120)}],
+ "brand": {"text":string,"color":"#hex","size":number}
+}
+Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small caption). Pick a bold gradient or solid background that fits the platform and audience tone. Add 0-4 relevant icons from img.icons8.com using real plausible icon names. Keep all text within canvas bounds (canvas is ${designSpec.canvasW}x${designSpec.canvasH}px) and do not let text blocks overlap vertically.`;
+            const user = `Title: ${item.refined || item.raw}\nHook: ${item.hook || ''}\nDescription: ${item.description || ''}\nAudience: ${item.audience || 'general'}\nPlatforms: ${(item.platforms || []).join(', ') || 'all'}`;
+            const text = await callAI([{ role: 'system', content: sys }, { role: 'user', content: user }], { temperature: 0.9 });
+            const json = parseJsonFromModel(text);
+            designSpec.bg = json.bg || designSpec.bg;
+            designSpec.textBlocks = (json.textBlocks || []).map((b, i) => ({ id: 't' + i, ...b }));
+            designSpec.icons = json.icons || [];
+            designSpec.brand = json.brand || designSpec.brand;
+            renderDesignFields();
+            await redrawCanvas();
+            statusEl.textContent = 'Done';
+            setTimeout(() => statusEl.textContent = '', 1500);
+        } catch (err) {
+            console.error(err);
+            statusEl.textContent = '';
+            toast(`AI design failed: ${err.message}`, 'error');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    async function exportDesignPNG() {
+        const canvas = document.getElementById('designCanvas');
+        try {
+            const dataUrl = canvas.toDataURL('image/png');
+            const item = contentData.find(d => d.id === currentDesignItemId);
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = `day${item ? item.day : 'x'}_design.png`;
+            a.click();
+        } catch (err) {
+            toast('Export blocked — one of the icon images may not allow canvas export (CORS). Try removing icons and export again.', 'error');
+        }
+    }
+
+    async function saveDesignToCard() {
+        if (!currentDesignItemId) return;
+        const canvas = document.getElementById('designCanvas');
+        try {
+            const dataUrl = canvas.toDataURL('image/png');
+            designImages[currentDesignItemId] = dataUrl;
+            const payload = { designSpec: JSON.parse(JSON.stringify(designSpec)), designImage: dataUrl };
+            await updateContent(currentDesignItemId, payload);
+            if (!useRemoteDb()) await storageSet(`design:${currentDesignItemId}`, dataUrl);
+            toast('Design saved to card');
+            closeDesignModal();
+        } catch (err) {
+            toast(`Save failed: ${err.message}`, 'error');
+        }
+    }
 
     // ================================================================
     // RENDER CALENDAR
@@ -521,14 +1190,12 @@
 
                     const tagRow = document.createElement('div');
                     tagRow.className = 'flex gap-1';
-
                     if (item.audience) {
                         const audTag = document.createElement('span');
                         audTag.className = `audience-tag aud-${item.audience}`;
                         audTag.textContent = item.audience;
                         tagRow.appendChild(audTag);
                     }
-
                     (item.platforms || ['all']).forEach(p => {
                         const tag = document.createElement('span');
                         tag.className = `platform-tag tag-${p}`;
@@ -543,21 +1210,18 @@
                         hook.innerHTML = `<i class="fas fa-bolt" style="color:#2563eb;margin-right:6px;"></i> ${item.hook}`;
                         wrapper.appendChild(hook);
                     }
-
                     if (item.description) {
                         const desc = document.createElement('div');
                         desc.className = 'desc-text';
                         desc.textContent = item.description;
                         wrapper.appendChild(desc);
                     }
-
                     if (item.cta) {
                         const cta = document.createElement('div');
                         cta.className = 'cta-text';
                         cta.innerHTML = `<i class="fas fa-arrow-right" style="margin-right:6px;"></i> ${item.cta}`;
                         wrapper.appendChild(cta);
                     }
-
                     if (item.hashtags) {
                         const hash = document.createElement('div');
                         hash.className = 'hashtags';
@@ -565,17 +1229,42 @@
                         wrapper.appendChild(hash);
                     }
 
+                    if (designImages[item.id]) {
+                        const thumb = document.createElement('img');
+                        thumb.className = 'design-thumb';
+                        thumb.src = designImages[item.id];
+                        thumb.title = 'Click to edit design';
+                        thumb.onclick = () => openDesignModal(item.id);
+                        wrapper.appendChild(thumb);
+                    }
+
                     const actions = document.createElement('div');
                     actions.className = 'flex';
                     actions.style.marginTop = '8px';
+
+                    const aiBtn = document.createElement('button');
+                    aiBtn.className = 'btn btn-sm btn-ai';
+                    aiBtn.setAttribute('data-ai-write', item.id);
+                    aiBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> AI Write';
+                    aiBtn.onclick = () => generateContentAI(item.id);
+
+                    const designBtn = document.createElement('button');
+                    designBtn.className = 'btn btn-sm btn-design';
+                    designBtn.innerHTML = '<i class="fas fa-image"></i> Design';
+                    designBtn.onclick = () => openDesignModal(item.id);
+
                     const editBtn = document.createElement('button');
                     editBtn.className = 'btn btn-sm btn-outline';
                     editBtn.innerHTML = '<i class="fas fa-edit"></i>';
                     editBtn.onclick = () => openEditModal(item.id);
+
                     const delBtn = document.createElement('button');
                     delBtn.className = 'btn btn-sm btn-danger';
                     delBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                    delBtn.onclick = () => { if(confirm('Delete this?')) deleteContent(item.id); };
+                    delBtn.onclick = () => { if (confirm('Delete this?')) deleteContent(item.id); };
+
+                    actions.appendChild(aiBtn);
+                    actions.appendChild(designBtn);
                     actions.appendChild(editBtn);
                     actions.appendChild(delBtn);
                     wrapper.appendChild(actions);
@@ -594,7 +1283,7 @@
     }
 
     // ================================================================
-    // MODAL LOGIC
+    // ADD/EDIT MODAL LOGIC
     // ================================================================
     let isEditing = false;
     let editId = null;
@@ -635,9 +1324,7 @@
         document.getElementById('modalOverlay').classList.add('show');
     }
 
-    function closeModal() {
-        document.getElementById('modalOverlay').classList.remove('show');
-    }
+    function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
 
     async function saveFromModal() {
         const day = parseInt(document.getElementById('formDay').value) || 1;
@@ -653,30 +1340,47 @@
         if (!raw) { alert('Raw idea is required'); return; }
 
         const data = { day, raw, refined, audience, platforms, hook, description, cta, hashtags };
-
         if (isEditing && editId) {
-            updateContent(editId, data);
+            await updateContent(editId, data);
         } else {
             data.id = genId();
-            addContent(data);
+            await addContent(data);
         }
         closeModal();
     }
 
     // ================================================================
-    // NAVIGATION
+    // SETTINGS MODAL
     // ================================================================
-    function navPrev() {
-        if (currentView === 'week') weekOffset--;
-        else if (currentView === 'day') dayOffset--;
-        renderCalendar();
+    function openSettings() {
+        document.getElementById('settingsBaseUrl').value = apiConfig.baseUrl || DEFAULT_API.baseUrl;
+        document.getElementById('settingsModel').value = apiConfig.model || DEFAULT_API.model;
+        document.getElementById('settingsDbUrl').value = dbConfig.baseUrl || '';
+        document.getElementById('settingsDbSecret').value = dbConfig.secret || '';
+        document.getElementById('settingsOverlay').classList.add('show');
+    }
+    function closeSettings() { document.getElementById('settingsOverlay').classList.remove('show'); }
+    async function saveSettings() {
+        apiConfig = {
+            baseUrl: document.getElementById('settingsBaseUrl').value.trim() || DEFAULT_API.baseUrl,
+            model: document.getElementById('settingsModel').value
+        };
+        const newDbUrl = document.getElementById('settingsDbUrl').value.trim();
+        const newDbSecret = document.getElementById('settingsDbSecret').value.trim();
+        const dbChanged = newDbUrl !== (dbConfig.baseUrl || '');
+        dbConfig = { baseUrl: newDbUrl, secret: newDbSecret };
+        await storageSet('apiConfig', apiConfig);
+        await storageSet('dbConfig', dbConfig);
+        closeSettings();
+        toast('Settings saved');
+        if (dbChanged) await refreshData();
     }
 
-    function navNext() {
-        if (currentView === 'week') weekOffset++;
-        else if (currentView === 'day') dayOffset++;
-        renderCalendar();
-    }
+    // ================================================================
+    // NAVIGATION
+    // ================================================================
+    function navPrev() { if (currentView === 'week') weekOffset--; else if (currentView === 'day') dayOffset--; renderCalendar(); }
+    function navNext() { if (currentView === 'week') weekOffset++; else if (currentView === 'day') dayOffset++; renderCalendar(); }
 
     // ================================================================
     // IMPORT / EXPORT / REFRESH
@@ -691,20 +1395,35 @@
         URL.revokeObjectURL(url);
     }
 
-    async function importData(file) {
+    function importData(file) {
         const reader = new FileReader();
         reader.onload = async (e) => {
             try {
                 const imported = JSON.parse(e.target.result);
                 if (Array.isArray(imported)) {
-                    contentData = imported;
-                    await saveData();
-                    alert('Import successful!');
+                    contentData = imported.map(item => ({ ...item, id: item.id || genId() }));
+                    designImages = {};
+                    contentData.forEach(item => { if (item.designImage) designImages[item.id] = item.designImage; });
+
+                    if (useRemoteDb()) {
+                        try {
+                            await dbFetch('?bulk=1', { method: 'POST', body: JSON.stringify({ items: contentData }) });
+                        } catch (err) {
+                            toast(`DB bulk import failed: ${err.message}`, 'error');
+                        }
+                    } else {
+                        await storageSet('contentData', stripImages(contentData));
+                        for (const item of contentData) {
+                            if (item.designImage) await storageSet(`design:${item.id}`, item.designImage);
+                        }
+                    }
+                    renderCalendar();
+                    toast('Import successful!');
                 } else {
-                    alert('Invalid JSON format. Expected an array.');
+                    toast('Invalid JSON format. Expected an array.', 'error');
                 }
-            } catch(err) {
-                alert('Error parsing JSON: ' + err.message);
+            } catch (err) {
+                toast('Error parsing JSON: ' + err.message, 'error');
             }
         };
         reader.readAsText(file);
@@ -742,28 +1461,41 @@
 
         document.getElementById('navPrev').addEventListener('click', navPrev);
         document.getElementById('navNext').addEventListener('click', navNext);
-
         document.getElementById('refreshData').addEventListener('click', refreshData);
         document.getElementById('openAddModal').addEventListener('click', () => openAddModal());
         document.getElementById('closeModal').addEventListener('click', closeModal);
         document.getElementById('saveContent').addEventListener('click', saveFromModal);
-        document.getElementById('modalOverlay').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) closeModal();
+        document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeModal(); });
+
+        document.getElementById('openSettings').addEventListener('click', openSettings);
+        document.getElementById('closeSettings').addEventListener('click', closeSettings);
+        document.getElementById('saveSettings').addEventListener('click', saveSettings);
+        document.getElementById('settingsOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeSettings(); });
+
+        document.getElementById('closeDesign').addEventListener('click', closeDesignModal);
+        document.getElementById('designOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeDesignModal(); });
+        document.getElementById('aiGenerateDesign').addEventListener('click', aiGenerateDesign);
+        document.getElementById('exportDesignPng').addEventListener('click', exportDesignPNG);
+        document.getElementById('saveDesignToCard').addEventListener('click', saveDesignToCard);
+        document.getElementById('addTextBlockBtn').addEventListener('click', () => {
+            designSpec.textBlocks.push({ id: 't' + Date.now(), text: 'New text', x: 50, y: 75, font: 'Inter', size: 28, weight: 600, color: '#ffffff', align: 'center', maxWidth: 80 });
+            renderDesignFields();
+            redrawCanvas();
+        });
+        document.getElementById('canvasPreset').addEventListener('change', (e) => {
+            const [w, h] = e.target.value.split('x').map(Number);
+            designSpec.canvasW = w; designSpec.canvasH = h;
+            redrawCanvas();
         });
 
         document.getElementById('exportData').addEventListener('click', exportData);
-        document.getElementById('importData').addEventListener('click', () => {
-            document.getElementById('fileInput').click();
-        });
+        document.getElementById('importData').addEventListener('click', () => document.getElementById('fileInput').click());
         document.getElementById('fileInput').addEventListener('change', (e) => {
-            if (e.target.files.length) {
-                importData(e.target.files[0]);
-                e.target.value = '';
-            }
+            if (e.target.files.length) { importData(e.target.files[0]); e.target.value = ''; }
         });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeModal();
+            if (e.key === 'Escape') { closeModal(); closeSettings(); closeDesignModal(); }
         });
     });
 </script>
