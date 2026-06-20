@@ -575,8 +575,8 @@
 <!-- SETTINGS MODAL -->
 <div class="modal-overlay" id="settingsOverlay">
     <div class="modal">
-        <h2><i class="fas fa-gear"></i> AI API Settings</h2>
-        <label>API Endpoint</label>
+        <h2><i class="fas fa-gear"></i> Settings</h2>
+        <label>AI API Endpoint</label>
         <input type="text" id="settingsBaseUrl" placeholder="https://smagents.vercel.app/api/chat" />
         <div class="hint">This must be a POST endpoint accepting <code>{model, messages}</code> and returning an OpenAI-style chat completion. CORS must be open on the endpoint (yours already is).</div>
         <label>Model</label>
@@ -587,6 +587,13 @@
             <option value="moonshotai/kimi-k2.6">moonshotai/kimi-k2.6</option>
             <option value="mistralai/mistral-large-3-675b-instruct-2512">mistralai/mistral-large-3-675b-instruct-2512</option>
         </select>
+
+        <label style="margin-top:20px;">Database Endpoint <span class="text-muted">(optional)</span></label>
+        <input type="text" id="settingsDbUrl" placeholder="https://smagents.vercel.app/api/content" />
+        <div class="hint">Leave blank to keep using this chat's built-in storage. Set this to your deployed Turso-backed endpoint to use a real, shareable database instead.</div>
+        <label>Database Secret <span class="text-muted">(optional)</span></label>
+        <input type="text" id="settingsDbSecret" placeholder="shared secret, only if your endpoint requires one" />
+
         <div class="modal-actions">
             <button class="btn btn-outline" id="closeSettings">Cancel</button>
             <button class="btn btn-primary" id="saveSettings">Save</button>
@@ -632,10 +639,33 @@
     // ================================================================
     const FONTS = ['Inter','DM Sans','Space Mono','Bebas Neue','Playfair Display','Oswald','Montserrat','Raleway','Syne'];
     const DEFAULT_API = { baseUrl: 'https://smagents.vercel.app/api/chat', model: 'deepseek-ai/deepseek-v4-flash' };
+    // Leave baseUrl blank to keep using Claude's built-in artifact storage.
+    // Point it at your deployed pages/api/content.js endpoint to switch to the real Turso DB.
+    const DEFAULT_DB = { baseUrl: '', secret: '' };
 
     let contentData = [];
     let apiConfig = { ...DEFAULT_API };
+    let dbConfig = { ...DEFAULT_DB };
     let designImages = {}; // { itemId: dataUrl }
+
+    function useRemoteDb() { return !!dbConfig.baseUrl; }
+
+    async function dbFetch(query, options = {}) {
+        const url = dbConfig.baseUrl.replace(/\/$/, '') + query;
+        const headers = { 'Content-Type': 'application/json' };
+        if (dbConfig.secret) headers['x-api-secret'] = dbConfig.secret;
+        const res = await fetch(url, { ...options, headers });
+        if (!res.ok) {
+            let detail = '';
+            try { detail = JSON.stringify(await res.json()); } catch (e) {}
+            throw new Error(`DB error ${res.status} ${detail}`.slice(0, 200));
+        }
+        return res.json();
+    }
+
+    // Local artifact storage keeps base64 design images out of the main blob
+    // (single keys are capped at 5MB) — the remote DB doesn't need this split.
+    function stripImages(arr) { return arr.map(({ designImage, ...rest }) => rest); }
 
     function toast(msg, type = 'success') {
         const el = document.getElementById('toast');
@@ -672,17 +702,41 @@
     }
 
     async function loadData() {
+        const dbCfg = await storageGet('dbConfig', null);
+        dbConfig = dbCfg && typeof dbCfg.baseUrl === 'string' ? dbCfg : { ...DEFAULT_DB };
+
+        if (useRemoteDb()) {
+            try {
+                const { items } = await dbFetch('', { method: 'GET' });
+                if (items && items.length) {
+                    contentData = items;
+                } else {
+                    contentData = addDemoData();
+                    await dbFetch('?bulk=1', { method: 'POST', body: JSON.stringify({ items: contentData }) });
+                }
+                designImages = {};
+                contentData.forEach(item => { if (item.designImage) designImages[item.id] = item.designImage; });
+            } catch (err) {
+                console.error('DB load failed, falling back to local storage', err);
+                toast(`DB connection failed (${err.message}) — using local storage`, 'error');
+                await loadLocalData();
+            }
+        } else {
+            await loadLocalData();
+        }
+
+        const cfg = await storageGet('apiConfig', null);
+        apiConfig = cfg && cfg.baseUrl ? cfg : { ...DEFAULT_API };
+    }
+
+    async function loadLocalData() {
         const stored = await storageGet('contentData', null);
         if (stored && Array.isArray(stored) && stored.length) {
             contentData = stored;
         } else {
             contentData = addDemoData();
-            await storageSet('contentData', contentData);
+            await storageSet('contentData', stripImages(contentData));
         }
-        const cfg = await storageGet('apiConfig', null);
-        apiConfig = cfg && cfg.baseUrl ? cfg : { ...DEFAULT_API };
-
-        // load any saved design thumbnails
         designImages = {};
         try {
             const list = await window.storage.list('design:', false);
@@ -696,23 +750,42 @@
         } catch (e) { /* no designs yet */ }
     }
 
-    async function saveData() {
-        await storageSet('contentData', contentData);
+    function getDayData(day) { return contentData.filter(item => item.day === day); }
+
+    async function addContent(item) {
+        if (useRemoteDb()) {
+            try { await dbFetch('', { method: 'POST', body: JSON.stringify(item) }); }
+            catch (err) { toast(`DB save failed: ${err.message}`, 'error'); }
+        }
+        contentData.push(item);
+        if (!useRemoteDb()) await storageSet('contentData', stripImages(contentData));
         renderCalendar();
     }
 
-    function getDayData(day) { return contentData.filter(item => item.day === day); }
-
-    async function addContent(item) { contentData.push(item); await saveData(); }
     async function updateContent(id, updated) {
         const index = contentData.findIndex(item => item.id === id);
-        if (index !== -1) { contentData[index] = { ...contentData[index], ...updated }; await saveData(); }
+        if (index === -1) return;
+        contentData[index] = { ...contentData[index], ...updated };
+        if (useRemoteDb()) {
+            try { await dbFetch('', { method: 'POST', body: JSON.stringify(contentData[index]) }); }
+            catch (err) { toast(`DB save failed: ${err.message}`, 'error'); }
+        } else {
+            await storageSet('contentData', stripImages(contentData));
+        }
+        renderCalendar();
     }
+
     async function deleteContent(id) {
         contentData = contentData.filter(item => item.id !== id);
         delete designImages[id];
-        await storageDelete(`design:${id}`);
-        await saveData();
+        if (useRemoteDb()) {
+            try { await dbFetch(`?id=${encodeURIComponent(id)}`, { method: 'DELETE' }); }
+            catch (err) { toast(`DB delete failed: ${err.message}`, 'error'); }
+        } else {
+            await storageDelete(`design:${id}`);
+            await storageSet('contentData', stripImages(contentData));
+        }
+        renderCalendar();
     }
 
     function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
@@ -1058,8 +1131,9 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
         try {
             const dataUrl = canvas.toDataURL('image/png');
             designImages[currentDesignItemId] = dataUrl;
-            await storageSet(`design:${currentDesignItemId}`, dataUrl);
-            await updateContent(currentDesignItemId, { designSpec: JSON.parse(JSON.stringify(designSpec)) });
+            const payload = { designSpec: JSON.parse(JSON.stringify(designSpec)), designImage: dataUrl };
+            await updateContent(currentDesignItemId, payload);
+            if (!useRemoteDb()) await storageSet(`design:${currentDesignItemId}`, dataUrl);
             toast('Design saved to card');
             closeDesignModal();
         } catch (err) {
@@ -1298,6 +1372,8 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     function openSettings() {
         document.getElementById('settingsBaseUrl').value = apiConfig.baseUrl || DEFAULT_API.baseUrl;
         document.getElementById('settingsModel').value = apiConfig.model || DEFAULT_API.model;
+        document.getElementById('settingsDbUrl').value = dbConfig.baseUrl || '';
+        document.getElementById('settingsDbSecret').value = dbConfig.secret || '';
         document.getElementById('settingsOverlay').classList.add('show');
     }
     function closeSettings() { document.getElementById('settingsOverlay').classList.remove('show'); }
@@ -1306,9 +1382,15 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
             baseUrl: document.getElementById('settingsBaseUrl').value.trim() || DEFAULT_API.baseUrl,
             model: document.getElementById('settingsModel').value
         };
+        const newDbUrl = document.getElementById('settingsDbUrl').value.trim();
+        const newDbSecret = document.getElementById('settingsDbSecret').value.trim();
+        const dbChanged = newDbUrl !== (dbConfig.baseUrl || '');
+        dbConfig = { baseUrl: newDbUrl, secret: newDbSecret };
         await storageSet('apiConfig', apiConfig);
+        await storageSet('dbConfig', dbConfig);
         closeSettings();
         toast('Settings saved');
+        if (dbChanged) await refreshData();
     }
 
     // ================================================================
@@ -1336,8 +1418,23 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
             try {
                 const imported = JSON.parse(e.target.result);
                 if (Array.isArray(imported)) {
-                    contentData = imported;
-                    await saveData();
+                    contentData = imported.map(item => ({ ...item, id: item.id || genId() }));
+                    designImages = {};
+                    contentData.forEach(item => { if (item.designImage) designImages[item.id] = item.designImage; });
+
+                    if (useRemoteDb()) {
+                        try {
+                            await dbFetch('?bulk=1', { method: 'POST', body: JSON.stringify({ items: contentData }) });
+                        } catch (err) {
+                            toast(`DB bulk import failed: ${err.message}`, 'error');
+                        }
+                    } else {
+                        await storageSet('contentData', stripImages(contentData));
+                        for (const item of contentData) {
+                            if (item.designImage) await storageSet(`design:${item.id}`, item.designImage);
+                        }
+                    }
+                    renderCalendar();
                     toast('Import successful!');
                 } else {
                     toast('Invalid JSON format. Expected an array.', 'error');
