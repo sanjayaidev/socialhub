@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "npm install",
+  "buildCommand": "mkdir -p public && cp *.html public/",
   "devCommand": "vercel dev",
   "installCommand": "npm install",
   "framework": null,
+  "outputDirectory": "public",
   "routes": [
     {
       "src": "/(.*)",
