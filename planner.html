@@ -526,8 +526,12 @@
                 <button class="btn" data-view="day"><i class="fas fa-list-ul"></i> Day</button>
             </div>
             <div class="nav-controls">
+                <button class="btn btn-outline" id="monthPrev" title="Previous month"><i class="fas fa-chevron-left"></i></button>
+                <span class="nav-label" id="navLabel">Month Year</span>
+                <button class="btn btn-outline" id="monthNext" title="Next month"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="nav-controls" style="margin-left:8px;">
                 <button class="btn btn-outline" id="navPrev"><i class="fas fa-chevron-left"></i></button>
-                <span class="nav-label" id="navLabel">Day 1-31</span>
                 <button class="btn btn-outline" id="navNext"><i class="fas fa-chevron-right"></i></button>
             </div>
             <button class="btn btn-refresh" id="refreshData" title="Reload from storage"><i class="fas fa-sync-alt"></i></button>
@@ -694,13 +698,17 @@
     // NO DEMO DATA - Data loads from planner table only
     // ================================================================
 
-    async function loadData() {
+    async function loadData(selectedMonth = null, selectedYear = null) {
         const dbCfg = await storageGet('dbConfig', null);
         dbConfig = dbCfg && typeof dbCfg.baseUrl === 'string' ? dbCfg : { ...DEFAULT_DB };
 
         if (useRemoteDb()) {
             try {
-                const { items } = await dbFetch('', { method: 'GET' });
+                let query = '?table=planner';
+                if (selectedMonth !== null && selectedYear !== null) {
+                    query += `&month=${selectedMonth}&year=${selectedYear}`;
+                }
+                const { items } = await dbFetch(query, { method: 'GET' });
                 contentData = items || [];
                 designImages = {};
                 contentData.forEach(item => { if (item.designImage) designImages[item.id] = item.designImage; });
@@ -733,7 +741,7 @@
         } catch (e) { /* no designs yet */ }
     }
 
-    function getDayData(day) { return contentData.filter(item => item.day === day); }
+    function getDayData(day) { return contentData.filter(item => item.day === day || item.dayOfMonth === day); }
 
     async function addContent(item) {
         if (useRemoteDb()) {
@@ -1130,6 +1138,12 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     let currentView = 'month';
     let weekOffset = 0;
     let dayOffset = 0;
+    let currentMonth = new Date().getMonth() + 1; // 1-12
+    let currentYear = new Date().getFullYear();
+
+    function getDaysInMonth(month, year) {
+        return new Date(year, month, 0).getDate();
+    }
 
     function renderCalendar() {
         const grid = document.getElementById('calendarGrid');
@@ -1140,8 +1154,10 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
         const label = document.getElementById('navLabel');
 
         if (currentView === 'month') {
-            for (let d = 1; d <= 31; d++) daysToShow.push(d);
-            label.textContent = 'Day 1-31';
+            const daysInMonth = getDaysInMonth(currentMonth, currentYear);
+            for (let d = 1; d <= daysInMonth; d++) daysToShow.push(d);
+            const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            label.textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
         } else if (currentView === 'week') {
             const today = new Date().getDate();
             const start = Math.max(1, Math.min(25, today + weekOffset * 7));
@@ -1293,7 +1309,7 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
         editId = null;
         document.getElementById('modalTitle').textContent = 'Add Content';
         document.getElementById('editId').value = '';
-        document.getElementById('formDay').value = day || new Date().getDate();
+        document.getElementById('formDay').value = day || 1;
         document.getElementById('formRaw').value = '';
         document.getElementById('formRefined').value = '';
         document.getElementById('formAudience').value = '';
@@ -1381,6 +1397,26 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     // ================================================================
     function navPrev() { if (currentView === 'week') weekOffset--; else if (currentView === 'day') dayOffset--; renderCalendar(); }
     function navNext() { if (currentView === 'week') weekOffset++; else if (currentView === 'day') dayOffset++; renderCalendar(); }
+    
+    async function monthPrev() {
+        currentMonth--;
+        if (currentMonth < 1) {
+            currentMonth = 12;
+            currentYear--;
+        }
+        await loadData(currentMonth, currentYear);
+        renderCalendar();
+    }
+    
+    async function monthNext() {
+        currentMonth++;
+        if (currentMonth > 12) {
+            currentMonth = 1;
+            currentYear++;
+        }
+        await loadData(currentMonth, currentYear);
+        renderCalendar();
+    }
 
     // ================================================================
     // IMPORT / EXPORT / REFRESH
@@ -1430,7 +1466,7 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     }
 
     async function refreshData() {
-        await loadData();
+        await loadData(currentMonth, currentYear);
         weekOffset = 0;
         dayOffset = 0;
         renderCalendar();
@@ -1452,13 +1488,15 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     // INIT
     // ================================================================
     document.addEventListener('DOMContentLoaded', async function() {
-        await loadData();
+        await loadData(currentMonth, currentYear);
         renderCalendar();
 
         document.querySelectorAll('.view-toggle .btn').forEach(btn => {
             btn.addEventListener('click', () => setView(btn.dataset.view));
         });
 
+        document.getElementById('monthPrev').addEventListener('click', monthPrev);
+        document.getElementById('monthNext').addEventListener('click', monthNext);
         document.getElementById('navPrev').addEventListener('click', navPrev);
         document.getElementById('navNext').addEventListener('click', navNext);
         document.getElementById('refreshData').addEventListener('click', refreshData);
