@@ -8,6 +8,7 @@ Your app is now configured to use Turso database with Vercel. Here's what was se
 2. **`page/api/content.js`** - Updated API to use Turso instead of Appwrite
 3. **`lib/db.js`** - Reusable Turso client helper (optional, for other API routes)
 4. **`schema.sql`** - Database schema to create the `content_items` table
+5. **`page/api/init-db.js`** - Auto-initialization endpoint for creating tables on deploy
 
 ## Environment Variables
 
@@ -26,22 +27,34 @@ npm install
 
 Or if you don't have a local setup, Vercel will install dependencies automatically on deploy.
 
-### 2. Create the Database Table
+### 2. Create the Database Table (Automatic)
 
-Run the SQL schema in your Turso database. You can do this via:
+**Recommended: Use the auto-initialization endpoint**
 
-**Option A: Turso CLI**
+After deploying to Vercel, call the initialization endpoint once:
+
+```bash
+curl https://your-vercel-app.vercel.app/api/init-db
+```
+
+Or visit in browser: `https://your-vercel-app.vercel.app/api/init-db`
+
+This will:
+- Check if the `content_items` table exists
+- Create it if it doesn't exist
+- Create the `idx_content_items_day` index if it doesn't exist
+- Return a status report of what was done
+
+**Manual Option A: Turso CLI**
 ```bash
 turso db shell <your-database-name> < schema.sql
 ```
 
-**Option B: Turso Console**
+**Manual Option B: Turso Console**
 1. Go to https://console.turso.tech
 2. Select your database
 3. Open the SQL console
 4. Copy and paste the contents of `schema.sql`
-
-**Option C: Programmatically** (create a one-time migration script)
 
 ### 3. Deploy to Vercel
 
@@ -53,6 +66,28 @@ Vercel will automatically:
 - Install `@libsql/client` from package.json
 - Use the environment variables you've already configured
 - Deploy the Edge function at `/api/content`
+- Deploy the Edge function at `/api/init-db`
+
+### 4. Auto-Initialize on Each Deploy (Optional)
+
+To automatically initialize the database on each deployment, add a post-deploy script:
+
+**Option A: Call init-db endpoint after deploy**
+```bash
+vercel deploy && curl https://your-vercel-app.vercel.app/api/init-db
+```
+
+**Option B: Add to vercel.json (if you have one)**
+```json
+{
+  "deployments": {
+    "postDeploy": "curl $VERCEL_URL/api/init-db"
+  }
+}
+```
+
+**Option C: GitHub Actions**
+If using GitHub for deployments, add a step to call the init endpoint after deployment.
 
 ## API Endpoints
 
