@@ -1,20 +1,14 @@
 // pages/api/content.js
-// Edge function that sits between the Content Planner artifact and Appwrite.
-// Same shape as pages/api/chat.js: one file, plain fetch-compatible client,
-// no Node-only APIs (so it works on the Edge runtime).
+// Edge function that connects to Turso database via Vercel Storage
+// Uses @libsql/client for SQLite-compatible database operations
 //
 // Required env vars (set in Vercel → Settings → Environment Variables):
-//   APPWRITE_ENDPOINT    e.g. https://cloud.appwrite.io/v1
-//   APPWRITE_PROJECT_ID  your Appwrite project ID
-//   APPWRITE_DATABASE_ID your Appwrite database ID
-//   APPWRITE_COLLECTION_ID your Appwrite collection ID for content_items
-//   APPWRITE_API_KEY     your Appwrite API key with appropriate permissions
-// Optional:
-//   CONTENT_API_SECRET   if set, every request must send header
-//                         x-api-secret: <value>. If unset, the endpoint is open
-//                         (fine for solo/dev use, not for anything public).
+//   TURSO_DATABASE_URL   your Turso database URL (e.g., libsql://...)
+//   TURSO_AUTH_TOKEN     your Turso authentication token
 
 export const config = { runtime: 'edge' };
+
+import { createClient } from '@libsql/client';
 
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -29,32 +23,19 @@ function json(obj, status = 200) {
     });
 }
 
-// Appwrite client helper - creates a fetch-compatible client for Edge runtime
-function getAppwriteClient() {
-    const endpoint = process.env.APPWRITE_ENDPOINT;
-    const projectId = process.env.APPWRITE_PROJECT_ID;
-    const apiKey = process.env.APPWRITE_API_KEY;
+// Turso client helper - creates a client for Edge runtime
+function getTursoClient() {
+    const url = process.env.TURSO_DATABASE_URL;
+    const authToken = process.env.TURSO_AUTH_TOKEN;
     
-    if (!endpoint || !projectId || !apiKey) {
-        throw new Error('Missing required Appwrite environment variables');
+    if (!url) {
+        throw new Error('Missing TURSO_DATABASE_URL environment variable');
     }
     
-    return {
-        endpoint: endpoint.replace(/\/$/, ''), // Remove trailing slash
-        projectId,
-        apiKey,
-        databaseId: process.env.APPWRITE_DATABASE_ID,
-        collectionId: process.env.APPWRITE_COLLECTION_ID,
-    };
-}
-
-function makeAppwriteHeaders() {
-    const client = getAppwriteClient();
-    return {
-        'Content-Type': 'application/json',
-        'X-Appwrite-Project': client.projectId,
-        'Authorization': `Bearer ${client.apiKey}`,
-    };
+    return createClient({
+        url: url,
+        authToken: authToken,
+    });
 }
 
 function authorized(req) {
@@ -63,73 +44,125 @@ function authorized(req) {
     return req.headers.get('x-api-secret') === secret;
 }
 
-function rowToItem(doc) {
-    // Appwrite documents have $id, $createdAt, $updatedAt metadata
+function rowToItem(row) {
+    // Convert database row to content item object
     return {
-        id: doc.$id || doc.id,
-        day: doc.day,
-        audience: doc.audience || '',
-        raw: doc.raw,
-        refined: doc.refined || '',
-        platforms: doc.platforms ? (typeof doc.platforms === 'string' ? JSON.parse(doc.platforms) : doc.platforms) : [],
-        hook: doc.hook || '',
-        description: doc.description || '',
-        cta: doc.cta || '',
-        hashtags: doc.hashtags || '',
-        designSpec: doc.design_spec ? (typeof doc.design_spec === 'string' ? JSON.parse(doc.design_spec) : doc.design_spec) : undefined,
-        designImage: doc.design_image || undefined,
+        id: row.id,
+        day: row.day,
+        audience: row.audience || '',
+        raw: row.raw,
+        refined: row.refined || '',
+        platforms: row.platforms ? JSON.parse(row.platforms) : [],
+        hook: row.hook || '',
+        description: row.description || '',
+        cta: row.cta || '',
+        hashtags: row.hashtags || '',
+        designSpec: row.design_spec ? JSON.parse(row.design_spec) : undefined,
+        designImage: row.design_image || undefined,
     };
 }
 
-async function appwriteFetch(path, options = {}) {
-    const client = getAppwriteClient();
-    const url = `${client.endpoint}/databases/${client.databaseId}/collections/${client.collectionId}/documents${path}`;
-    const headers = makeAppwriteHeaders();
-    
-    const res = await fetch(url, { ...options, headers });
-    if (!res.ok) {
-        let detail = '';
-        try { detail = JSON.stringify(await res.json()); } catch (e) {}
-        throw new Error(`Appwrite error ${res.status} ${detail}`.slice(0, 200));
+async function getAllItems() {
+    const client = getTursoClient();
+    try {
+        const result = await client.execute('SELECT * FROM content_items ORDER BY day ASC');
+        return result.rows.map(row => rowToItem(row));
+    } finally {
+        client.close();
     }
-    return res.json();
+}
+
+async function getItemById(id) {
+    const client = getTursoClient();
+    try {
+        const result = await client.execute({
+            sql: 'SELECT * FROM content_items WHERE id = ?',
+            args: [id],
+        });
+        if (result.rows.length === 0) return null;
+        return rowToItem(result.rows[0]);
+    } finally {
+        client.close();
+    }
 }
 
 async function upsertItem(item) {
-    const client = getAppwriteClient();
-    const docId = item.id;
-    
-    // Prepare document data for Appwrite
-    const document = {
-        day: item.day,
-        audience: item.audience || '',
-        raw: item.raw,
-        refined: item.refined || '',
-        platforms: JSON.stringify(item.platforms || []),
-        hook: item.hook || '',
-        description: item.description || '',
-        cta: item.cta || '',
-        hashtags: item.hashtags || '',
-        design_spec: item.designSpec ? JSON.stringify(item.designSpec) : null,
-        design_image: item.designImage || null,
-    };
-    
-    // Try to update existing document, or create if it doesn't exist
+    const client = getTursoClient();
     try {
-        await appwriteFetch(`/${docId}`, {
-            method: 'PUT',
-            body: JSON.stringify(document),
+        // Check if item exists
+        const existing = await client.execute({
+            sql: 'SELECT id FROM content_items WHERE id = ?',
+            args: [item.id],
         });
-    } catch (err) {
-        // If document doesn't exist, create it
-        if (err.message.includes('404')) {
-            await appwriteFetch('', {
-                method: 'POST',
-                body: JSON.stringify({ ...document, $id: docId }),
+        
+        if (existing.rows.length > 0) {
+            // Update existing item
+            await client.execute({
+                sql: `UPDATE content_items SET 
+                    day = ?, audience = ?, raw = ?, refined = ?, 
+                    platforms = ?, hook = ?, description = ?, cta = ?, 
+                    hashtags = ?, design_spec = ?, design_image = ?
+                    WHERE id = ?`,
+                args: [
+                    item.day,
+                    item.audience || '',
+                    item.raw,
+                    item.refined || '',
+                    JSON.stringify(item.platforms || []),
+                    item.hook || '',
+                    item.description || '',
+                    item.cta || '',
+                    item.hashtags || '',
+                    item.designSpec ? JSON.stringify(item.designSpec) : null,
+                    item.designImage || null,
+                    item.id,
+                ],
             });
         } else {
-            throw err;
+            // Insert new item
+            await client.execute({
+                sql: `INSERT INTO content_items 
+                    (id, day, audience, raw, refined, platforms, hook, description, cta, hashtags, design_spec, design_image)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                args: [
+                    item.id,
+                    item.day,
+                    item.audience || '',
+                    item.raw,
+                    item.refined || '',
+                    JSON.stringify(item.platforms || []),
+                    item.hook || '',
+                    item.description || '',
+                    item.cta || '',
+                    item.hashtags || '',
+                    item.designSpec ? JSON.stringify(item.designSpec) : null,
+                    item.designImage || null,
+                ],
+            });
         }
+    } finally {
+        client.close();
+    }
+}
+
+async function deleteItem(id) {
+    const client = getTursoClient();
+    try {
+        await client.execute({
+            sql: 'DELETE FROM content_items WHERE id = ?',
+            args: [id],
+        });
+    } finally {
+        client.close();
+    }
+}
+
+async function deleteAllItems() {
+    const client = getTursoClient();
+    try {
+        await client.execute('DELETE FROM content_items');
+    } finally {
+        client.close();
     }
 }
 
@@ -145,10 +178,7 @@ export default async function handler(req) {
 
     try {
         if (req.method === 'GET') {
-            // Appwrite doesn't have a simple "get all" without pagination, so we'll fetch with limit=100
-            // For more than 100 items, you'd need to implement pagination
-            const result = await appwriteFetch('?limit=100');
-            const items = (result.documents || []).map(rowToItem).sort((a, b) => a.day - b.day);
+            const items = await getAllItems();
             return json({ items });
         }
 
@@ -158,13 +188,8 @@ export default async function handler(req) {
             // Bulk replace-all (used by the planner's Import feature and initial seed)
             if (searchParams.get('bulk') === '1') {
                 const items = Array.isArray(body.items) ? body.items : [];
-                // Delete all existing documents first
-                const current = await appwriteFetch('?limit=100');
-                for (const doc of (current.documents || [])) {
-                    try {
-                        await appwriteFetch(`/${doc.$id}`, { method: 'DELETE' });
-                    } catch (e) { /* ignore delete errors */ }
-                }
+                // Delete all existing items first
+                await deleteAllItems();
                 // Insert new items
                 for (const item of items) {
                     if (item.id && item.raw) await upsertItem(item);
@@ -183,12 +208,13 @@ export default async function handler(req) {
         if (req.method === 'DELETE') {
             const id = searchParams.get('id');
             if (!id) return json({ error: 'id query param required' }, 400);
-            await appwriteFetch(`/${id}`, { method: 'DELETE' });
+            await deleteItem(id);
             return json({ ok: true });
         }
 
         return json({ error: 'method not allowed' }, 405);
     } catch (err) {
+        console.error('Database error:', err);
         return json({ error: String(err && err.message ? err.message : err) }, 500);
     }
 }
