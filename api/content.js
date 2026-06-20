@@ -282,7 +282,7 @@ export default async function handler(req) {
     }
 
     const { searchParams } = new URL(req.url);
-    const table = searchParams.get('table') || 'content_items'; // 'content_items' or 'planner'
+    const table = searchParams.get('table') || 'planner'; // Default to 'planner' table
 
     try {
         if (req.method === 'GET') {
