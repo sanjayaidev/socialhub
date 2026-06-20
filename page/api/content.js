@@ -1,14 +1,13 @@
 // pages/api/content.js
-// Edge function that connects to Turso database via Vercel Storage
-// Uses @libsql/client for SQLite-compatible database operations
+// Edge function that connects to Neon database via Vercel Storage
+// Uses @neondatabase/serverless for PostgreSQL operations
 //
 // Required env vars (set in Vercel → Settings → Environment Variables):
-//   TURSO_DATABASE_URL   your Turso database URL (e.g., libsql://...)
-//   TURSO_AUTH_TOKEN     your Turso authentication token
+//   DATABASE_URL   your Neon database URL (e.g., postgresql://...)
 
 export const config = { runtime: 'edge' };
 
-import { createClient } from '@libsql/client';
+import { Pool } from '@neondatabase/serverless';
 
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -23,18 +22,17 @@ function json(obj, status = 200) {
     });
 }
 
-// Turso client helper - creates a client for Edge runtime
-function getTursoClient() {
-    const url = process.env.TURSO_DATABASE_URL;
-    const authToken = process.env.TURSO_AUTH_TOKEN;
+// Neon client helper - creates a pool for Edge runtime
+function getNeonPool() {
+    const url = process.env.DATABASE_URL;
     
     if (!url) {
-        throw new Error('Missing TURSO_DATABASE_URL environment variable');
+        throw new Error('Missing DATABASE_URL environment variable');
     }
     
-    return createClient({
-        url: url,
-        authToken: authToken,
+    return new Pool({
+        connectionString: url,
+        ssl: 'require',
     });
 }
 
@@ -63,106 +61,91 @@ function rowToItem(row) {
 }
 
 async function getAllItems() {
-    const client = getTursoClient();
+    const pool = getNeonPool();
     try {
-        const result = await client.execute('SELECT * FROM content_items ORDER BY day ASC');
+        const result = await pool.query('SELECT * FROM content_items ORDER BY day ASC');
         return result.rows.map(row => rowToItem(row));
     } finally {
-        client.close();
+        await pool.end();
     }
 }
 
 async function getItemById(id) {
-    const client = getTursoClient();
+    const pool = getNeonPool();
     try {
-        const result = await client.execute({
-            sql: 'SELECT * FROM content_items WHERE id = ?',
-            args: [id],
-        });
+        const result = await pool.query('SELECT * FROM content_items WHERE id = $1', [id]);
         if (result.rows.length === 0) return null;
         return rowToItem(result.rows[0]);
     } finally {
-        client.close();
+        await pool.end();
     }
 }
 
 async function upsertItem(item) {
-    const client = getTursoClient();
+    const pool = getNeonPool();
     try {
         // Check if item exists
-        const existing = await client.execute({
-            sql: 'SELECT id FROM content_items WHERE id = ?',
-            args: [item.id],
-        });
+        const existing = await pool.query('SELECT id FROM content_items WHERE id = $1', [item.id]);
         
         if (existing.rows.length > 0) {
             // Update existing item
-            await client.execute({
-                sql: `UPDATE content_items SET 
-                    day = ?, audience = ?, raw = ?, refined = ?, 
-                    platforms = ?, hook = ?, description = ?, cta = ?, 
-                    hashtags = ?, design_spec = ?, design_image = ?
-                    WHERE id = ?`,
-                args: [
-                    item.day,
-                    item.audience || '',
-                    item.raw,
-                    item.refined || '',
-                    JSON.stringify(item.platforms || []),
-                    item.hook || '',
-                    item.description || '',
-                    item.cta || '',
-                    item.hashtags || '',
-                    item.designSpec ? JSON.stringify(item.designSpec) : null,
-                    item.designImage || null,
-                    item.id,
-                ],
-            });
+            await pool.query(`UPDATE content_items SET 
+                day = $1, audience = $2, raw = $3, refined = $4, 
+                platforms = $5, hook = $6, description = $7, cta = $8, 
+                hashtags = $9, design_spec = $10, design_image = $11
+                WHERE id = $12`, [
+                item.day,
+                item.audience || '',
+                item.raw,
+                item.refined || '',
+                JSON.stringify(item.platforms || []),
+                item.hook || '',
+                item.description || '',
+                item.cta || '',
+                item.hashtags || '',
+                item.designSpec ? JSON.stringify(item.designSpec) : null,
+                item.designImage || null,
+                item.id,
+            ]);
         } else {
             // Insert new item
-            await client.execute({
-                sql: `INSERT INTO content_items 
-                    (id, day, audience, raw, refined, platforms, hook, description, cta, hashtags, design_spec, design_image)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                args: [
-                    item.id,
-                    item.day,
-                    item.audience || '',
-                    item.raw,
-                    item.refined || '',
-                    JSON.stringify(item.platforms || []),
-                    item.hook || '',
-                    item.description || '',
-                    item.cta || '',
-                    item.hashtags || '',
-                    item.designSpec ? JSON.stringify(item.designSpec) : null,
-                    item.designImage || null,
-                ],
-            });
+            await pool.query(`INSERT INTO content_items 
+                (id, day, audience, raw, refined, platforms, hook, description, cta, hashtags, design_spec, design_image)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`, [
+                item.id,
+                item.day,
+                item.audience || '',
+                item.raw,
+                item.refined || '',
+                JSON.stringify(item.platforms || []),
+                item.hook || '',
+                item.description || '',
+                item.cta || '',
+                item.hashtags || '',
+                item.designSpec ? JSON.stringify(item.designSpec) : null,
+                item.designImage || null,
+            ]);
         }
     } finally {
-        client.close();
+        await pool.end();
     }
 }
 
 async function deleteItem(id) {
-    const client = getTursoClient();
+    const pool = getNeonPool();
     try {
-        await client.execute({
-            sql: 'DELETE FROM content_items WHERE id = ?',
-            args: [id],
-        });
+        await pool.query('DELETE FROM content_items WHERE id = $1', [id]);
     } finally {
-        client.close();
+        await pool.end();
     }
 }
 
 async function deleteAllItems() {
-    const client = getTursoClient();
+    const pool = getNeonPool();
     try {
-        await client.execute('DELETE FROM content_items');
+        await pool.query('DELETE FROM content_items');
     } finally {
-        client.close();
+        await pool.end();
     }
 }
 
