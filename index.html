@@ -372,23 +372,30 @@
 
     // Initialize data from database or fallback to localStorage
     async function loadData() {
-        // First, trigger auto-migration if needed
+        // First, trigger auto-migration if needed and wait for it to complete
         try {
-            await fetch(`${API_BASE}/init-db`, { method: 'POST' });
+            const migrationResponse = await fetch(`${API_BASE}/init-db`, { method: 'POST' });
+            if (!migrationResponse.ok) {
+                console.warn('Migration endpoint returned non-OK status');
+            }
+            const migrationResult = await migrationResponse.json();
+            console.log('Migration result:', migrationResult);
         } catch (err) {
             console.warn('Auto-migration trigger failed:', err);
         }
         
-        // Small delay to ensure migration completes before fetching
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Wait for migration to fully complete (Neon cold start + SQL execution)
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         // Try to fetch from database first
         const dbData = await fetchFromDatabase();
+        console.log('Database fetch result:', dbData);
         
         if (dbData !== null && dbData.length > 0) {
             // Use database data
             contentData = dbData;
             persistOnly();
+            console.log(`Loaded ${contentData.length} items from database`);
         } else {
             // Fallback to localStorage for backward compatibility
             const stored = localStorage.getItem('contentPlannerData');
@@ -407,6 +414,7 @@
                 contentData = [];
                 persistOnly();
             }
+            console.log(`Loaded ${contentData.length} items from localStorage fallback`);
         }
     }
 
