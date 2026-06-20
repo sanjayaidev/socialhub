@@ -1,52 +1,25 @@
--- Appwrite Collection Setup for Content Planner
--- 
--- OPTION 1: Use the automated migration script (RECOMMENDED)
--- ---------------------------------------------------------
--- Run: node migrate-to-appwrite.js
--- This will:
---   1. Create the database and collection via API
---   2. Create all required attributes
---   3. Create indexes
---   4. Migrate data from Turso (if TURSO_DATABASE_URL is set)
---   5. Seed sample data if no migration source exists
---
--- Required environment variables:
---   APPWRITE_ENDPOINT    e.g. https://cloud.appwrite.io/v1
---   APPWRITE_PROJECT_ID  your Appwrite project ID
---   APPWRITE_API_KEY     your Appwrite API key (with database/admin permissions)
---
--- Optional for migration:
---   TURSO_DATABASE_URL   If set, will migrate data from Turso
---   TURSO_AUTH_TOKEN     Turso authentication token
---
--- OPTION 2: Manual setup via Appwrite Console
--- --------------------------------------------
--- 1. Create a Database in your Appwrite project (or use default)
--- 2. Create a Collection named "content_items" with these attributes:
---
--- Collection ID: content_items (or auto-generated)
--- Permissions: Set according to your security needs (API key used in backend has full access)
---
--- Document Attributes:
--- ---------------------
--- | Attribute     | Type      | Required | Default | Array |
--- |---------------|-----------|----------|---------|-------|
--- | day           | integer   | Yes      | -       | No    |
--- | audience      | string    | No       | -       | No    |
--- | raw           | string    | Yes      | -       | No    |
--- | refined       | string    | No       | -       | No    |
--- | platforms     | string    | No       | -       | No    | (JSON array as string)
--- | hook          | string    | No       | -       | No    |
--- | description   | string    | No       | -       | No    |
--- | cta           | string    | No       | -       | No    |
--- | hashtags      | string    | No       | -       | No    |
--- | design_spec   | string    | No       | -       | No    | (JSON object as string)
--- | design_image  | string    | No       | -       | No    | (base64 data URL)
---
--- Indexes:
--- --------
--- Create an index on 'day' for faster sorting (optional but recommended)
---
--- Note: Appwrite automatically adds $id, $createdAt, $updatedAt, $permissions metadata fields
---
--- Example API calls are handled by /api/content.js which uses the Appwrite REST API
+-- Turso Database Schema for Content Planner
+-- Run this SQL in your Turso console or via the libsql client to create the table
+
+-- Create content_items table
+CREATE TABLE IF NOT EXISTS content_items (
+    id TEXT PRIMARY KEY,
+    day INTEGER NOT NULL,
+    audience TEXT DEFAULT '',
+    raw TEXT NOT NULL,
+    refined TEXT DEFAULT '',
+    platforms TEXT DEFAULT '[]',  -- JSON array stored as string
+    hook TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    cta TEXT DEFAULT '',
+    hashtags TEXT DEFAULT '',
+    design_spec TEXT DEFAULT NULL,  -- JSON object stored as string
+    design_image TEXT DEFAULT NULL  -- base64 data URL
+);
+
+-- Create index on day for faster sorting
+CREATE INDEX IF NOT EXISTS idx_content_items_day ON content_items(day);
+
+-- Optional: Sample data for testing
+-- INSERT INTO content_items (id, day, audience, raw, refined, platforms, hook, description, cta, hashtags)
+-- VALUES ('sample-1', 1, 'developers', 'Build a todo app', 'Learn to build a production-ready todo application', '["twitter", "linkedin"]', '🧵 Build a todo app in 10 minutes', 'Step-by-step guide...', 'Try it now!', '#coding #webdev');
