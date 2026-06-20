@@ -1,22 +1,32 @@
--- schema.sql
--- Run once against your Turso database:
---   turso db shell smagents-content < schema.sql
-
-CREATE TABLE IF NOT EXISTS content_items (
-    id           TEXT PRIMARY KEY,
-    day          INTEGER NOT NULL,
-    audience     TEXT,
-    raw          TEXT NOT NULL,
-    refined      TEXT,
-    platforms    TEXT,    -- JSON array, e.g. ["ig","yt","li"]
-    hook         TEXT,
-    description  TEXT,
-    cta          TEXT,
-    hashtags     TEXT,
-    design_spec  TEXT,    -- JSON object (Design Studio layout)
-    design_image TEXT,    -- base64 PNG data URL
-    created_at   TEXT DEFAULT (datetime('now')),
-    updated_at   TEXT DEFAULT (datetime('now'))
-);
-
-CREATE INDEX IF NOT EXISTS idx_content_items_day ON content_items(day);
+-- Appwrite Collection Setup for Content Planner
+-- Run this in your Appwrite Console or use the API to create the collection
+--
+-- 1. Create a Database in your Appwrite project (or use default)
+-- 2. Create a Collection named "content_items" with these attributes:
+--
+-- Collection ID: content_items (or auto-generated)
+-- Permissions: Set according to your security needs (API key used in backend has full access)
+--
+-- Document Attributes:
+-- ---------------------
+-- | Attribute     | Type      | Required | Default | Array |
+-- |---------------|-----------|----------|---------|-------|
+-- | day           | integer   | Yes      | -       | No    |
+-- | audience      | string    | No       | -       | No    |
+-- | raw           | string    | Yes      | -       | No    |
+-- | refined       | string    | No       | -       | No    |
+-- | platforms     | string    | No       | -       | No    | (JSON array as string)
+-- | hook          | string    | No       | -       | No    |
+-- | description   | string    | No       | -       | No    |
+-- | cta           | string    | No       | -       | No    |
+-- | hashtags      | string    | No       | -       | No    |
+-- | design_spec   | string    | No       | -       | No    | (JSON object as string)
+-- | design_image  | string    | No       | -       | No    | (base64 data URL)
+--
+-- Indexes:
+-- --------
+-- Create an index on 'day' for faster sorting (optional but recommended)
+--
+-- Note: Appwrite automatically adds $id, $createdAt, $updatedAt, $permissions metadata fields
+--
+-- Example API calls are handled by /api/content.js which uses the Appwrite REST API
