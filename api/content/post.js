@@ -38,7 +38,7 @@ export default async function handler(req) {
 
     const pool = getPool();
     try {
-      await pool.query('delete from content_posts where id = $1', [postId]);
+      await pool.query('delete from daily_posts where id = $1', [postId]);
       return json({ ok: true });
     } finally {
       await pool.end();
