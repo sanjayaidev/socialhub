@@ -28,22 +28,13 @@ function getPool() {
 }
 
 function rowToPost(row) {
+  // Parse metadata jsonb back into post object
+  const metadata = typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata;
   return {
     postId: row.id,
     day: row.day,
     type: row.type,
-    title: row.title || '',
-    hook: row.hook || '',
-    caption: row.caption || '',
-    hashtags: row.hashtags || [],
-    image_prompt: row.image_prompt || '',
-    bullets: row.bullets || [],
-    slides: row.slides || [],
-    cta: row.cta || '',
-    tag: row.tag || '',
-    images: row.images || [],
-    status: row.status,
-    brandSettings: row.brand_settings || null,
+    ...metadata,
   };
 }
 
@@ -63,7 +54,7 @@ export default async function handler(req) {
     const pool = getPool();
     try {
       const result = await pool.query(
-        'select * from content_posts where plan_id = $1 order by day asc',
+        'select id, day, type, metadata from daily_posts where plan_id = $1 order by day asc',
         [planId]
       );
       return json(result.rows.map(rowToPost));

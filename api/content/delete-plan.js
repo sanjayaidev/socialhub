@@ -1,7 +1,7 @@
 // api/content/delete-plan.js
 //
 // DELETE /api/content/plan { planId } -> { ok: true }
-// Cascades to content_posts via the FK's ON DELETE CASCADE.
+// Cascades to daily_posts via the FK's ON DELETE CASCADE.
 
 import { Pool } from '@neondatabase/serverless';
 
@@ -39,7 +39,7 @@ export default async function handler(req) {
 
     const pool = getPool();
     try {
-      await pool.query('delete from content_plans where id = $1', [planId]);
+      await pool.query('delete from plans where id = $1', [planId]);
       return json({ ok: true });
     } finally {
       await pool.end();
