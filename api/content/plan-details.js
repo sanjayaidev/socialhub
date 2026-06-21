@@ -99,7 +99,8 @@ export default async function handler(req) {
         WHERE dp.plan_id = $1
         ORDER BY dp.day ASC
       `, [planId]);
-      return result.rows.map(rowToPost);
+      const posts = result.rows.map(rowToPost);
+      return json(posts);
     } finally {
       await pool.end();
     }
