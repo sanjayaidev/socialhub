@@ -19,25 +19,53 @@ function log(msg, type = 'info') {
   scroll.scrollTop = scroll.scrollHeight;
 }
 
-function exec(provider, actionType, params) {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage({ action: 'execute', provider, actionType, params }, (res) => {
-      if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
-      if (!res) return reject(new Error('No response'));
-      if (!res.success) return reject(new Error(res.error || 'Failed'));
-      resolve(res.result);
+// Web app mode - direct fetch to API endpoints
+async function apiCall(endpoint, method = 'POST', data = {}) {
+  try {
+    const response = await fetch(endpoint, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: method !== 'GET' ? JSON.stringify(data) : undefined
     });
-  });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.error('API call failed:', err);
+    throw err;
+  }
 }
 
-function dbMsg(action, data) {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage({ action, ...data }, (res) => {
-      if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
-      if (!res?.success) return reject(new Error(res?.error || 'DB error'));
-      resolve(res.result);
+// NIM API call for content generation
+async function callNIM(prompt, options = {}) {
+  const nimEndpoint = options.endpoint || '/api/nim/generate';
+  const apiKey = options.apiKey || '';
+  
+  try {
+    const response = await fetch(nimEndpoint, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+      },
+      body: JSON.stringify({
+        prompt,
+        model: options.model || 'meta/llama-3.1-70b-instruct',
+        temperature: options.temperature || 0.7,
+        max_tokens: options.max_tokens || 4096
+      })
     });
-  });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`NIM API error: ${response.status} - ${error}`);
+    }
+    
+    const result = await response.json();
+    return result.choices?.[0]?.message?.content || result.output || '';
+  } catch (err) {
+    console.error('NIM API call failed:', err);
+    throw err;
+  }
 }
 
 function setProgress(msg, done, total) {
@@ -266,6 +294,73 @@ function parseDeepSeekArray(raw) {
   throw new Error('Could not extract JSON array');
 }
 
+// ── Build NIM prompt ──
+function buildNIMPrompt(brief, month, year, postTypes) {
+  const typesInfo = postTypes.map((t, i) => `Day ${i + 1}: ${t}`).join(', ');
+  return `You are an expert Instagram content strategist AND copywriter.
+CONTENT BRIEF: ${brief}
+MONTH: ${month} ${year}
+
+CRITICAL: Output EXACTLY ${postTypes.length} post objects. No more, no less.
+
+POST TYPES (must match exactly): ${typesInfo}
+
+Every post must have: day (exact numbers), type, title, caption (150-300 chars with emojis), hashtags (15-20 array no #), image_prompt (detailed visual desc), hook, bullets (single only 3-item array), slides (carousel only: array of first/content/last each with title body image_prompt)
+
+OUTPUT: JSON array only. No markdown. Start with [ end with ].`;
+}
+
+// ── Generate content ideas using NIM API ──
+async function generateContentWithNIM(prompt, month, year, postTypes) {
+  const BATCH_SIZE = 15;
+  const total = postTypes.length;
+  
+  const buildBatchPrompt = (batchPosts, startDay) => {
+    const batchTypes = batchPosts.map((p, i) => `Day ${startDay + i}: type ${p}`);
+    return `You are an expert Instagram content strategist AND copywriter.
+CONTENT BRIEF: ${prompt.split('CONTENT BRIEF: ')[1]?.split('\nMONTH:')[0] || prompt}
+MONTH: ${month} ${year}
+
+CRITICAL: Output EXACTLY ${batchPosts.length} post objects. No more, no less.
+
+POST TYPES (must match exactly): ${batchTypes.join(', ')}
+
+Every post must have: day (exact numbers), type, title, caption (150-300 chars with emojis), hashtags (15-20 array no #), image_prompt (detailed visual desc), hook, bullets (single only 3-item array), slides (carousel only: array of first/content/last each with title body image_prompt)
+
+OUTPUT: JSON array only. No markdown. Start with [ end with ].`;
+  };
+  
+  if (total <= BATCH_SIZE) {
+    log(`→ NIM: generating ${total} posts...`, 'step');
+    const raw = await callNIM(buildBatchPrompt(postTypes, 1));
+    return parseDeepSeekArray(raw);
+  }
+  
+  const allIdeas = [];
+  let day = 1;
+  let batchNum = 0;
+  const totalBatches = Math.ceil(total / BATCH_SIZE);
+  
+  while (day <= total) {
+    if (stopRequested) break;
+    const batchEnd = Math.min(day + BATCH_SIZE - 1, total);
+    const batchPosts = postTypes.slice(day - 1, batchEnd);
+    batchNum++;
+    log(`→ Batch ${batchNum}/${totalBatches}: days ${day}–${day + batchPosts.length - 1}...`, 'step');
+    setProgress(`Generating batch ${batchNum}/${totalBatches}...`, stats.done, total);
+    
+    const raw = await callNIM(buildBatchPrompt(batchPosts, day));
+    const ideas = parseDeepSeekArray(raw);
+    
+    ideas.forEach((idea, idx) => { idea.day = day + idx; });
+    log(`✓ Batch ${batchNum}: ${ideas.length} posts (days ${day}–${day + ideas.length - 1})`, 'success');
+    allIdeas.push(...ideas);
+    day += batchPosts.length;
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return allIdeas;
+}
+
 // ── Generate content ideas ──
 async function generateContent(brief, month, year, postTypes) {
   const BATCH_SIZE = 15;
@@ -328,12 +423,22 @@ async function saveImgbbKey() {
   if (useCustom) {
     const key = document.getElementById('imgbbKey').value.trim();
     if (key) {
-      await chrome.storage.local.set({ userImgbbKey: key });
+      // Store in localStorage for web app mode
+      localStorage.setItem('userImgbbKey', key);
       log('✓ Custom ImgBB key saved', 'success');
     }
   } else {
-    await chrome.storage.local.remove('userImgbbKey');
+    localStorage.removeItem('userImgbbKey');
   }
+}
+
+// ── DB operations via API ──
+async function dbSavePlan(month, year, posts) {
+  return await apiCall('/api/content/plans', 'POST', { month, year, posts });
+}
+
+async function dbLoadPlans() {
+  return await apiCall('/api/content/plans', 'GET');
 }
 
 // ── Main generation workflow ──
@@ -388,15 +493,16 @@ async function startWorkflow() {
   log('🚀 Content Planner v6.0 — Generating with brand + distribution', 'success');
 
   try {
-    setProgress('Connecting to DeepSeek...', 0, totalPosts);
-    await exec('deepseek', 'newchat', {});
-    await new Promise(r => setTimeout(r, 2000));
-
+    setProgress('Connecting to NIM API...', 0, totalPosts);
+    
+    // Build prompt for NIM
+    const nimPrompt = buildNIMPrompt(brief, month, year, postTypes);
+    
     setProgress('Generating content ideas...', 0, totalPosts);
-    log('→ Asking DeepSeek for all posts...', 'step');
+    log('→ Asking NIM for all posts...', 'step');
 
-    const ideas = await generateContent(brief, month, year, postTypes);
-    log(`✓ Got ${ideas.length} ideas from DeepSeek`, 'success');
+    const ideas = await generateContentWithNIM(nimPrompt, month, year, postTypes);
+    log(`✓ Got ${ideas.length} ideas from NIM`, 'success');
 
     // Process and save each idea
     for (let i = 0; i < ideas.length && !stopRequested; i++) {
@@ -432,11 +538,11 @@ async function startWorkflow() {
       log(`✓ Day ${day} (${type}): "${record.title.slice(0, 40)}"`, 'success');
     }
 
-    // Save to DB
+    // Save to DB via API
     if (allPostsData.length > 0) {
       log('→ Saving to database...', 'step');
       setProgress('Saving to database...', stats.done, totalPosts);
-      await dbMsg('dbSavePlan', { month, year, posts: allPostsData });
+      await dbSavePlan(month, year, allPostsData);
       log(`✓ Saved ${allPostsData.length} posts to database`, 'success');
     }
 
@@ -463,15 +569,21 @@ function stopWorkflow() {
 
 async function openDashboard() {
   try {
-    const plans = await dbMsg('dbLoadPlans', {});
+    const plans = await dbLoadPlans();
     if (!plans || Object.keys(plans).length === 0) {
       alert('No plans found. Generate ideas first.');
       return;
     }
-    chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') });
+    // Web app mode - redirect to dashboard page
+    window.location.href = 'dashboard.html';
   } catch (err) {
     log('Dashboard error: ' + err.message, 'error');
   }
+}
+
+async function openDesigner() {
+  // Web app mode - redirect to designer page
+  window.location.href = 'designer.html';
 }
 
 // ── Event listeners ──
