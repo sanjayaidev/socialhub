@@ -25,28 +25,37 @@ function toggleLayer(layerId) {
 }
 let currentEditContext = null;
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'applyDesign') {
-    currentEditContext = { postId: request.postId, slideIndex: request.slideIndex };
-    applyDesign(request.designSpec).then(() => {
-      if (request.designSpec.slideMetadata) {
-        window.currentSlideMetadata = request.designSpec.slideMetadata;
-      }
-      sendResponse({ success: true });
-    });
-    return true;
-  }
+// FIX: this listener used to be registered unconditionally at the top of
+// the file. In a plain browser tab (no Chrome extension) `chrome` is
+// undefined, so `chrome.runtime.onMessage` throws a ReferenceError the
+// instant this script runs -- which aborted the ENTIRE file and meant
+// window.ContentDesignerAPI was never created. That's why every Designer
+// control (and the agent chat, which depends on ContentDesignerAPI) was
+// dead outside the Chrome extension. Guard it like agent.js already does.
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'applyDesign') {
+      currentEditContext = { postId: request.postId, slideIndex: request.slideIndex };
+      applyDesign(request.designSpec).then(() => {
+        if (request.designSpec.slideMetadata) {
+          window.currentSlideMetadata = request.designSpec.slideMetadata;
+        }
+        sendResponse({ success: true });
+      });
+      return true;
+    }
 
-  if (request.action === 'saveEditedSlide') {
-    handleSaveEditedSlide().then(res => sendResponse(res)).catch(err => sendResponse({ success: false, error: err.message }));
-    return true;
-  }
+    if (request.action === 'saveEditedSlide') {
+      handleSaveEditedSlide().then(res => sendResponse(res)).catch(err => sendResponse({ success: false, error: err.message }));
+      return true;
+    }
 
-  if (request.action === 'exportPNG') {
-    exportPNG(request.filename).then(() => sendResponse({ success: true }));
-    return true;
-  }
-});
+    if (request.action === 'exportPNG') {
+      exportPNG(request.filename).then(() => sendResponse({ success: true }));
+      return true;
+    }
+  });
+}
 
 async function handleSaveEditedSlide() {
   if (!currentEditContext) return { success: false, error: 'No edit context' };
@@ -815,6 +824,9 @@ function loadLogoFile(input) {
 let _pendingCheckRunning = false;
 async function checkForPendingDesign() {
   if (!apiModeActive || _pendingCheckRunning) return;
+  // FIX: guard chrome.storage too, for the same reason as the listener
+  // above -- this used to assume chrome.storage existed unconditionally.
+  if (typeof chrome === 'undefined' || !chrome.storage) return;
   const result = await chrome.storage.local.get(['cp_pending_design', 'cp_pending_filename']);
   if (!result.cp_pending_design) return;
   _pendingCheckRunning = true;
@@ -1367,9 +1379,12 @@ window.ContentDesignerAPI = {
 // ═══════════════════════════════════════════════════════════════
 // PRESET BROWSER (View all saved presets from Neon DB)
 // ═══════════════════════════════════════════════════════════════
+function hasChromeRuntime() {
+  return typeof chrome !== 'undefined' && !!chrome.runtime;
+}
 function sendToExt(message) {
   return new Promise((resolve, reject) => {
-    if (typeof chrome === 'undefined' || !chrome.runtime) {
+    if (!hasChromeRuntime()) {
       reject(new Error('Chrome API not available.'));
       return;
     }
@@ -1386,10 +1401,30 @@ function sendToExt(message) {
   });
 }
 
+// FIX: these two used to be hardwired to the Chrome-extension-only
+// sendToExt() calls and always failed with "Chrome API not available"
+// in a plain browser tab. They now talk to /api/content/presets(.js)
+// when there's no extension around.
+async function dbLoadAllPresetsWeb() {
+  const res = await fetch('/api/content/presets');
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
+}
+async function dbDeletePresetWeb(id) {
+  const res = await fetch('/api/content/preset', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id })
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
+}
+
 async function openPresetBrowser() {
   try {
-    const res = await sendToExt({ action: 'dbLoadAllPresets' });
-    const allPresets = res || [];
+    const allPresets = hasChromeRuntime()
+      ? (await sendToExt({ action: 'dbLoadAllPresets' })) || []
+      : await dbLoadAllPresetsWeb();
     
     if (!allPresets.length) {
       alert('No saved presets found in database.');
@@ -1456,7 +1491,8 @@ async function openPresetBrowser() {
       if (e.target.classList.contains('delete-preset-btn')) {
         const id = e.target.dataset.id;
         if (confirm('Delete this preset permanently?')) {
-          await sendToExt({ action: 'dbDeletePreset', id });
+          if (hasChromeRuntime()) await sendToExt({ action: 'dbDeletePreset', id });
+          else await dbDeletePresetWeb(id);
           openPresetBrowser(); // Refresh list
         }
       }
