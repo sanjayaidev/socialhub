@@ -714,6 +714,27 @@ if (hasChromeRuntime()) {
       sendResponse({ success: true, history });
       return true;
     }
+
+    if (request.action === 'generateAIImage') {
+      processPrompt({
+        prompt: request.prompt,
+        conversationId: request.conversationId,
+        canvasState: request.canvasState,
+        autoApply: request.autoApply !== false,
+        autoExport: request.autoExport || false,
+        returnDataUrl: request.returnDataUrl || false,
+        clearCanvasFirst: request.clearCanvasFirst || false,
+        aspectRatio: request.aspectRatio,
+        day: request.day,
+        slideIndex: request.slideIndex,
+        type: request.type,
+        planId: request.planId,
+        replaceId: request.replaceId
+      })
+        .then(result => sendResponse({ success: true, result }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+      return true;
+    }
   });
 }
 

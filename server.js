@@ -86,6 +86,19 @@ app.all('/api/content/post', (req, res) => {
   apiHandler(req, res, join(__dirname, 'api', 'content', 'post.js'));
 });
 
+// AI Images API routes
+app.all('/api/content/ai-images', (req, res) => {
+  apiHandler(req, res, join(__dirname, 'api', 'content', 'ai-images.js'));
+});
+
+app.all('/api/content/ai-image', (req, res) => {
+  apiHandler(req, res, join(__dirname, 'api', 'content', 'ai-image.js'));
+});
+
+app.all('/api/content/regenerate-ai-image', (req, res) => {
+  apiHandler(req, res, join(__dirname, 'api', 'content', 'regenerate-ai-image.js'));
+});
+
 // Chat API route
 app.all('/api/chat', (req, res) => {
   apiHandler(req, res, join(__dirname, 'api', 'chat.js'));
