@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Content Planner · 31 Day Calendar</title>
+    <title>Content Planner · Monthly Calendar</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&family=Bebas+Neue&family=Playfair+Display:wght@600;700&family=Oswald:wght@400;600&family=Montserrat:wght@500;700;800&family=Raleway:wght@500;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <style>
@@ -33,7 +33,7 @@
             flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 28px;
+            margin-bottom: 22px;
             gap: 16px;
         }
         .header h1 {
@@ -47,11 +47,7 @@
             align-items: center;
             gap: 10px;
         }
-        .header h1 i {
-            font-size: 28px;
-            background: none;
-            -webkit-text-fill-color: #2563eb;
-        }
+        .header h1 i { font-size: 28px; background: none; -webkit-text-fill-color: #2563eb; }
         .controls {
             display: flex;
             flex-wrap: wrap;
@@ -73,129 +69,77 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            text-decoration: none;
         }
-        .btn-primary {
-            background: #2563eb;
-            color: white;
-            border: none;
-            box-shadow: 0 4px 12px rgba(37,99,235,0.25);
-        }
-        .btn-primary:hover {
-            background: #1d4ed8;
-            transform: scale(0.97);
-        }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #cbd5e1;
-        }
-        .btn-outline:hover {
-            background: #f1f5f9;
-        }
-        .btn-danger {
-            background: #dc2626;
-            color: white;
-            border: none;
-        }
-        .btn-sm {
-            padding: 4px 14px;
-            font-size: 12px;
-        }
-        .btn-refresh {
-            background: #8b5cf6;
-            color: white;
-            border: none;
-        }
-        .btn-refresh:hover {
-            background: #7c3aed;
-        }
-        .btn-ai {
-            background: linear-gradient(135deg, #7c3aed, #ec4899);
-            color: white;
-            border: none;
-        }
-        .btn-ai:hover {
-            opacity: 0.92;
-            transform: scale(0.97);
-        }
-        .btn-design {
-            background: #0f172a;
-            color: white;
-            border: none;
-        }
-        .btn-design:hover {
-            background: #1e293b;
-        }
-        .btn:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-            transform: none !important;
-        }
+        .btn-primary { background: #2563eb; color: white; border: none; box-shadow: 0 4px 12px rgba(37,99,235,0.25); }
+        .btn-primary:hover { background: #1d4ed8; transform: scale(0.97); }
+        .btn-outline { background: transparent; border: 1px solid #cbd5e1; }
+        .btn-outline:hover { background: #f1f5f9; }
+        .btn-danger { background: #dc2626; color: white; border: none; }
+        .btn-sm { padding: 4px 14px; font-size: 12px; }
+        .btn-refresh { background: #8b5cf6; color: white; border: none; }
+        .btn-refresh:hover { background: #7c3aed; }
+        .btn-ai { background: linear-gradient(135deg, #7c3aed, #ec4899); color: white; border: none; }
+        .btn-ai:hover { opacity: 0.92; transform: scale(0.97); }
+        .btn-design { background: #0f172a; color: white; border: none; }
+        .btn-design:hover { background: #1e293b; }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; }
 
-        .view-toggle {
-            display: flex;
-            gap: 4px;
-            background: #f1f5f9;
-            border-radius: 60px;
-            padding: 4px;
-        }
-        .view-toggle .btn {
-            border-radius: 40px;
-            border: none;
-            background: transparent;
-            padding: 6px 16px;
-            font-weight: 500;
-            font-size: 13px;
-        }
-        .view-toggle .btn.active {
-            background: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
+        .view-toggle { display: flex; gap: 4px; background: #f1f5f9; border-radius: 60px; padding: 4px; }
+        .view-toggle .btn { border-radius: 40px; border: none; background: transparent; padding: 6px 16px; font-weight: 500; font-size: 13px; }
+        .view-toggle .btn.active { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 
-        .range-label {
-            font-size: 13px;
-            font-weight: 500;
-            color: #64748b;
-            white-space: nowrap;
-        }
+        .nav-controls { display: flex; gap: 6px; align-items: center; }
+        .nav-controls .btn { padding: 6px 12px; font-size: 13px; }
+        .nav-label { font-size: 14px; font-weight: 500; color: #475569; min-width: 130px; text-align: center; }
 
-        .date-control {
+        .month-year-picker {
             display: flex;
             align-items: center;
-            gap: 6px;
-            background: white;
-            border: 1px solid #e2e8f0;
+            gap: 2px;
+            background: #f1f5f9;
             border-radius: 60px;
-            padding: 4px 14px 4px 16px;
+            padding: 4px 6px;
         }
-        .date-control label {
-            font-size: 12px;
-            color: #64748b;
-            font-weight: 500;
-        }
-        .date-control input[type="date"] {
-            border: none;
-            font-family: 'Inter', sans-serif;
-            font-size: 13px;
-            color: #1e293b;
-            background: transparent;
-        }
-        .date-control input[type="date"]:focus { outline: none; }
+        .month-year-picker button { background: transparent; border: none; cursor: pointer; color: #475569; padding: 4px 8px; font-size: 13px; border-radius: 30px; }
+        .month-year-picker button:hover { background: white; }
+        .month-year-picker select { border: none; background: transparent; font-weight: 600; font-size: 13px; padding: 4px 4px; cursor: pointer; }
+        .month-year-picker .year-label { font-weight: 600; font-size: 13px; min-width: 38px; text-align: center; color: #1e293b; }
 
-        .calendar-grid {
-            display: grid;
-            gap: 14px;
-            margin-top: 12px;
+        .calendar-grid { margin-top: 12px; }
+        .month-view { display: block; }
+        .week-view { display: grid; grid-template-columns: repeat(7, 1fr); gap: 14px; }
+        .day-view { display: grid; grid-template-columns: 1fr; gap: 14px; }
+
+        .weekday-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 8px; }
+        .weekday-header span { text-align: center; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; }
+        .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+        .cal-cell {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #eef2f6;
+            padding: 8px 10px;
+            min-height: 100px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
         }
-        .month-view {
-            grid-template-columns: repeat(5, 1fr);
-        }
-        .week-view {
-            grid-template-columns: repeat(7, 1fr);
-        }
-        .day-view {
-            grid-template-columns: 1fr;
-        }
+        .cal-cell:hover { border-color: #cbd5e1; box-shadow: 0 6px 18px rgba(0,0,0,0.05); transform: translateY(-2px); }
+        .cal-cell.outside { opacity: 0.35; }
+        .cal-cell.outside:hover { transform: none; box-shadow: none; border-color: #eef2f6; }
+        .cal-cell.today { border: 2px solid #2563eb; }
+        .cal-cell.selected { background: #eff6ff; border-color: #2563eb; }
+        .cal-date { font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+        .count-badge { background: #e2e8f0; color: #475569; font-size: 10px; font-weight: 700; border-radius: 20px; padding: 1px 7px; }
+        .cal-item-chip { font-size: 10px; padding: 2px 6px; border-radius: 8px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
+        .cal-item-chip .dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 6px; }
+        .cal-more { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+
+        .day-detail-panel { margin-top: 22px; border-top: 1px solid #eef2f6; padding-top: 18px; }
+        .day-detail-header { font-size: 16px; font-weight: 600; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .day-detail-empty { color: #94a3b8; font-size: 13px; text-align: center; padding: 20px 0; }
+        .day-detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        @media (max-width: 760px) { .day-detail-grid { grid-template-columns: 1fr; } }
 
         .day-card {
             background: white;
@@ -206,316 +150,77 @@
             transition: all 0.25s ease;
             animation: fadeUp 0.3s ease forwards;
         }
-        .day-card:hover {
-            border-color: #cbd5e1;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.04);
-            transform: translateY(-3px);
-        }
-        .day-number {
-            font-weight: 600;
-            font-size: 18px;
-            color: #1e293b;
-            margin-bottom: 2px;
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-        }
-        .day-number small {
-            font-weight: 400;
-            font-size: 13px;
-            color: #64748b;
-        }
-        .day-date {
-            font-size: 12px;
-            color: #8b5cf6;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-        .topic-title {
-            font-weight: 600;
-            font-size: 15px;
-            margin: 8px 0 4px;
-            color: #0f172a;
-        }
-        .topic-raw {
-            font-size: 13px;
-            color: #475569;
-            margin-bottom: 10px;
-            background: #f8fafc;
-            padding: 6px 10px;
-            border-radius: 12px;
-        }
-        .platform-tag {
-            display: inline-block;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 2px 12px;
-            border-radius: 30px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin: 4px 4px 4px 0;
-        }
-        .tag-ig {
-            background: #fce4ec;
-            color: #c62828;
-        }
-        .tag-yt {
-            background: #ffebee;
-            color: #b71c1c;
-        }
-        .tag-li {
-            background: #e3f2fd;
-            color: #0d47a1;
-        }
-        .tag-all {
-            background: #e8f5e9;
-            color: #1b5e20;
-        }
+        .day-card:hover { border-color: #cbd5e1; box-shadow: 0 8px 24px rgba(0,0,0,0.04); transform: translateY(-3px); }
+        .day-number { font-weight: 600; font-size: 18px; color: #1e293b; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .day-number small { font-weight: 400; font-size: 13px; color: #64748b; }
+        .topic-title { font-weight: 600; font-size: 15px; margin: 8px 0 4px; color: #0f172a; }
+        .topic-raw { font-size: 13px; color: #475569; margin-bottom: 10px; background: #f8fafc; padding: 6px 10px; border-radius: 12px; }
+        .platform-tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 12px; border-radius: 30px; text-transform: uppercase; letter-spacing: 0.3px; margin: 4px 4px 4px 0; }
+        .tag-ig { background: #fce4ec; color: #c62828; }
+        .tag-yt { background: #ffebee; color: #b71c1c; }
+        .tag-li { background: #e3f2fd; color: #0d47a1; }
+        .tag-all { background: #e8f5e9; color: #1b5e20; }
 
-        .audience-tag {
-            display: inline-block;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 12px;
-            border-radius: 30px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin: 4px 4px 4px 0;
-        }
-        .aud-client {
-            background: #fff7ed;
-            color: #c2410c;
-            border: 1px solid #fed7aa;
-        }
-        .aud-student {
-            background: #eef2ff;
-            color: #4338ca;
-            border: 1px solid #c7d2fe;
-        }
+        .audience-tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 12px; border-radius: 30px; text-transform: uppercase; letter-spacing: 0.3px; margin: 4px 4px 4px 0; }
+        .aud-client { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+        .aud-student { background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
 
-        .hook-text {
-            font-size: 13px;
-            background: #f1f5f9;
-            padding: 8px 12px;
-            border-radius: 14px;
-            margin: 6px 0;
-            color: #1e293b;
-            border-left: 3px solid #2563eb;
-        }
-        .desc-text {
-            font-size: 13px;
-            color: #334155;
-            margin: 6px 0;
-            word-break: break-word;
-        }
-        .cta-text {
-            font-size: 12px;
-            font-weight: 600;
-            color: #059669;
-            margin: 6px 0;
-            background: #ecfdf5;
-            padding: 6px 10px;
-            border-radius: 12px;
-            display: inline-block;
-        }
-        .hashtags {
-            font-size: 12px;
-            color: #2563eb;
-            font-weight: 500;
-        }
+        .hook-text { font-size: 13px; background: #f1f5f9; padding: 8px 12px; border-radius: 14px; margin: 6px 0; color: #1e293b; border-left: 3px solid #2563eb; }
+        .desc-text { font-size: 13px; color: #334155; margin: 6px 0; word-break: break-word; }
+        .cta-text { font-size: 12px; font-weight: 600; color: #059669; margin: 6px 0; background: #ecfdf5; padding: 6px 10px; border-radius: 12px; display: inline-block; }
+        .hashtags { font-size: 12px; color: #2563eb; font-weight: 500; }
 
-        .design-thumb {
-            width: 100%;
-            border-radius: 14px;
-            margin: 8px 0;
-            border: 1px solid #eef2f6;
-            cursor: pointer;
-            display: block;
-        }
+        .design-thumb { width: 100%; border-radius: 14px; margin: 8px 0; border: 1px solid #eef2f6; cursor: pointer; display: block; }
 
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.3);
-            backdrop-filter: blur(4px);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            padding: 20px;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px;
         }
-        .modal-overlay.show {
-            display: flex;
-        }
+        .modal-overlay.show { display: flex; }
         .modal {
-            background: white;
-            border-radius: 32px;
-            padding: 32px;
-            max-width: 700px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: fadeUp 0.25s ease;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.15);
+            background: white; border-radius: 32px; padding: 32px; max-width: 700px; width: 90%;
+            max-height: 90vh; overflow-y: auto; animation: fadeUp 0.25s ease; box-shadow: 0 30px 80px rgba(0,0,0,0.15);
         }
-        .modal.wide {
-            max-width: 1080px;
-        }
-        .modal h2 {
-            margin-bottom: 20px;
-            font-size: 22px;
-        }
-        .modal label {
-            font-weight: 500;
-            font-size: 14px;
-            display: block;
-            margin: 12px 0 4px;
-        }
+        .modal.wide { max-width: 1080px; }
+        .modal h2 { margin-bottom: 20px; font-size: 22px; }
+        .modal label { font-weight: 500; font-size: 14px; display: block; margin: 12px 0 4px; }
         .modal input, .modal textarea, .modal select {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
-            transition: 0.2s;
+            width: 100%; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 16px;
+            font-family: 'Inter', sans-serif; font-size: 14px; transition: 0.2s;
         }
-        .modal input:focus, .modal textarea:focus, .modal select:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
-        }
-        .modal textarea {
-            min-height: 60px;
-            resize: vertical;
-        }
-        .modal-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            margin-top: 24px;
-            flex-wrap: wrap;
-        }
+        .modal input:focus, .modal textarea:focus, .modal select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .modal textarea { min-height: 60px; resize: vertical; }
+        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; flex-wrap: wrap; }
+        .modal-row { display: flex; gap: 10px; }
+        .modal-row > div { flex: 1; }
 
-        .flex {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .gap-1 {
-            gap: 4px;
-        }
-        .text-muted {
-            color: #64748b;
-            font-size: 13px;
-        }
-        .hint {
-            font-size: 12px;
-            color: #94a3b8;
-            margin-top: 4px;
-        }
+        .flex { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .gap-1 { gap: 4px; }
+        .text-muted { color: #64748b; font-size: 13px; }
+        .hint { font-size: 12px; color: #94a3b8; margin-top: 4px; }
 
-        /* Design studio layout */
-        .design-studio {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 20px;
-        }
-        @media (max-width: 760px) {
-            .design-studio {
-                grid-template-columns: 1fr;
-            }
-        }
-        .design-canvas-wrap {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-        .design-canvas-wrap canvas {
-            width: 100%;
-            max-width: 380px;
-            border-radius: 14px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-            background: #111;
-        }
-        .design-fields {
-            max-height: 60vh;
-            overflow-y: auto;
-            padding-right: 6px;
-        }
-        .design-fields h4 {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #64748b;
-            margin: 16px 0 6px;
-        }
-        .design-fields h4:first-child {
-            margin-top: 0;
-        }
-        .field-row {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 6px;
-        }
-        .field-row input[type="color"] {
-            width: 40px;
-            padding: 2px;
-            height: 36px;
-            flex: 0 0 40px;
-        }
-        .text-block-card {
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        .text-block-card .field-row input, .text-block-card .field-row select {
-            font-size: 12px;
-            padding: 8px 10px;
-        }
-        .remove-block {
-            background: #fee2e2;
-            color: #b91c1c;
-            border: none;
-            border-radius: 10px;
-            padding: 4px 8px;
-            font-size: 11px;
-            cursor: pointer;
-        }
-        .ai-status {
-            font-size: 12px;
-            color: #7c3aed;
-            min-height: 16px;
-        }
+        .design-studio { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+        @media (max-width: 760px) { .design-studio { grid-template-columns: 1fr; } }
+        .design-canvas-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .design-canvas-wrap canvas { width: 100%; max-width: 380px; border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); background: #111; }
+        .design-fields { max-height: 60vh; overflow-y: auto; padding-right: 6px; }
+        .design-fields h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin: 16px 0 6px; }
+        .design-fields h4:first-child { margin-top: 0; }
+        .field-row { display: flex; gap: 6px; margin-bottom: 6px; }
+        .field-row input[type="color"] { width: 40px; padding: 2px; height: 36px; flex: 0 0 40px; }
+        .text-block-card { border: 1px solid #e2e8f0; border-radius: 14px; padding: 10px; margin-bottom: 10px; }
+        .text-block-card .field-row input, .text-block-card .field-row select { font-size: 12px; padding: 8px 10px; }
+        .remove-block { background: #fee2e2; color: #b91c1c; border: none; border-radius: 10px; padding: 4px 8px; font-size: 11px; cursor: pointer; }
+        .ai-status { font-size: 12px; color: #7c3aed; min-height: 16px; }
 
         .toast {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: #1e293b;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-size: 13px;
-            opacity: 0;
-            transition: all 0.3s;
-            z-index: 2000;
-            pointer-events: none;
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: #1e293b; color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px;
+            opacity: 0; transition: all 0.3s; z-index: 2000; pointer-events: none;
         }
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-        .toast.error {
-            background: #b91c1c;
-        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.error { background: #b91c1c; }
 
         @keyframes fadeUp {
             0% { opacity: 0; transform: translateY(16px); }
@@ -523,14 +228,15 @@
         }
 
         @media (max-width: 860px) {
-            .month-view { grid-template-columns: repeat(3, 1fr); }
+            .month-grid { grid-template-columns: repeat(7, 1fr); }
             .week-view { grid-template-columns: repeat(3, 1fr); }
+            .cal-cell { min-height: 70px; }
         }
         @media (max-width: 540px) {
             .app { padding: 16px; }
-            .month-view { grid-template-columns: 1fr; }
             .week-view { grid-template-columns: 1fr; }
             .header h1 { font-size: 20px; }
+            .cal-item-chip { display: none; }
         }
     </style>
 </head>
@@ -545,14 +251,19 @@
                 <button class="btn" data-view="week"><i class="fas fa-calendar-day"></i> Week</button>
                 <button class="btn" data-view="day"><i class="fas fa-list-ul"></i> Day</button>
             </div>
-            <span class="range-label" id="rangeLabel"></span>
-            <div class="date-control">
-                <label for="startDateInput">Day 1 =</label>
-                <input type="date" id="startDateInput">
+            <div class="month-year-picker">
+                <button id="yearPrev" title="Previous year"><i class="fas fa-angles-left"></i></button>
+                <span class="year-label" id="yearLabel">2026</span>
+                <button id="yearNext" title="Next year"><i class="fas fa-angles-right"></i></button>
+                <select id="monthSelect"></select>
+            </div>
+            <div class="nav-controls">
+                <button class="btn btn-outline" id="navPrev"><i class="fas fa-chevron-left"></i></button>
+                <span class="nav-label" id="navLabel">Month</span>
+                <button class="btn btn-outline" id="navNext"><i class="fas fa-chevron-right"></i></button>
             </div>
             <button class="btn btn-refresh" id="refreshData" title="Reload from storage"><i class="fas fa-sync-alt"></i></button>
             <button class="btn btn-outline" id="openSettings" title="API settings"><i class="fas fa-gear"></i></button>
-            <a class="btn btn-outline" href="index.html"><i class="fas fa-arrow-left"></i> Overview</a>
             <button class="btn btn-primary" id="openAddModal"><i class="fas fa-plus"></i> Add</button>
             <button class="btn btn-outline" id="exportData"><i class="fas fa-download"></i> Export</button>
             <button class="btn btn-outline" id="importData"><i class="fas fa-upload"></i> Import</button>
@@ -561,6 +272,7 @@
     </div>
 
     <div class="calendar-grid month-view" id="calendarGrid"></div>
+    <div class="day-detail-panel" id="dayDetailPanel"></div>
 </div>
 
 <!-- ADD/EDIT CONTENT MODAL -->
@@ -568,8 +280,16 @@
     <div class="modal">
         <h2 id="modalTitle">Add Content</h2>
         <input type="hidden" id="editId" />
-        <label>Day (1-31)</label>
-        <input type="number" id="formDay" min="1" max="31" value="1" />
+        <div class="modal-row">
+            <div>
+                <label>Month</label>
+                <select id="formMonth"></select>
+            </div>
+            <div>
+                <label>Day</label>
+                <input type="number" id="formDay" min="1" max="31" value="1" />
+            </div>
+        </div>
         <label>Raw Idea</label>
         <input type="text" id="formRaw" placeholder="e.g. Why I stopped paying for hosting" />
         <label>Refined Title</label>
@@ -653,10 +373,11 @@
     // ================================================================
     const FONTS = ['Inter','DM Sans','Space Mono','Bebas Neue','Playfair Display','Oswald','Montserrat','Raleway','Syne'];
     const DEFAULT_API = { baseUrl: 'https://smagents.vercel.app/api/chat', model: 'deepseek-ai/deepseek-v4-flash' };
+    const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const WEEKDAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
     let contentData = [];
     let apiConfig = { ...DEFAULT_API };
-    let calendarConfig = { startDate: null };
     let designImages = {}; // { itemId: dataUrl }
 
     function toast(msg, type = 'success') {
@@ -667,7 +388,36 @@
     }
 
     // ================================================================
-    // STORAGE (persistent artifact storage — shared with index.html)
+    // DATE HELPERS
+    // ================================================================
+    function daysInMonth(year, month) { return new Date(year, month, 0).getDate(); } // month is 1-12
+    function firstWeekdayOfMonth(year, month) { return new Date(year, month - 1, 1).getDay(); }
+    function addMonths(date, n) {
+        const d = new Date(date);
+        d.setDate(1);
+        d.setMonth(d.getMonth() + n);
+        return d;
+    }
+    function addDays(date, n) {
+        const d = new Date(date);
+        d.setDate(d.getDate() + n);
+        return d;
+    }
+    function getWeekDates(date) {
+        const d = new Date(date);
+        d.setDate(d.getDate() - d.getDay());
+        const week = [];
+        for (let i = 0; i < 7; i++) { week.push(new Date(d)); d.setDate(d.getDate() + 1); }
+        return week;
+    }
+    function fmtShort(d) { return `${MONTH_NAMES[d.getMonth()].slice(0,3)} ${d.getDate()}`; }
+    function fmtRange(start, end) {
+        if (start.getMonth() === end.getMonth()) return `${fmtShort(start)}–${end.getDate()}, ${start.getFullYear()}`;
+        return `${fmtShort(start)} – ${fmtShort(end)}, ${end.getFullYear()}`;
+    }
+
+    // ================================================================
+    // STORAGE (persistent artifact storage — no localStorage)
     // ================================================================
     async function storageGet(key, fallback = null) {
         try {
@@ -683,72 +433,13 @@
     }
 
     // ================================================================
-    // DATE HELPERS — "Day N" maps onto a real calendar date
-    // ================================================================
-    function pad2(n) { return String(n).padStart(2, '0'); }
-    function isoDate(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
-    function parseISO(str) {
-        const [y, m, d] = str.split('-').map(Number);
-        return new Date(y, m - 1, d);
-    }
-    function defaultStartDate() {
-        const t = new Date();
-        return isoDate(new Date(t.getFullYear(), t.getMonth(), 1)); // 1st of current month
-    }
-    function dateForDay(dayNum) {
-        const start = parseISO(calendarConfig.startDate || defaultStartDate());
-        return new Date(start.getFullYear(), start.getMonth(), start.getDate() + (dayNum - 1));
-    }
-    function fmtShort(d) { return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); }
-    function fmtFull(d) { return d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); }
-    function daysBetween(a, b) {
-        const A = new Date(a.getFullYear(), a.getMonth(), a.getDate());
-        const B = new Date(b.getFullYear(), b.getMonth(), b.getDate());
-        return Math.round((B - A) / 86400000);
-    }
-    function currentDayIndex() {
-        const start = parseISO(calendarConfig.startDate || defaultStartDate());
-        const idx = daysBetween(start, new Date()) + 1;
-        return Math.max(1, Math.min(31, idx));
-    }
-
-    // ================================================================
-    // DEMO DATA (kept in sync with index.html so first load on either
-    // page seeds the same shared dataset)
+    // DEMO DATA (placed in Month 7 / July since it needs all 31 days)
     // ================================================================
     function addDemoData() {
         return [
-            { id: 'd1', day: 1, audience: 'client', raw: "WhatsApp tools cost too much every month", refined: "Why Pay ₹3,000+/Month for WATI or AiSensy When You Can Own It for ₹2,500 Once?", platforms: ["ig","yt","li"], hook: "Coaches and clinics are renting WhatsApp automation for ₹3,000+/month. I sell the same thing for ₹2,500 — once.", description: "GOwa is a self-hosted WhatsApp server: bulk messages, auto-replies, CRM hooks. No subscription, no lock-in. You own the server.", cta: "DM 'WHATSAPP' or message me directly for a free quote.", hashtags: "#whatsappautomation #smallbusiness #saas" },
-            { id: 'd2', day: 2, audience: 'student', raw: "People want to learn how I build all this", refined: "I'm Opening My Full-Stack Build System to Students — Here's What's Inside", platforms: ["yt","li"], hook: "Everything I sell to clients, I now teach. Android, Web, Windows, Infra — one unified system.", description: "Build with Sanjay isn't pre-recorded fluff. It's the exact stack I use for client work: shared auth, shared databases, one AI backend across every app you build.", cta: "Full curriculum + pricing in bio. Apply for the ₹25,000 bundle or pick a single module.", hashtags: "#learntobuild #fullstack #buildwithsanjay" },
-            { id: 'd3', day: 3, audience: 'client', raw: "Agencies overquote simple apps", refined: "An Agency Quoted a Client ₹80,000 and 3 Months. I Did It in 5 Days.", platforms: ["ig","yt","li"], hook: "₹80,000. Three months. That's what an agency quoted for a simple business app. I build the same thing in 3–7 days.", description: "React, Flutter, Supabase — one codebase for web, Android and iOS. Fixed price from ₹5,000. You only pay after you confirm it works.", cta: "Tell me your problem on WhatsApp — free consultation, no commitment.", hashtags: "#webdev #appdevelopment #startupindia" },
-            { id: 'd4', day: 4, audience: 'student', raw: "Show the infra module value", refined: "The ₹15,000 Module Most Students Skip — And Why It's the One That Actually Matters", platforms: ["yt","li"], hook: "Everyone wants to learn the flashy app. Almost nobody wants to learn deployment, auth, and databases. That's the mistake.", description: "The Infrastructure module covers deploy, DB, auth, APIs, Docker, Supabase, Cloudflare — the unglamorous skills that make every other app actually ship.", cta: "Module breakdown and pricing at the course pricing page — link in bio.", hashtags: "#webdevelopment #supabase #learntocode" },
-            { id: 'd5', day: 5, audience: 'client', raw: "Proof: GOwa saved a client real money", refined: "This Client Was Paying ₹4,000/Month Just to Send WhatsApp Messages. Not Anymore.", platforms: ["ig","yt","li"], hook: "₹48,000+ saved a year. That's what switching from WATI/Interakt to a self-hosted server actually looks like.", description: "GOwa is live, not a mockup — a self-hosted WhatsApp API server I deploy for businesses who are tired of renting basic messaging tools.", cta: "Want the same setup? Message me — fixed price, pay after it works.", hashtags: "#whatsappapi #costsaving #smallbusinessindia" },
-            { id: 'd6', day: 6, audience: 'student', raw: "Android module — what you actually build", refined: "In the Android Module, You Don't Just Learn Kotlin — You Ship 3 Real Apps", platforms: ["yt","li"], hook: "₹8,000 and you walk away with PocketAI, CGLive, and StreamStudio — real, working apps, not toy projects.", description: "This is the same engineering I use for paying clients, broken into a module you can finish on your own timeline.", cta: "See the full module list and the bundle discount — course pricing in bio.", hashtags: "#androiddev #buildwithsanjay #appdev" },
-            { id: 'd7', day: 7, audience: 'client', raw: "Why my clients trust a solo dev over an agency", refined: "18+ Brands Trust One Developer Over an Agency. Here's Why That Works.", platforms: ["ig","li"], hook: "No account managers. No handoffs. You talk to the person actually building your product — every time.", description: "7+ years building for businesses across gaming, tech, food, real estate, fashion and education. Fixed price, 3 free revisions, you pay only after approval.", cta: "Free consultation — tell me your problem on WhatsApp.", hashtags: "#solodev #buildinpublic #indianbusiness" },
-            { id: 'd8', day: 8, audience: 'student', raw: "Web Apps module breakdown", refined: "₹7,000 Gets You n8n, an AI Chatbot, an HR Tool, and a Calendly Clone — Here's the Module", platforms: ["yt","li"], hook: "Four real products in one module. This is what 'learn by building' actually means.", description: "The Web Apps module walks you through n8n automation, AI chat interfaces, HR dashboards, and scheduling tools — the exact builds I sell to clients.", cta: "Full module breakdown on the pricing page — link in bio.", hashtags: "#n8n #automation #learntocode" },
-            { id: 'd9', day: 9, audience: 'client', raw: "AI integration is confusing for business owners", refined: "\"My Competitors Use AI. I Don't Know Where to Start.\" — Here's the Fix.", platforms: ["yt","li"], hook: "You don't need to understand AI. You need someone to wire it into what you already have.", description: "Groq, Gemini, OpenAI, ElevenLabs — I connect real AI to your product: chatbots that answer real questions, document Q&A, voice synthesis. Starts at ₹1,500.", cta: "Message 'AI' on WhatsApp for a free scoping call.", hashtags: "#aiintegration #chatbot #businessautomation" },
-            { id: 'd10', day: 10, audience: 'student', raw: "Windows module — desktop AI agent", refined: "₹5,000 Module: Build a Desktop AI Agent + Browser Extension From Scratch", platforms: ["yt","li"], hook: "Most courses skip desktop apps entirely. I built my business on them. Here's the module.", description: "The Windows module teaches the exact desktop-agent architecture I use for client tools — lightweight, fast, and sellable.", cta: "Course pricing and module list — link in bio.", hashtags: "#desktopapp #buildwithsanjay #windevs" },
-            { id: 'd11', day: 11, audience: 'client', raw: "Social media management pitch", refined: "\"We Post Randomly and Get Zero Traction.\" Sound Familiar?", platforms: ["ig","yt","li"], hook: "Posting isn't a strategy. A content calendar, designed posts, and monthly reports is.", description: "Strategy-first social media management from ₹4,999/month — Instagram, Facebook, LinkedIn, GMB. Done for you, not post-and-pray.", cta: "DM 'SOCIAL' for a free audit of your current page.", hashtags: "#socialmediamanagement #contentstrategy #digitalmarketing" },
-            { id: 'd12', day: 12, audience: 'student', raw: "Why the bundle beats single modules", refined: "Why I Tell Students to Buy the ₹25,000 Bundle, Not Single Modules", platforms: ["yt","li"], hook: "Five separate modules teach you five separate apps. The bundle teaches you one system where they all talk to each other.", description: "One auth system, one shared database, one AI backend across Android, Web, Desktop, and Extension. That's the actual unlock — not the code, the architecture.", cta: "Apply for the bundle — link in bio, course pricing page.", hashtags: "#fullstackdeveloper #systemdesign #buildwithsanjay" },
-            { id: 'd13', day: 13, audience: 'client', raw: "Chrome extension delivered in 24h for a client", refined: "A Client Needed to See Where Their Remote Team's Time Was Going. I Shipped This in 24 Hours.", platforms: ["yt","li"], hook: "No spyware. No invasive tracking software. Just a lightweight Chrome extension that respects the team and answers the question.", description: "Built with vanilla JS, zero dependencies, data never leaves the browser. Delivered same-day. Chrome extensions start at ₹1,500.", cta: "Need something similar? Message me your use case.", hashtags: "#chromeextension #remotework #automation" },
-            { id: 'd14', day: 14, audience: 'student', raw: "Websites module value", refined: "₹6,000 Module: Portfolio, Ecom, Flipbook, Wedding Site, AI Chatbot — All in One Track", platforms: ["yt","li"], hook: "Five different website types. One module. Real client-grade builds, not templates.", description: "The Websites module is the fastest way to start taking freelance website projects — you finish with five deployable site types in your portfolio.", cta: "See the full curriculum on the pricing page — link in bio.", hashtags: "#webdesign #freelancing #learntocode" },
-            { id: 'd15', day: 15, audience: 'client', raw: "Pay after it works — trust pitch", refined: "I Don't Get Paid Until You Confirm It Works. Here's Why That Matters.", platforms: ["ig","li"], hook: "Freelancer disappeared mid-project? That's not how I work. Fixed price upfront. You approve, then you pay.", description: "No hourly billing. No invoice surprises. 3 free revisions included. Zero upfront, zero risk on your side — every single project.", cta: "Tell me your problem — free consultation, no commitment.", hashtags: "#trust #freelancerindia #fixedprice" },
-            { id: 'd16', day: 16, audience: 'student', raw: "Real student testimonial", refined: "\"It Was a Wonderful Month With Lots of Learning\" — A Student's Honest Review", platforms: ["ig","li"], hook: "I'm not posting this to brag. I'm posting it because this is what 1-on-1 training is supposed to feel like.", description: "Personalised video editing and dev training — Mobile or PC, taught with depth and patience, not generic pre-recorded lessons.", cta: "Enquire about 1-on-1 training — link in bio.", hashtags: "#studentreview #mentorship #learnonline" },
-            { id: 'd17', day: 17, audience: 'client', raw: "Income tax calculator case study", refined: "People Were Paying CAs Just to Estimate Their Tax. I Built a Free Calculator With AI Q&A Instead.", platforms: ["yt","li"], hook: "FY 2024-25, old regime, new regime, every income head — and an AI that answers your specific question. Free.", description: "This is a live tool, not a portfolio mockup. It shows exactly the kind of fintech + AI work I take on for clients.", cta: "Need a custom calculator or fintech tool for your business? Message me.", hashtags: "#fintech #aiQA #indiantax" },
-            { id: 'd18', day: 18, audience: 'student', raw: "Who the course is actually for", refined: "You Don't Need to Be 'Technical' to Start — Here's Who This Course Is Really For", platforms: ["ig","yt","li"], hook: "If you can describe a problem in plain language, you can finish this course. That's the only requirement.", description: "Every module is built the same way I build for clients: start from the problem, not the jargon. Beginners included.", cta: "Pick your starting module — pricing page link in bio.", hashtags: "#beginnerfriendly #codingforbeginners #buildwithsanjay" },
-            { id: 'd19', day: 19, audience: 'client', raw: "Business automation pain point", refined: "If Someone on Your Team Copy-Pastes Data Every Day, That's a ₹1,500 Problem to Fix", platforms: ["yt","li"], hook: "The same manual task, every single day — that's automatable, and it's usually cheaper to fix than to keep doing.", description: "Scripts, n8n workflows, API integrations — I replace repetitive ops work with scheduled jobs that connect to your existing stack.", cta: "Tell me the repetitive task. I'll tell you if it's automatable and what it costs.", hashtags: "#businessautomation #n8n #operations" },
-            { id: 'd20', day: 20, audience: 'student', raw: "GMB rank tracker as a teaching example", refined: "I Taught Myself to Track Google Maps Rankings — Then Turned It Into a Product Worth Selling", platforms: ["yt","li"], hook: "Every tool I teach in this course exists because I needed it first, then sold it. That's the real lesson.", description: "The GMB Rank Tracker module shows the exact build process — from personal tool to one-time-purchase product clients pay for.", cta: "Learn to build sellable tools, not just toy projects — course link in bio.", hashtags: "#buildinpublic #seo #indiehacker" },
-            { id: 'd21', day: 21, audience: 'client', raw: "Backend & API service pitch", refined: "\"My App Has No Real Backend — It Breaks Under Load.\" I Fix That From ₹2,000.", platforms: ["yt","li"], hook: "A backend that wasn't built to scale will break exactly when your app starts succeeding. Fix it before that happens.", description: "Supabase auth, database, realtime, storage, plus custom servers and Razorpay/PayPal integration — scalable from day one.", cta: "Send me your current setup — I'll tell you what's at risk.", hashtags: "#backend #supabase #appfounders" },
-            { id: 'd22', day: 22, audience: 'student', raw: "Cross-app architecture explained simply", refined: "What 'Cross-App Communication' Actually Means (Explained for Beginners)", platforms: ["yt","li"], hook: "Your Android app, your website, and your desktop tool should be able to talk to each other. Most courses never teach this.", description: "One authentication system, shared databases that sync across platforms, a centralized AI backend — that's the architecture behind the full bundle.", cta: "This is exactly what the ₹25,000 bundle teaches — link in bio.", hashtags: "#systemarchitecture #fullstack #buildwithsanjay" },
-            { id: 'd23', day: 23, audience: 'client', raw: "Video and design services pitch", refined: "\"Our Videos Look Cheap and Nobody Watches Them.\" Let's Fix That.", platforms: ["ig","yt","li"], hook: "Premiere Pro edits, After Effects motion, Blender 3D, brand identity — built for YouTube, Reels, and ads that actually hold attention.", description: "7+ years editing, 2+ years running digital marketing for real brands. Custom pricing based on scope.", cta: "Send me a video you're unhappy with — I'll tell you what's fixable.", hashtags: "#videoediting #motiongraphics #branding" },
-            { id: 'd24', day: 24, audience: 'student', raw: "1-on-1 training pitch, separate from the dev course", refined: "Want to Edit Your Own Content Instead of Paying Someone Every Month? Learn It Properly.", platforms: ["ig","li"], hook: "CapCut, Inshot, VN on mobile. Premiere Pro and After Effects on PC. Taught at your pace, with real projects.", description: "Not pre-recorded generic lessons. One-on-one video editing training that builds an actual portfolio as you go.", cta: "Enquire about training — link in bio.", hashtags: "#videoediting #1on1training #learnonline" },
-            { id: 'd25', day: 25, audience: 'client', raw: "Site Sheet — editable site without code", refined: "A Website Your Client Can Edit Like a Spreadsheet — No Code, No Developer Needed After Launch", platforms: ["ig","yt","li"], hook: "Most clients don't want to learn a CMS. They want something that feels like Google Sheets. So I built that.", description: "SiteSheet is a one-time-purchase website with a spreadsheet-like editing UI — content updates without touching code.", cta: "Want a site your team can actually maintain? Message me.", hashtags: "#nocode #webdesign #smallbusinesswebsite" },
-            { id: 'd26', day: 26, audience: 'student', raw: "Compare module price vs agency price", refined: "The Infra Module Costs ₹15,000. An Agency Would Charge That Per Month.", platforms: ["yt","li"], hook: "Learn deployment, databases, auth, and Docker once — or keep paying someone else to handle it forever.", description: "This module exists because clients kept asking me to 'just teach them' instead of hiring me every time something needed deploying.", cta: "Course pricing breakdown — link in bio.", hashtags: "#devops #docker #learntocode" },
-            { id: 'd27', day: 27, audience: 'client', raw: "Free tools as a trust-building lead magnet", refined: "I Give Away 4 Tools for Free — No Account, No Catch. Here's Why.", platforms: ["ig","yt"], hook: "Godot Visual Coder, an AI Coder app, Blender on mobile, a livestreaming app — all free. Try before you ever pay me for anything.", description: "If the free tools are useful, the paid work speaks for itself. That's the whole strategy.", cta: "Try a free tool first — link in bio. Then tell me what you actually need built.", hashtags: "#freetools #buildinpublic #godotdev" },
-            { id: 'd28', day: 28, audience: 'student', raw: "Show real client logos as proof for course credibility", refined: "18+ Real Businesses Use What I Teach in This Course. Not Theory — Production Code.", platforms: ["li"], hook: "Every module in this course is something I've already shipped to a paying client. You're not learning hypotheticals.", description: "From dental clinics to fintech to fashion brands — the same patterns taught in the course are running live for real businesses today.", cta: "See the module list and pick where to start — link in bio.", hashtags: "#realworldskills #buildwithsanjay #portfolio" },
-            { id: 'd29', day: 29, audience: 'client', raw: "Process transparency — how a project actually goes", refined: "From \"I Have a Problem\" to Live: My Exact 4-Step Process", platforms: ["ig","li"], hook: "Tell me the problem. Get one fixed number. I build with daily WhatsApp updates. You approve, then you pay.", description: "No hourly billing, no radio silence, no surprise invoices. This is the same process for every client, every time.", cta: "Start with step one — tell me your problem on WhatsApp.", hashtags: "#transparentpricing #freelancerindia #process" },
-            { id: 'd30', day: 30, audience: 'student', raw: "Direct comparison: course vs hiring me", refined: "Hire Me for ₹80,000+, or Learn to Build It Yourself for ₹25,000 — Here's an Honest Comparison", platforms: ["yt","li"], hook: "I'll say this even though it costs me client work: if you're building long-term, learning might be the better investment.", description: "Hiring gets you one product. The course gets you the skill to build the next ten yourself — that's the actual trade-off.", cta: "Decide which one fits you — both links in bio.", hashtags: "#learnvshire #buildwithsanjay #honestmarketing" },
-            { id: 'd31', day: 31, audience: 'client', raw: "Month-end recap + dual CTA", refined: "31 Days, 9+ Tools, 18+ Brands — Here's Everything I Can Build or Teach You", platforms: ["ig","yt","li"], hook: "If you scrolled through this month and saw something that matched your problem, this is your reminder to actually message me.", description: "Business owner? I'll quote you a fixed price. Want to learn to build it yourself? I'll point you to the right module.", cta: "Business owners: WhatsApp me. Future builders: check the course pricing page. Both links in bio.", hashtags: "#recap #buildwithsanjay #cta" }
+            { id: 'd1', month: 7, day: 1, audience: 'client', raw: "WhatsApp tools cost too much every month", refined: "Why Pay ₹3,000+/Month for WATI or AiSensy When You Can Own It for ₹2,500 Once?", platforms: ["ig","yt","li"], hook: "Coaches and clinics are renting WhatsApp automation for ₹3,000+/month. I sell the same thing for ₹2,500 — once.", description: "GOwa is a self-hosted WhatsApp server: bulk messages, auto-replies, CRM hooks. No subscription, no lock-in. You own the server.", cta: "DM 'WHATSAPP' or message me directly for a free quote.", hashtags: "#whatsappautomation #smallbusiness #saas" },
+            { id: 'd2', month: 7, day: 2, audience: 'student', raw: "People want to learn how I build all this", refined: "I'm Opening My Full-Stack Build System to Students — Here's What's Inside", platforms: ["yt","li"], hook: "Everything I sell to clients, I now teach. Android, Web, Windows, Infra — one unified system.", description: "Build with Sanjay isn't pre-recorded fluff. It's the exact stack I use for client work.", cta: "Full curriculum + pricing in bio.", hashtags: "#learntobuild #fullstack #buildwithsanjay" },
+            { id: 'd3', month: 7, day: 3, audience: 'client', raw: "Agencies overquote simple apps", refined: "An Agency Quoted a Client ₹80,000 and 3 Months. I Did It in 5 Days.", platforms: ["ig","yt","li"], hook: "₹80,000. Three months. That's what an agency quoted. I build the same thing in 3–7 days.", description: "React, Flutter, Supabase — one codebase for web, Android and iOS.", cta: "Tell me your problem on WhatsApp — free consultation.", hashtags: "#webdev #appdevelopment #startupindia" }
         ];
     }
 
@@ -760,18 +451,14 @@
             contentData = addDemoData();
             await storageSet('contentData', contentData);
         }
+        // backfill: anything saved before the month field existed defaults to month 7
+        let needsBackfill = false;
+        contentData.forEach(item => { if (!item.month) { item.month = 7; needsBackfill = true; } });
+        if (needsBackfill) await storageSet('contentData', contentData);
+
         const cfg = await storageGet('apiConfig', null);
         apiConfig = cfg && cfg.baseUrl ? cfg : { ...DEFAULT_API };
 
-        const calCfg = await storageGet('calendarConfig', null);
-        if (calCfg && calCfg.startDate) {
-            calendarConfig = calCfg;
-        } else {
-            calendarConfig = { startDate: defaultStartDate() };
-            await storageSet('calendarConfig', calendarConfig);
-        }
-
-        // load any saved design thumbnails
         designImages = {};
         try {
             const list = await window.storage.list('design:', false);
@@ -790,12 +477,7 @@
         renderCalendar();
     }
 
-    async function saveCalendarConfig() {
-        await storageSet('calendarConfig', calendarConfig);
-        renderCalendar();
-    }
-
-    function getDayData(day) { return contentData.filter(item => item.day === day); }
+    function getDayData(month, day) { return contentData.filter(item => item.month === month && item.day === day); }
 
     async function addContent(item) { contentData.push(item); await saveData(); }
     async function updateContent(id, updated) {
@@ -810,6 +492,13 @@
     }
 
     function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+    // ================================================================
+    // STATE
+    // ================================================================
+    let currentView = 'month';
+    let cursorDate = new Date(); // anchor date driving month/week/day views
+    let selectedDetail = null;   // { month, day } currently expanded in month view
 
     // ================================================================
     // AI CALLS
@@ -892,7 +581,7 @@
         if (!item) return;
         currentDesignItemId = itemId;
         designSpec = item.designSpec ? JSON.parse(JSON.stringify(item.designSpec)) : defaultDesignSpec(item);
-        document.getElementById('designDayLabel').textContent = `— Day ${item.day} · ${fmtShort(dateForDay(item.day))}`;
+        document.getElementById('designDayLabel').textContent = `— ${MONTH_NAMES[(item.month||7)-1]} ${item.day}`;
         document.getElementById('designAiStatus').textContent = '';
         document.getElementById('canvasPreset').value = `${designSpec.canvasW}x${designSpec.canvasH}`;
         renderDesignFields();
@@ -1044,7 +733,6 @@
 
         try { await document.fonts.ready; } catch (e) {}
 
-        // background
         if (designSpec.bg.type === 'solid') {
             ctx.fillStyle = designSpec.bg.color || '#111827';
             ctx.fillRect(0, 0, W, H);
@@ -1059,7 +747,6 @@
             ctx.fillRect(0, 0, W, H);
         }
 
-        // icons
         for (const icon of (designSpec.icons || [])) {
             try {
                 const img = await loadImage(icon.url);
@@ -1068,7 +755,6 @@
             } catch (e) { /* skip broken icon */ }
         }
 
-        // text blocks
         for (const b of (designSpec.textBlocks || [])) {
             const x = (b.x / 100) * W, y = (b.y / 100) * H;
             const maxWidthPx = ((b.maxWidth || 80) / 100) * W;
@@ -1082,7 +768,6 @@
             lines.forEach((l, i) => ctx.fillText(l, x, startY + i * lineHeight));
         }
 
-        // brand
         if (designSpec.brand && designSpec.brand.text) {
             ctx.font = `600 ${designSpec.brand.size || 22}px Inter`;
             ctx.fillStyle = designSpec.brand.color || '#a5b4fc';
@@ -1135,7 +820,7 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
             const item = contentData.find(d => d.id === currentDesignItemId);
             const a = document.createElement('a');
             a.href = dataUrl;
-            a.download = `day${item ? item.day : 'x'}_design.png`;
+            a.download = `month${item ? item.month : 'x'}_day${item ? item.day : 'x'}_design.png`;
             a.click();
         } catch (err) {
             toast('Export blocked — one of the icon images may not allow canvas export (CORS). Try removing icons and export again.', 'error');
@@ -1158,163 +843,320 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     }
 
     // ================================================================
-    // RENDER CALENDAR
+    // SHARED ITEM CARD BUILDER
     // ================================================================
-    let currentView = 'month';
+    function buildItemCard(item) {
+        const wrapper = document.createElement('div');
+        wrapper.style.marginBottom = '12px';
+        wrapper.style.borderBottom = '1px solid #f1f5f9';
+        wrapper.style.paddingBottom = '10px';
 
-    function renderCalendar() {
-        const grid = document.getElementById('calendarGrid');
-        grid.className = `calendar-grid ${currentView}-view`;
-        grid.innerHTML = '';
+        const raw = document.createElement('div');
+        raw.className = 'topic-raw';
+        raw.textContent = `📌 ${item.raw}`;
+        wrapper.appendChild(raw);
 
-        let daysToShow = [];
-        const rangeLabel = document.getElementById('rangeLabel');
+        const refined = document.createElement('div');
+        refined.className = 'topic-title';
+        refined.textContent = item.refined || item.raw;
+        wrapper.appendChild(refined);
 
-        if (currentView === 'month') {
-            for (let d = 1; d <= 31; d++) daysToShow.push(d);
-            rangeLabel.textContent = `${fmtShort(dateForDay(1))} – ${fmtShort(dateForDay(31))}`;
-        } else if (currentView === 'week') {
-            const idx = currentDayIndex();
-            const start = Math.max(1, Math.min(25, idx - 3));
-            const end = Math.min(31, start + 6);
-            for (let d = start; d <= end; d++) daysToShow.push(d);
-            rangeLabel.textContent = `${fmtShort(dateForDay(start))} – ${fmtShort(dateForDay(end))}`;
-        } else {
-            const idx = currentDayIndex();
-            daysToShow = [idx];
-            rangeLabel.textContent = fmtFull(dateForDay(idx));
+        const tagRow = document.createElement('div');
+        tagRow.className = 'flex gap-1';
+        if (item.audience) {
+            const audTag = document.createElement('span');
+            audTag.className = `audience-tag aud-${item.audience}`;
+            audTag.textContent = item.audience;
+            tagRow.appendChild(audTag);
+        }
+        (item.platforms || ['all']).forEach(p => {
+            const tag = document.createElement('span');
+            tag.className = `platform-tag tag-${p}`;
+            tag.textContent = p.toUpperCase();
+            tagRow.appendChild(tag);
+        });
+        wrapper.appendChild(tagRow);
+
+        if (item.hook) {
+            const hook = document.createElement('div');
+            hook.className = 'hook-text';
+            hook.innerHTML = `<i class="fas fa-bolt" style="color:#2563eb;margin-right:6px;"></i> ${item.hook}`;
+            wrapper.appendChild(hook);
+        }
+        if (item.description) {
+            const desc = document.createElement('div');
+            desc.className = 'desc-text';
+            desc.textContent = item.description;
+            wrapper.appendChild(desc);
+        }
+        if (item.cta) {
+            const cta = document.createElement('div');
+            cta.className = 'cta-text';
+            cta.innerHTML = `<i class="fas fa-arrow-right" style="margin-right:6px;"></i> ${item.cta}`;
+            wrapper.appendChild(cta);
+        }
+        if (item.hashtags) {
+            const hash = document.createElement('div');
+            hash.className = 'hashtags';
+            hash.textContent = item.hashtags;
+            wrapper.appendChild(hash);
         }
 
-        daysToShow.forEach(day => {
-            const items = getDayData(day);
-            const card = document.createElement('div');
-            card.className = 'day-card';
+        if (designImages[item.id]) {
+            const thumb = document.createElement('img');
+            thumb.className = 'design-thumb';
+            thumb.src = designImages[item.id];
+            thumb.title = 'Click to edit design';
+            thumb.onclick = () => openDesignModal(item.id);
+            wrapper.appendChild(thumb);
+        }
 
-            const dayHeader = document.createElement('div');
-            dayHeader.className = 'day-number';
-            dayHeader.innerHTML = `<span>Day ${day}</span> <small>${items.length} items</small>`;
-            card.appendChild(dayHeader);
+        const actions = document.createElement('div');
+        actions.className = 'flex';
+        actions.style.marginTop = '8px';
 
-            const dateLine = document.createElement('div');
-            dateLine.className = 'day-date';
-            dateLine.textContent = fmtShort(dateForDay(day));
-            card.appendChild(dateLine);
+        const aiBtn = document.createElement('button');
+        aiBtn.className = 'btn btn-sm btn-ai';
+        aiBtn.setAttribute('data-ai-write', item.id);
+        aiBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> AI Write';
+        aiBtn.onclick = () => generateContentAI(item.id);
 
-            if (items.length === 0) {
-                const empty = document.createElement('div');
-                empty.className = 'text-muted';
-                empty.style.padding = '8px 0';
-                empty.textContent = 'No content planned';
-                card.appendChild(empty);
+        const designBtn = document.createElement('button');
+        designBtn.className = 'btn btn-sm btn-design';
+        designBtn.innerHTML = '<i class="fas fa-image"></i> Design';
+        designBtn.onclick = () => openDesignModal(item.id);
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn btn-sm btn-outline';
+        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+        editBtn.onclick = () => openEditModal(item.id);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn btn-sm btn-danger';
+        delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+        delBtn.onclick = () => { if (confirm('Delete this?')) deleteContent(item.id); };
+
+        actions.appendChild(aiBtn);
+        actions.appendChild(designBtn);
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+        wrapper.appendChild(actions);
+
+        return wrapper;
+    }
+
+    function buildDayCard(month, day, dateObj) {
+        const items = getDayData(month, day);
+        const card = document.createElement('div');
+        card.className = 'day-card';
+
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'day-number';
+        const label = dateObj ? `${WEEKDAY_NAMES[dateObj.getDay()]}, ${MONTH_NAMES[month-1].slice(0,3)} ${day}` : `Day ${day}`;
+        dayHeader.innerHTML = `<span>${label}</span> <small>${items.length} items</small>`;
+        card.appendChild(dayHeader);
+
+        if (items.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'text-muted';
+            empty.style.padding = '8px 0';
+            empty.textContent = 'No content planned';
+            card.appendChild(empty);
+        } else {
+            items.forEach(item => card.appendChild(buildItemCard(item)));
+        }
+
+        const addBtn = document.createElement('button');
+        addBtn.className = 'btn btn-sm btn-outline';
+        addBtn.style.marginTop = '4px';
+        addBtn.innerHTML = '<i class="fas fa-plus"></i> Add to this day';
+        addBtn.onclick = () => openAddModal(month, day);
+        card.appendChild(addBtn);
+
+        return card;
+    }
+
+    // ================================================================
+    // RENDER: MONTH VIEW (real calendar grid)
+    // ================================================================
+    function renderMonthGrid() {
+        const grid = document.getElementById('calendarGrid');
+        grid.className = 'calendar-grid month-view';
+
+        const year = cursorDate.getFullYear();
+        const month = cursorDate.getMonth() + 1;
+        document.getElementById('navLabel').textContent = `${MONTH_NAMES[month-1]} ${year}`;
+
+        const weekdayRow = document.createElement('div');
+        weekdayRow.className = 'weekday-header';
+        WEEKDAY_NAMES.forEach(w => {
+            const s = document.createElement('span');
+            s.textContent = w;
+            weekdayRow.appendChild(s);
+        });
+        grid.appendChild(weekdayRow);
+
+        const cellsWrap = document.createElement('div');
+        cellsWrap.className = 'month-grid';
+
+        const totalDays = daysInMonth(year, month);
+        const startOffset = firstWeekdayOfMonth(year, month);
+        const prevMonth = month === 1 ? 12 : month - 1;
+        const prevYear = month === 1 ? year - 1 : year;
+        const prevMonthDays = daysInMonth(prevYear, prevMonth);
+
+        const today = new Date();
+        const isRealCurrentMonth = today.getFullYear() === year && today.getMonth() + 1 === month;
+        const totalCells = Math.ceil((startOffset + totalDays) / 7) * 7;
+
+        for (let i = 0; i < totalCells; i++) {
+            const cell = document.createElement('div');
+            let dayNum, isOutside = false, outsideDir = 0;
+
+            if (i < startOffset) {
+                dayNum = prevMonthDays - startOffset + i + 1;
+                isOutside = true;
+                outsideDir = -1;
+            } else if (i >= startOffset + totalDays) {
+                dayNum = i - startOffset - totalDays + 1;
+                isOutside = true;
+                outsideDir = 1;
             } else {
-                items.forEach(item => {
-                    const wrapper = document.createElement('div');
-                    wrapper.style.marginBottom = '12px';
-                    wrapper.style.borderBottom = '1px solid #f1f5f9';
-                    wrapper.style.paddingBottom = '10px';
-
-                    const raw = document.createElement('div');
-                    raw.className = 'topic-raw';
-                    raw.textContent = `📌 ${item.raw}`;
-                    wrapper.appendChild(raw);
-
-                    const refined = document.createElement('div');
-                    refined.className = 'topic-title';
-                    refined.textContent = item.refined || item.raw;
-                    wrapper.appendChild(refined);
-
-                    const tagRow = document.createElement('div');
-                    tagRow.className = 'flex gap-1';
-                    if (item.audience) {
-                        const audTag = document.createElement('span');
-                        audTag.className = `audience-tag aud-${item.audience}`;
-                        audTag.textContent = item.audience;
-                        tagRow.appendChild(audTag);
-                    }
-                    (item.platforms || ['all']).forEach(p => {
-                        const tag = document.createElement('span');
-                        tag.className = `platform-tag tag-${p}`;
-                        tag.textContent = p.toUpperCase();
-                        tagRow.appendChild(tag);
-                    });
-                    wrapper.appendChild(tagRow);
-
-                    if (item.hook) {
-                        const hook = document.createElement('div');
-                        hook.className = 'hook-text';
-                        hook.innerHTML = `<i class="fas fa-bolt" style="color:#2563eb;margin-right:6px;"></i> ${item.hook}`;
-                        wrapper.appendChild(hook);
-                    }
-                    if (item.description) {
-                        const desc = document.createElement('div');
-                        desc.className = 'desc-text';
-                        desc.textContent = item.description;
-                        wrapper.appendChild(desc);
-                    }
-                    if (item.cta) {
-                        const cta = document.createElement('div');
-                        cta.className = 'cta-text';
-                        cta.innerHTML = `<i class="fas fa-arrow-right" style="margin-right:6px;"></i> ${item.cta}`;
-                        wrapper.appendChild(cta);
-                    }
-                    if (item.hashtags) {
-                        const hash = document.createElement('div');
-                        hash.className = 'hashtags';
-                        hash.textContent = item.hashtags;
-                        wrapper.appendChild(hash);
-                    }
-
-                    if (designImages[item.id]) {
-                        const thumb = document.createElement('img');
-                        thumb.className = 'design-thumb';
-                        thumb.src = designImages[item.id];
-                        thumb.title = 'Click to edit design';
-                        thumb.onclick = () => openDesignModal(item.id);
-                        wrapper.appendChild(thumb);
-                    }
-
-                    const actions = document.createElement('div');
-                    actions.className = 'flex';
-                    actions.style.marginTop = '8px';
-
-                    const aiBtn = document.createElement('button');
-                    aiBtn.className = 'btn btn-sm btn-ai';
-                    aiBtn.setAttribute('data-ai-write', item.id);
-                    aiBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> AI Write';
-                    aiBtn.onclick = () => generateContentAI(item.id);
-
-                    const designBtn = document.createElement('button');
-                    designBtn.className = 'btn btn-sm btn-design';
-                    designBtn.innerHTML = '<i class="fas fa-image"></i> Design';
-                    designBtn.onclick = () => openDesignModal(item.id);
-
-                    const editBtn = document.createElement('button');
-                    editBtn.className = 'btn btn-sm btn-outline';
-                    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
-                    editBtn.onclick = () => openEditModal(item.id);
-
-                    const delBtn = document.createElement('button');
-                    delBtn.className = 'btn btn-sm btn-danger';
-                    delBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                    delBtn.onclick = () => { if (confirm('Delete this?')) deleteContent(item.id); };
-
-                    actions.appendChild(aiBtn);
-                    actions.appendChild(designBtn);
-                    actions.appendChild(editBtn);
-                    actions.appendChild(delBtn);
-                    wrapper.appendChild(actions);
-                    card.appendChild(wrapper);
-                });
+                dayNum = i - startOffset + 1;
             }
 
-            const addBtn = document.createElement('button');
-            addBtn.className = 'btn btn-sm btn-outline';
-            addBtn.style.marginTop = '4px';
-            addBtn.innerHTML = '<i class="fas fa-plus"></i> Add to this day';
-            addBtn.onclick = () => openAddModal(day);
-            card.appendChild(addBtn);
-            grid.appendChild(card);
-        });
+            cell.className = 'cal-cell' + (isOutside ? ' outside' : '');
+            if (!isOutside && isRealCurrentMonth && dayNum === today.getDate()) cell.classList.add('today');
+            if (!isOutside && selectedDetail && selectedDetail.month === month && selectedDetail.day === dayNum) cell.classList.add('selected');
+
+            const items = isOutside ? [] : getDayData(month, dayNum);
+
+            const dateRow = document.createElement('div');
+            dateRow.className = 'cal-date';
+            dateRow.innerHTML = `<span>${dayNum}</span>` + (items.length ? `<span class="count-badge">${items.length}</span>` : '');
+            cell.appendChild(dateRow);
+
+            items.slice(0, 2).forEach(item => {
+                const chip = document.createElement('div');
+                chip.className = 'cal-item-chip';
+                const color = item.audience === 'client' ? { bg: '#fff7ed', fg: '#c2410c', dot: '#f97316' }
+                            : item.audience === 'student' ? { bg: '#eef2ff', fg: '#4338ca', dot: '#6366f1' }
+                            : { bg: '#f1f5f9', fg: '#475569', dot: '#94a3b8' };
+                chip.style.background = color.bg;
+                chip.style.color = color.fg;
+                chip.innerHTML = `<span class="dot" style="background:${color.dot}"></span>${(item.refined || item.raw || '').slice(0, 22)}`;
+                cell.appendChild(chip);
+            });
+            if (items.length > 2) {
+                const more = document.createElement('div');
+                more.className = 'cal-more';
+                more.textContent = `+${items.length - 2} more`;
+                cell.appendChild(more);
+            }
+            if (designImages[(items[0] || {}).id]) {
+                // small visual hint that a design exists for the first item
+                const dot = document.createElement('div');
+                dot.style.fontSize = '10px';
+                dot.style.color = '#0f172a';
+                dot.innerHTML = '<i class="fas fa-image"></i>';
+                cell.appendChild(dot);
+            }
+
+            if (isOutside) {
+                cell.onclick = () => { cursorDate = addMonths(cursorDate, outsideDir); selectedDetail = null; renderCalendar(); };
+            } else {
+                cell.onclick = () => { selectedDetail = { month, day: dayNum }; renderCalendar(); };
+            }
+
+            cellsWrap.appendChild(cell);
+        }
+
+        grid.appendChild(cellsWrap);
+        renderDayDetailPanel();
+    }
+
+    function renderDayDetailPanel() {
+        const panel = document.getElementById('dayDetailPanel');
+        panel.innerHTML = '';
+        if (currentView !== 'month') return;
+
+        if (!selectedDetail) {
+            const empty = document.createElement('div');
+            empty.className = 'day-detail-empty';
+            empty.textContent = 'Click a day on the calendar to see or add content for it.';
+            panel.appendChild(empty);
+            return;
+        }
+
+        const { month: dMonth, day: dDay } = selectedDetail;
+        const items = getDayData(dMonth, dDay);
+
+        const header = document.createElement('div');
+        header.className = 'day-detail-header';
+        header.innerHTML = `<span>${MONTH_NAMES[dMonth-1]} ${dDay} — ${items.length} item${items.length === 1 ? '' : 's'}</span>`;
+        const addBtn = document.createElement('button');
+        addBtn.className = 'btn btn-sm btn-primary';
+        addBtn.innerHTML = '<i class="fas fa-plus"></i> Add to this day';
+        addBtn.onclick = () => openAddModal(dMonth, dDay);
+        header.appendChild(addBtn);
+        panel.appendChild(header);
+
+        if (items.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'day-detail-empty';
+            empty.textContent = 'No content planned for this day yet.';
+            panel.appendChild(empty);
+        } else {
+            const itemsGrid = document.createElement('div');
+            itemsGrid.className = 'day-detail-grid';
+            items.forEach(item => itemsGrid.appendChild(buildItemCard(item)));
+            panel.appendChild(itemsGrid);
+        }
+    }
+
+    // ================================================================
+    // RENDER: WEEK / DAY VIEWS
+    // ================================================================
+    function renderWeekView() {
+        const grid = document.getElementById('calendarGrid');
+        grid.className = 'calendar-grid week-view';
+        const week = getWeekDates(cursorDate);
+        document.getElementById('navLabel').textContent = fmtRange(week[0], week[6]);
+        week.forEach(d => grid.appendChild(buildDayCard(d.getMonth() + 1, d.getDate(), d)));
+    }
+
+    function renderDayView() {
+        const grid = document.getElementById('calendarGrid');
+        grid.className = 'calendar-grid day-view';
+        document.getElementById('navLabel').textContent = `${WEEKDAY_NAMES[cursorDate.getDay()]}, ${fmtShort(cursorDate)}, ${cursorDate.getFullYear()}`;
+        grid.appendChild(buildDayCard(cursorDate.getMonth() + 1, cursorDate.getDate(), cursorDate));
+    }
+
+    // ================================================================
+    // RENDER DISPATCH
+    // ================================================================
+    function renderCalendar() {
+        const grid = document.getElementById('calendarGrid');
+        grid.innerHTML = '';
+        const panel = document.getElementById('dayDetailPanel');
+        if (currentView !== 'month') panel.innerHTML = '';
+        syncPickerUI();
+
+        if (currentView === 'month') renderMonthGrid();
+        else if (currentView === 'week') renderWeekView();
+        else renderDayView();
+    }
+
+    // ================================================================
+    // MONTH / YEAR PICKER
+    // ================================================================
+    function populateMonthSelect() {
+        const sel = document.getElementById('monthSelect');
+        sel.innerHTML = MONTH_NAMES.map((m, i) => `<option value="${i+1}">${m}</option>`).join('');
+    }
+    function syncPickerUI() {
+        document.getElementById('monthSelect').value = cursorDate.getMonth() + 1;
+        document.getElementById('yearLabel').textContent = cursorDate.getFullYear();
     }
 
     // ================================================================
@@ -1323,12 +1165,27 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     let isEditing = false;
     let editId = null;
 
-    function openAddModal(day = null) {
+    function populateFormMonth() {
+        const sel = document.getElementById('formMonth');
+        sel.innerHTML = MONTH_NAMES.map((m, i) => `<option value="${i+1}">${m}</option>`).join('');
+    }
+
+    function syncDayMaxToMonth() {
+        const monthVal = parseInt(document.getElementById('formMonth').value) || 1;
+        const max = daysInMonth(cursorDate.getFullYear(), monthVal);
+        const dayInput = document.getElementById('formDay');
+        dayInput.max = max;
+        if (parseInt(dayInput.value) > max) dayInput.value = max;
+    }
+
+    function openAddModal(month = null, day = null) {
         isEditing = false;
         editId = null;
         document.getElementById('modalTitle').textContent = 'Add Content';
         document.getElementById('editId').value = '';
-        document.getElementById('formDay').value = day || currentDayIndex();
+        document.getElementById('formMonth').value = month || (cursorDate.getMonth() + 1);
+        document.getElementById('formDay').value = day || cursorDate.getDate();
+        syncDayMaxToMonth();
         document.getElementById('formRaw').value = '';
         document.getElementById('formRefined').value = '';
         document.getElementById('formAudience').value = '';
@@ -1347,7 +1204,9 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
         editId = id;
         document.getElementById('modalTitle').textContent = 'Edit Content';
         document.getElementById('editId').value = id;
+        document.getElementById('formMonth').value = item.month || 7;
         document.getElementById('formDay').value = item.day;
+        syncDayMaxToMonth();
         document.getElementById('formRaw').value = item.raw || '';
         document.getElementById('formRefined').value = item.refined || '';
         document.getElementById('formAudience').value = item.audience || '';
@@ -1362,7 +1221,8 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
 
     async function saveFromModal() {
-        const day = Math.max(1, Math.min(31, parseInt(document.getElementById('formDay').value) || 1));
+        const month = parseInt(document.getElementById('formMonth').value) || 1;
+        const day = parseInt(document.getElementById('formDay').value) || 1;
         const raw = document.getElementById('formRaw').value.trim();
         const refined = document.getElementById('formRefined').value.trim();
         const audience = document.getElementById('formAudience').value.trim().toLowerCase();
@@ -1374,7 +1234,7 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
 
         if (!raw) { alert('Raw idea is required'); return; }
 
-        const data = { day, raw, refined, audience, platforms, hook, description, cta, hashtags };
+        const data = { month, day, raw, refined, audience, platforms, hook, description, cta, hashtags };
         if (isEditing && editId) {
             await updateContent(editId, data);
         } else {
@@ -1404,6 +1264,24 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     }
 
     // ================================================================
+    // NAVIGATION
+    // ================================================================
+    function navPrev() {
+        if (currentView === 'month') cursorDate = addMonths(cursorDate, -1);
+        else if (currentView === 'week') cursorDate = addDays(cursorDate, -7);
+        else cursorDate = addDays(cursorDate, -1);
+        selectedDetail = null;
+        renderCalendar();
+    }
+    function navNext() {
+        if (currentView === 'month') cursorDate = addMonths(cursorDate, 1);
+        else if (currentView === 'week') cursorDate = addDays(cursorDate, 7);
+        else cursorDate = addDays(cursorDate, 1);
+        selectedDetail = null;
+        renderCalendar();
+    }
+
+    // ================================================================
     // IMPORT / EXPORT / REFRESH
     // ================================================================
     function exportData() {
@@ -1423,6 +1301,7 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
                 const imported = JSON.parse(e.target.result);
                 if (Array.isArray(imported)) {
                     contentData = imported;
+                    contentData.forEach(item => { if (!item.month) item.month = 7; });
                     await saveData();
                     toast('Import successful!');
                 } else {
@@ -1438,7 +1317,6 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     async function refreshData() {
         await loadData();
         renderCalendar();
-        toast('Reloaded from storage');
     }
 
     // ================================================================
@@ -1446,6 +1324,7 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     // ================================================================
     function setView(view) {
         currentView = view;
+        selectedDetail = null;
         document.querySelectorAll('.view-toggle .btn').forEach(btn => btn.classList.remove('active'));
         document.querySelector(`.view-toggle .btn[data-view="${view}"]`).classList.add('active');
         renderCalendar();
@@ -1455,19 +1334,35 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     // INIT
     // ================================================================
     document.addEventListener('DOMContentLoaded', async function() {
+        populateMonthSelect();
+        populateFormMonth();
         await loadData();
-        document.getElementById('startDateInput').value = calendarConfig.startDate;
         renderCalendar();
 
         document.querySelectorAll('.view-toggle .btn').forEach(btn => {
             btn.addEventListener('click', () => setView(btn.dataset.view));
         });
 
-        document.getElementById('startDateInput').addEventListener('change', async (e) => {
-            if (!e.target.value) return;
-            calendarConfig.startDate = e.target.value;
-            await saveCalendarConfig();
+        document.getElementById('navPrev').addEventListener('click', navPrev);
+        document.getElementById('navNext').addEventListener('click', navNext);
+
+        document.getElementById('monthSelect').addEventListener('change', (e) => {
+            cursorDate = new Date(cursorDate.getFullYear(), parseInt(e.target.value) - 1, 1);
+            selectedDetail = null;
+            renderCalendar();
         });
+        document.getElementById('yearPrev').addEventListener('click', () => {
+            cursorDate = addMonths(cursorDate, -12);
+            selectedDetail = null;
+            renderCalendar();
+        });
+        document.getElementById('yearNext').addEventListener('click', () => {
+            cursorDate = addMonths(cursorDate, 12);
+            selectedDetail = null;
+            renderCalendar();
+        });
+
+        document.getElementById('formMonth').addEventListener('change', syncDayMaxToMonth);
 
         document.getElementById('refreshData').addEventListener('click', refreshData);
         document.getElementById('openAddModal').addEventListener('click', () => openAddModal());
