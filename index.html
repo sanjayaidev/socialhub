@@ -536,6 +536,8 @@
             </div>
             <button class="btn btn-refresh" id="refreshData" title="Reload from storage"><i class="fas fa-sync-alt"></i></button>
             <button class="btn btn-outline" id="openSettings" title="API settings"><i class="fas fa-gear"></i></button>
+            <a href="planner.html" class="btn btn-outline" title="Go to Planner"><i class="fas fa-calendar-check"></i> Planner</a>
+            <button class="btn btn-ai" id="openAiPlanner"><i class="fas fa-wand-magic-sparkles"></i> AI Generate</button>
             <button class="btn btn-primary" id="openAddModal"><i class="fas fa-plus"></i> Add</button>
             <button class="btn btn-outline" id="exportData"><i class="fas fa-download"></i> Export</button>
             <button class="btn btn-outline" id="importData"><i class="fas fa-upload"></i> Import</button>
@@ -601,6 +603,40 @@
         <div class="modal-actions">
             <button class="btn btn-outline" id="closeSettings">Cancel</button>
             <button class="btn btn-primary" id="saveSettings">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- AI PLANNER GENERATOR MODAL -->
+<div class="modal-overlay" id="aiPlannerOverlay">
+    <div class="modal">
+        <h2><i class="fas fa-wand-magic-sparkles"></i> AI Content Planner Generator</h2>
+        <label>Month</label>
+        <select id="aiPlannerMonth">
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+        </select>
+        <label>Year</label>
+        <input type="number" id="aiPlannerYear" min="2024" max="2030" value="2026" />
+        <label>Prompt / Topic Theme</label>
+        <textarea id="aiPlannerPrompt" placeholder="e.g. Generate content ideas for a full-stack developer teaching coding, sharing client projects, and promoting WhatsApp automation tools..." rows="4"></textarea>
+        <div class="hint">Describe your content theme, target audience, and goals. AI will generate unique ideas for each day of the selected month.</div>
+        <div class="flex" style="margin-top:12px;">
+            <span class="ai-status" id="aiPlannerStatus"></span>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" id="closeAiPlanner">Cancel</button>
+            <button class="btn btn-ai" id="generateAiPlanner"><i class="fas fa-sparkles"></i> Generate Full Month</button>
         </div>
     </div>
 </div>
@@ -1393,6 +1429,86 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     }
 
     // ================================================================
+    // AI PLANNER GENERATOR
+    // ================================================================
+    function openAiPlanner() {
+        const monthSelect = document.getElementById('aiPlannerMonth');
+        monthSelect.value = currentMonth;
+        document.getElementById('aiPlannerYear').value = currentYear;
+        document.getElementById('aiPlannerPrompt').value = '';
+        document.getElementById('aiPlannerStatus').textContent = '';
+        document.getElementById('aiPlannerOverlay').classList.add('show');
+    }
+    function closeAiPlanner() { document.getElementById('aiPlannerOverlay').classList.remove('show'); }
+    
+    async function generateAiPlanner() {
+        const month = parseInt(document.getElementById('aiPlannerMonth').value);
+        const year = parseInt(document.getElementById('aiPlannerYear').value);
+        const prompt = document.getElementById('aiPlannerPrompt').value.trim();
+        const statusEl = document.getElementById('aiPlannerStatus');
+        const btn = document.getElementById('generateAiPlanner');
+        
+        if (!prompt) {
+            toast('Please enter a prompt describing your content theme', 'error');
+            return;
+        }
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        statusEl.textContent = 'AI is generating content ideas for each day...';
+        
+        try {
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const generatedItems = [];
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                statusEl.textContent = `Generating day ${day}/${daysInMonth}...`;
+                
+                const sys = `You are a senior content strategist. Generate ONE unique social media content idea for day ${day} of ${month}/${year}. Output ONLY a valid JSON object with exactly these keys: raw (string, brief topic idea under 60 chars), refined (string, punchy title under 110 chars), audience (either "client" or "student"), platforms (array like ["ig","yt","li"]), hook (string, 1-2 sentences), description (string, 2-4 sentences), cta (string, one call to action), hashtags (string, 4-6 hashtags). Make each day's content unique and varied.`;
+                const user = `Theme: ${prompt}\nDay: ${day} of ${daysInMonth}\nMonth: ${month}/${year}\n\nEnsure this day's content is distinct from other days - vary the topics, angles, and formats.`;
+                
+                const text = await callAI([{ role: 'system', content: sys }, { role: 'user', content: user }], { max_tokens: 600 });
+                const json = parseJsonFromModel(text);
+                
+                const postingDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                generatedItems.push({
+                    id: `ai_${year}_${month}_${day}`,
+                    day: day,
+                    month: month,
+                    year: year,
+                    postingDate: postingDate,
+                    dayOfMonth: day,
+                    raw: json.raw || `Content idea for day ${day}`,
+                    refined: json.refined || '',
+                    audience: json.audience || 'client',
+                    platforms: json.platforms || ['ig', 'yt', 'li'],
+                    hook: json.hook || '',
+                    description: json.description || '',
+                    cta: json.cta || '',
+                    hashtags: json.hashtags || '',
+                    status: 'draft'
+                });
+            }
+            
+            // Save to planner_item table (temporary storage)
+            statusEl.textContent = 'Saving to planner...';
+            if (useRemoteDb()) {
+                await dbFetch('?table=planner_item&bulk=1', { method: 'POST', body: JSON.stringify({ items: generatedItems }) });
+            }
+            
+            toast(`Generated ${daysInMonth} content ideas! Check the Planner tab.`);
+            closeAiPlanner();
+        } catch (err) {
+            console.error(err);
+            statusEl.textContent = '';
+            toast(`AI generation failed: ${err.message}`, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sparkles"></i> Generate Full Month';
+        }
+    }
+
+    // ================================================================
     // NAVIGATION
     // ================================================================
     function navPrev() { if (currentView === 'week') weekOffset--; else if (currentView === 'day') dayOffset--; renderCalendar(); }
@@ -1510,6 +1626,11 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
         document.getElementById('saveSettings').addEventListener('click', saveSettings);
         document.getElementById('settingsOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeSettings(); });
 
+        document.getElementById('openAiPlanner').addEventListener('click', openAiPlanner);
+        document.getElementById('closeAiPlanner').addEventListener('click', closeAiPlanner);
+        document.getElementById('generateAiPlanner').addEventListener('click', generateAiPlanner);
+        document.getElementById('aiPlannerOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeAiPlanner(); });
+
         document.getElementById('closeDesign').addEventListener('click', closeDesignModal);
         document.getElementById('designOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeDesignModal(); });
         document.getElementById('aiGenerateDesign').addEventListener('click', aiGenerateDesign);
@@ -1533,7 +1654,7 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
         });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') { closeModal(); closeSettings(); closeDesignModal(); }
+            if (e.key === 'Escape') { closeModal(); closeSettings(); closeAiPlanner(); closeDesignModal(); }
         });
     });
 </script>
