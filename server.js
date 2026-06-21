@@ -86,6 +86,11 @@ app.all('/api/content/post', (req, res) => {
   apiHandler(req, res, join(__dirname, 'api', 'content', 'post.js'));
 });
 
+// Chat API route
+app.all('/api/chat', (req, res) => {
+  apiHandler(req, res, join(__dirname, 'api', 'chat.js'));
+});
+
 // Catch-all route for SPA support
 app.get('*', (req, res) => {
   res.sendFile(join(__dirname, 'index.html'));
