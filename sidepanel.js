@@ -1,4 +1,4 @@
-// sidepanel.js — v6.0 with Brand Config + Distribution + Custom ImgBB Key
+// sidepanel.js — v6.1 (calls go through /api/content/generate proxy)
 
 let isRunning = false;
 let stopRequested = false;
@@ -35,30 +35,26 @@ async function apiCall(endpoint, method = 'POST', data = {}) {
   }
 }
 
-// NIM API call for content generation
+// ── Model calls now go through our own /api/content/generate proxy ──
+// (instead of fetching the Railway NIM endpoint directly from the
+// browser). Calling Railway directly used a non-CORS-safelisted header
+// (Content-Type: application/json), which forces the browser to send a
+// preflight OPTIONS request first. The Railway container only handles
+// POST /api/chat, so that preflight gets rejected and the browser
+// silently blocks the real request — this was the actual root cause of
+// "nothing happens" when generating content. Routing through our own
+// serverless function avoids CORS entirely, since that hop is
+// server-to-server.
 async function callNIM(prompt, options = {}) {
-  const nimEndpoint = options.endpoint || 'https://nimrailway-production.up.railway.app/api/chat';
-
   try {
-    const response = await fetch(nimEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [{ role: 'user', content: prompt }],
-        model: options.model || 'deepseek-ai/deepseek-v4-pro',
-        stream: false,
-        temperature: options.temperature || 0.7,
-        max_tokens: options.max_tokens || 4096
-      })
+    const result = await apiCall('/api/content/generate', 'POST', {
+      prompt,
+      model: options.model || 'deepseek-ai/deepseek-v4-pro',
+      temperature: options.temperature || 0.7,
+      max_tokens: options.max_tokens || 4096
     });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`NIM API error: ${response.status} - ${error}`);
-    }
-
-    const result = await response.json();
-    return result.choices?.[0]?.message?.content || '';
+    if (result?.error) throw new Error(result.error);
+    return result?.content || '';
   } catch (err) {
     console.error('NIM API call failed:', err);
     throw err;
@@ -89,17 +85,17 @@ function getBrandSettings() {
 // ── Get distribution settings ──
 function getDistribution() {
   const useDistribution = document.getElementById('useDistribution').checked;
-  
+
   if (!useDistribution) {
     const singleType = document.getElementById('singleTypeSelect').value;
     return { useDistribution: false, singleType, distribution: null };
   }
-  
+
   const single = parseInt(document.getElementById('singlePercent').value) || 0;
   const carousel = parseInt(document.getElementById('carouselPercent').value) || 0;
   const story = parseInt(document.getElementById('storyPercent').value) || 0;
   const reel = parseInt(document.getElementById('reelPercent').value) || 0;
-  
+
   return {
     useDistribution: true,
     distribution: { single, carousel, story, reel },
@@ -115,7 +111,7 @@ function updatePercentSum() {
   const total = single + carousel + story + reel;
   const sumEl = document.getElementById('percentSum');
   const startBtn = document.getElementById('startBtn');
-  
+
   if (total === 100) {
     sumEl.textContent = `Total: ${total}% ✓`;
     sumEl.className = 'percent-sum valid';
@@ -125,13 +121,12 @@ function updatePercentSum() {
     sumEl.className = 'percent-sum invalid';
     if (startBtn) startBtn.disabled = true;
   }
-  
-  // Update preview text
+
   const preview = document.getElementById('typePreview');
   if (preview) {
     preview.innerHTML = `Single: ${single}% · Carousel: ${carousel}% · Story: ${story}% · Reel: ${reel}%`;
   }
-  
+
   updateDayPreviewGrid();
 }
 
@@ -140,12 +135,11 @@ function updateDayPreviewGrid() {
   const useDist = document.getElementById('useDistribution').checked;
   const grid = document.getElementById('dayPreviewGrid');
   if (!grid) return;
-  
+
   grid.innerHTML = '';
-  
+
   if (!useDist) {
     const singleType = document.getElementById('singleTypeSelect').value;
-    const typeShort = singleType === 'carousel' ? 'CAR' : (singleType === 'story' ? 'STY' : (singleType === 'reel-cover' ? 'REL' : 'SGL'));
     for (let i = 1; i <= Math.min(total, 30); i++) {
       const div = document.createElement('div');
       div.className = `day-preview ${singleType === 'carousel' ? 'carousel' : (singleType === 'story' ? 'story' : (singleType === 'reel-cover' ? 'reel' : 'single'))}`;
@@ -155,18 +149,18 @@ function updateDayPreviewGrid() {
     }
     return;
   }
-  
+
   const single = parseInt(document.getElementById('singlePercent').value) || 0;
   const carousel = parseInt(document.getElementById('carouselPercent').value) || 0;
   const story = parseInt(document.getElementById('storyPercent').value) || 0;
   const reel = parseInt(document.getElementById('reelPercent').value) || 0;
-  
+
   const singleCount = Math.round(total * single / 100);
   const carouselCount = Math.round(total * carousel / 100);
   const storyCount = Math.round(total * story / 100);
   let reelCount = total - singleCount - carouselCount - storyCount;
   if (reelCount < 0) reelCount = 0;
-  
+
   let day = 1;
   for (let i = 0; i < singleCount && day <= total; i++) {
     const div = document.createElement('div');
@@ -197,52 +191,47 @@ function updateDayPreviewGrid() {
 // ── Generate post types based on distribution ──
 function generatePostTypes(total, distribution, singleType = null) {
   const types = [];
-  
+
   if (!distribution) {
-    // Single type only
     for (let i = 1; i <= total; i++) {
       types.push(singleType || 'single');
     }
     return types;
   }
-  
+
   const singleCount = Math.round(total * distribution.single / 100);
   const carouselCount = Math.round(total * distribution.carousel / 100);
   const storyCount = Math.round(total * distribution.story / 100);
   let reelCount = total - singleCount - carouselCount - storyCount;
   if (reelCount < 0) reelCount = 0;
-  
-  // Build array
+
   for (let i = 0; i < singleCount; i++) types.push('single');
   for (let i = 0; i < carouselCount; i++) types.push('carousel');
   for (let i = 0; i < storyCount; i++) types.push('story');
   for (let i = 0; i < reelCount; i++) types.push('reel-cover');
-  
-  // Shuffle to mix types
+
   for (let i = types.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [types[i], types[j]] = [types[j], types[i]];
   }
-  
+
   return types;
 }
 
 // ── Build prompt with brand info ──
 function buildPromptWithBrand(basePrompt, brandSettings, day, type) {
   if (!brandSettings.enabled) return basePrompt;
-  
+
   let brandedPrompt = basePrompt;
-  
-  // Add brand signature instruction
+
   if (brandSettings.name) {
     brandedPrompt += `\n\nBRANDING REQUIREMENT: Include the brand signature "${brandSettings.name}" at the bottom of the design.`;
   }
-  
-  // Add logo instruction
+
   if (brandSettings.includeLogo && brandSettings.logoUrl) {
     brandedPrompt += `\n\nLOGO REQUIREMENT: Include the logo from ${brandSettings.logoUrl} placed in the ${type === 'story' || type === 'reel-cover' ? 'top-right' : 'bottom-right'} corner.`;
   }
-  
+
   return brandedPrompt;
 }
 
@@ -307,11 +296,11 @@ Every post must have: day (exact numbers), type, title, caption (150-300 chars w
 OUTPUT: JSON array only. No markdown. Start with [ end with ].`;
 }
 
-// ── Generate content ideas using NIM API ──
+// ── Generate content ideas using DeepSeek (via our /api/content/generate proxy) ──
 async function generateContentWithNIM(prompt, month, year, postTypes) {
   const BATCH_SIZE = 15;
   const total = postTypes.length;
-  
+
   const buildBatchPrompt = (batchPosts, startDay) => {
     const batchTypes = batchPosts.map((p, i) => `Day ${startDay + i}: type ${p}`);
     return `You are an expert Instagram content strategist AND copywriter.
@@ -326,18 +315,18 @@ Every post must have: day (exact numbers), type, title, caption (150-300 chars w
 
 OUTPUT: JSON array only. No markdown. Start with [ end with ].`;
   };
-  
+
   if (total <= BATCH_SIZE) {
-    log(`→ NIM: generating ${total} posts...`, 'step');
+    log(`→ DeepSeek: generating ${total} posts...`, 'step');
     const raw = await callNIM(buildBatchPrompt(postTypes, 1), { model: 'deepseek-ai/deepseek-v4-pro', max_tokens: 4096 });
     return parseDeepSeekArray(raw);
   }
-  
+
   const allIdeas = [];
   let day = 1;
   let batchNum = 0;
   const totalBatches = Math.ceil(total / BATCH_SIZE);
-  
+
   while (day <= total) {
     if (stopRequested) break;
     const batchEnd = Math.min(day + BATCH_SIZE - 1, total);
@@ -345,71 +334,15 @@ OUTPUT: JSON array only. No markdown. Start with [ end with ].`;
     batchNum++;
     log(`→ Batch ${batchNum}/${totalBatches}: days ${day}–${day + batchPosts.length - 1}...`, 'step');
     setProgress(`Generating batch ${batchNum}/${totalBatches}...`, stats.done, total);
-    
+
     const raw = await callNIM(buildBatchPrompt(batchPosts, day), { model: 'deepseek-ai/deepseek-v4-pro', max_tokens: 4096 });
     const ideas = parseDeepSeekArray(raw);
-    
+
     ideas.forEach((idea, idx) => { idea.day = day + idx; });
     log(`✓ Batch ${batchNum}: ${ideas.length} posts (days ${day}–${day + ideas.length - 1})`, 'success');
     allIdeas.push(...ideas);
     day += batchPosts.length;
     await new Promise(r => setTimeout(r, 500));
-  }
-  return allIdeas;
-}
-
-// ── Generate content ideas ──
-async function generateContent(brief, month, year, postTypes) {
-  const BATCH_SIZE = 15;
-  const total = postTypes.length;
-  
-  const buildPrompt = (batchPosts, startDay) => {
-    const batchTypes = batchPosts.map((p, i) => `Day ${startDay + i}: type ${p}`);
-    return `You are an expert Instagram content strategist AND copywriter.
-CONTENT BRIEF: ${brief}
-MONTH: ${month} ${year}
-
-CRITICAL: Output EXACTLY ${batchPosts.length} post objects. No more, no less.
-
-POST TYPES (must match exactly): ${batchTypes.join(', ')}
-
-Every post must have: day (exact numbers), type, title, caption (150-300 chars with emojis), hashtags (15-20 array no #), image_prompt (detailed visual desc), hook, bullets (single only 3-item array), slides (carousel only: array of first/content/last each with title body image_prompt)
-
-OUTPUT: JSON array only. No markdown. Start with [ end with ].`;
-  };
-  
-  if (total <= BATCH_SIZE) {
-    log(`→ DeepSeek: generating ${total} posts...`, 'step');
-    const raw = await exec('deepseek', 'prompt', { message: buildPrompt(postTypes, 1) });
-    return parseDeepSeekArray(raw);
-  }
-  
-  const allIdeas = [];
-  let day = 1;
-  let batchNum = 0;
-  const totalBatches = Math.ceil(total / BATCH_SIZE);
-  
-  while (day <= total) {
-    if (stopRequested) break;
-    const batchEnd = Math.min(day + BATCH_SIZE - 1, total);
-    const batchPosts = postTypes.slice(day - 1, batchEnd);
-    batchNum++;
-    log(`→ Batch ${batchNum}/${totalBatches}: days ${day}–${day + batchPosts.length - 1}...`, 'step');
-    setProgress(`Generating batch ${batchNum}/${totalBatches}...`, stats.done, total);
-    
-    if (batchNum > 1) {
-      await exec('deepseek', 'newchat', {});
-      await new Promise(r => setTimeout(r, 2000));
-    }
-    
-    const raw = await exec('deepseek', 'prompt', { message: buildPrompt(batchPosts, day) });
-    const ideas = parseDeepSeekArray(raw);
-    
-    ideas.forEach((idea, idx) => { idea.day = day + idx; });
-    log(`✓ Batch ${batchNum}: ${ideas.length} posts (days ${day}–${day + ideas.length - 1})`, 'success');
-    allIdeas.push(...ideas);
-    day += batchPosts.length;
-    await new Promise(r => setTimeout(r, 1000));
   }
   return allIdeas;
 }
@@ -420,7 +353,6 @@ async function saveImgbbKey() {
   if (useCustom) {
     const key = document.getElementById('imgbbKey').value.trim();
     if (key) {
-      // Store in localStorage for web app mode
       localStorage.setItem('userImgbbKey', key);
       log('✓ Custom ImgBB key saved', 'success');
     }
@@ -442,15 +374,14 @@ async function dbLoadPlans() {
 async function startWorkflow() {
   const brief = document.getElementById('promptInput')?.value.trim();
   if (!brief) { alert('Please enter a content brief.'); return; }
-  
+
   totalPosts = parseInt(document.getElementById('postCount')?.value) || 30;
   const month = document.getElementById('monthSelect')?.value || 'June';
   const year = document.getElementById('yearInput')?.value || '2026';
-  
-  // Get distribution
+
   const dist = getDistribution();
   let postTypes;
-  
+
   if (!dist.useDistribution) {
     postTypes = Array(totalPosts).fill(dist.singleType);
     log(`📌 Using single type: ${dist.singleType} for all ${totalPosts} posts`, 'step');
@@ -462,8 +393,7 @@ async function startWorkflow() {
     postTypes = generatePostTypes(totalPosts, dist.distribution);
     log(`📊 Distribution: Single ${dist.distribution.single}%, Carousel ${dist.distribution.carousel}%, Story ${dist.distribution.story}%, Reel ${dist.distribution.reel}%`, 'step');
   }
-  
-  // Get brand settings
+
   const brandSettings = getBrandSettings();
   if (brandSettings.enabled) {
     log(`🏷️ Brand: "${brandSettings.name}" will be added to all images`, 'success');
@@ -471,10 +401,9 @@ async function startWorkflow() {
       log(`🖼️ Logo will be included from: ${brandSettings.logoUrl}`, 'success');
     }
   }
-  
-  // Save ImgBB key
+
   await saveImgbbKey();
-  
+
   isRunning = true;
   stopRequested = false;
   stats = { done: 0, errors: 0 };
@@ -487,21 +416,19 @@ async function startWorkflow() {
 
   document.getElementById('progressCard').style.display = 'block';
   setProgress('Starting...', 0, totalPosts);
-  log('🚀 Content Planner v6.0 — Generating with brand + distribution', 'success');
+  log('🚀 Content Planner — Generating with brand + distribution', 'success');
 
   try {
-    setProgress('Connecting to NIM API...', 0, totalPosts);
-    
-    // Build prompt for NIM
+    setProgress('Connecting to DeepSeek...', 0, totalPosts);
+
     const nimPrompt = buildNIMPrompt(brief, month, year, postTypes);
-    
+
     setProgress('Generating content ideas...', 0, totalPosts);
-    log('→ Asking NIM for all posts...', 'step');
+    log('→ Asking DeepSeek for all posts...', 'step');
 
     const ideas = await generateContentWithNIM(nimPrompt, month, year, postTypes);
-    log(`✓ Got ${ideas.length} ideas from NIM`, 'success');
+    log(`✓ Got ${ideas.length} ideas from DeepSeek`, 'success');
 
-    // Process and save each idea
     for (let i = 0; i < ideas.length && !stopRequested; i++) {
       const idea = ideas[i];
       const day = idea.day || (i + 1);
@@ -535,7 +462,6 @@ async function startWorkflow() {
       log(`✓ Day ${day} (${type}): "${record.title.slice(0, 40)}"`, 'success');
     }
 
-    // Save to DB via API
     if (allPostsData.length > 0) {
       log('→ Saving to database...', 'step');
       setProgress('Saving to database...', stats.done, totalPosts);
@@ -571,7 +497,6 @@ async function openDashboard() {
       alert('No plans found. Generate ideas first.');
       return;
     }
-    // Web app mode - redirect to dashboard page
     window.location.href = 'dashboard.html';
   } catch (err) {
     log('Dashboard error: ' + err.message, 'error');
@@ -579,18 +504,15 @@ async function openDashboard() {
 }
 
 async function openDesigner() {
-  // Web app mode - redirect to designer page
   window.location.href = 'designer.html';
 }
 
 // ── Event listeners ──
 document.addEventListener('DOMContentLoaded', () => {
-  // Brand toggle
   document.getElementById('brandEnabled').addEventListener('change', (e) => {
     document.getElementById('brandFields').style.display = e.target.checked ? 'block' : 'none';
   });
-  
-  // Distribution toggle
+
   document.getElementById('useDistribution').addEventListener('change', (e) => {
     document.getElementById('distributionFields').style.display = e.target.checked ? 'block' : 'none';
     document.getElementById('singleTypeOnly').style.display = e.target.checked ? 'none' : 'block';
@@ -602,8 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updatePercentSum();
     }
   });
-  
-  // Sliders
+
   document.getElementById('singlePercent').addEventListener('input', (e) => {
     document.getElementById('singleVal').textContent = e.target.value + '%';
     updatePercentSum();
@@ -620,23 +541,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('reelVal').textContent = e.target.value + '%';
     updatePercentSum();
   });
-  
-  // Post count change
+
   document.getElementById('postCount').addEventListener('input', () => updateDayPreviewGrid());
   document.getElementById('singleTypeSelect').addEventListener('change', () => updateDayPreviewGrid());
-  
-  // ImgBB key toggle
+
   document.getElementById('useImgbbKey').addEventListener('change', (e) => {
     document.getElementById('imgbbKeyField').style.display = e.target.checked ? 'block' : 'none';
   });
-  
-  // Buttons
+
   document.getElementById('startBtn').addEventListener('click', startWorkflow);
   document.getElementById('stopBtn').addEventListener('click', stopWorkflow);
   document.getElementById('dashBtn').addEventListener('click', openDashboard);
   document.getElementById('openDesignerBtn').addEventListener('click', openDesigner);
-  
-  // Initial state
+
   document.getElementById('brandFields').style.display = 'none';
   document.getElementById('distributionFields').style.display = 'block';
   document.getElementById('singleTypeOnly').style.display = 'none';
