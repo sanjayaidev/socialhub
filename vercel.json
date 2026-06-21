@@ -1,10 +1,15 @@
 {
   "version": 2,
-  "buildCommand": "mkdir -p public && cp *.html *.js *.css *.min.js public/ && mkdir -p public/presets && cp -r presets/* public/presets/ && mkdir -p public/utils && cp -r utils/* public/utils/ && mkdir -p public/api/content && cp api/content/*.js public/api/content/",
+  "buildCommand": "mkdir -p public && cp *.html *.js *.css *.min.js public/ && mkdir -p public/presets && cp -r presets/* public/presets/ && mkdir -p public/utils && cp -r utils/* public/utils/",
   "devCommand": "vercel dev",
   "installCommand": "npm install",
   "framework": null,
   "outputDirectory": "public",
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "@vercel/node@3.0.0"
+    }
+  },
   "routes": [
     {
       "src": "/api/(.*)",

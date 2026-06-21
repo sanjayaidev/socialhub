@@ -1,8 +1,6 @@
-// pages/api/content/post.js
+// api/content/post.js
 //
 // DELETE /api/content/post { postId } -> { ok: true }
-
-export const config = { runtime: 'edge' };
 
 import { Pool } from '@neondatabase/serverless';
 

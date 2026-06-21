@@ -1,4 +1,4 @@
-// pages/api/content/plan.js
+// api/content/plan.js
 //
 // GET  /api/content/plans              -> { [planId]: { id, month, year, post_count } }
 // POST /api/content/plans { month, year, posts, planId? }
@@ -6,8 +6,6 @@
 //         ALL posts under the given planId with the supplied array
 //         (full replace, not a merge — matches how sidepanel.js /
 //         dashboard.js always send the complete current post list).
-
-export const config = { runtime: 'edge' };
 
 import { Pool } from '@neondatabase/serverless';
 

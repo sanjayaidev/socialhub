@@ -1,12 +1,10 @@
-// pages/api/content/plan-details.js
+// api/content/plan-details.js
 //
 // POST /api/content/plan-details { planId } -> Post[]
 //
 // Returns posts shaped exactly how dashboard.js expects: jsonb columns
 // parsed back into arrays/objects, and `id` renamed to `postId` since
 // that's the field name dashboard.js reads (post.postId).
-
-export const config = { runtime: 'edge' };
 
 import { Pool } from '@neondatabase/serverless';
 
