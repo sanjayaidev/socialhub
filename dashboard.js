@@ -1000,7 +1000,11 @@ function buildCard(post) {
         renderCard(post);
       }
       else if (action === 'view-ai-gallery') {
-        chrome.tabs.create({ url: chrome.runtime.getURL('ai-designs.html') });
+        if (typeof chrome !== 'undefined' && chrome.tabs) {
+          chrome.tabs.create({ url: chrome.runtime.getURL('ai-designs.html') });
+        } else {
+          window.location.href = 'ai-designs.html';
+        }
       }
       else if (action === 'opendesigner') {
         const slideIndex = parseInt(e.currentTarget.dataset.slide || '0');
@@ -1075,25 +1079,34 @@ function openSlideInDesigner(day, slideIndex, postId) {
       toast('Cannot open: post not yet saved to DB. Save images first.', 'error');
       return;
     }
-    chrome.tabs.create({ url: chrome.runtime.getURL('designer.html') });
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.create({ url: chrome.runtime.getURL('designer.html') });
+    } else {
+      window.location.href = 'designer.html';
+    }
     toast(`Day ${day} opened in Designer (no spec — use AI chat to recreate from prompt)`, 'success');
     return;
   }
 
   const usePostId = postId || post.postId || '';
 
-  chrome.runtime.sendMessage({
-    action: 'openDesignerForEdit',
-    designSpec: { ...designSpec, slideMetadata: { day, slideIndex, type: post.type, title: post.title } },
-    postId: usePostId,
-    slideIndex
-  }, (res) => {
-    if (chrome.runtime.lastError || !res?.success) {
-      toast('Could not open designer: ' + (res?.error || chrome.runtime.lastError?.message), 'error');
-    } else {
-      toast(`✏️ Day ${day} Slide ${slideIndex + 1} opened in Designer`);
-    }
-  });
+  if (typeof chrome !== 'undefined' && chrome.runtime) {
+    chrome.runtime.sendMessage({
+      action: 'openDesignerForEdit',
+      designSpec: { ...designSpec, slideMetadata: { day, slideIndex, type: post.type, title: post.title } },
+      postId: usePostId,
+      slideIndex
+    }, (res) => {
+      if (chrome.runtime.lastError || !res?.success) {
+        toast('Could not open designer: ' + (res?.error || chrome.runtime.lastError?.message), 'error');
+      } else {
+        toast(`✏️ Day ${day} Slide ${slideIndex + 1} opened in Designer`);
+      }
+    });
+  } else {
+    // Web app mode - navigate to designer with query params
+    window.location.href = `designer.html?postId=${encodeURIComponent(usePostId)}&slideIndex=${slideIndex}&day=${day}`;
+  }
 }
 
 // ── Listen for slide updates saved back from designer ──
