@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Content Planner · 31 Day Calendar</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&family=Bebas+Neue&family=Playfair+Display:wght@600;700&family=Oswald:wght@400;600&family=Montserrat:wght@500;700;800&family=Raleway:wght@500;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -47,11 +47,7 @@
             align-items: center;
             gap: 10px;
         }
-        .header h1 i {
-            font-size: 28px;
-            background: none;
-            -webkit-text-fill-color: #2563eb;
-        }
+        .header h1 i { font-size: 28px; background: none; -webkit-text-fill-color: #2563eb; }
         .controls {
             display: flex;
             flex-wrap: wrap;
@@ -73,63 +69,19 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            text-decoration: none;
         }
-        .btn-primary {
-            background: #2563eb;
-            color: white;
-            border: none;
-            box-shadow: 0 4px 12px rgba(37,99,235,0.25);
-        }
-        .btn-primary:hover {
-            background: #1d4ed8;
-            transform: scale(0.97);
-        }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #cbd5e1;
-        }
-        .btn-outline:hover {
-            background: #f1f5f9;
-        }
-        .btn-danger {
-            background: #dc2626;
-            color: white;
-            border: none;
-        }
-        .btn-sm {
-            padding: 4px 14px;
-            font-size: 12px;
-        }
-        .btn-refresh {
-            background: #8b5cf6;
-            color: white;
-            border: none;
-        }
-        .btn-refresh:hover {
-            background: #7c3aed;
-        }
-        .btn-ai {
-            background: linear-gradient(135deg, #7c3aed, #ec4899);
-            color: white;
-            border: none;
-        }
-        .btn-ai:hover {
-            opacity: 0.92;
-            transform: scale(0.97);
-        }
-        .btn-design {
-            background: #0f172a;
-            color: white;
-            border: none;
-        }
-        .btn-design:hover {
-            background: #1e293b;
-        }
-        .btn:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-            transform: none !important;
-        }
+        .btn-primary { background: #2563eb; color: white; border: none; box-shadow: 0 4px 12px rgba(37,99,235,0.25); }
+        .btn-primary:hover { background: #1d4ed8; transform: scale(0.97); }
+        .btn-outline { background: transparent; border: 1px solid #cbd5e1; }
+        .btn-outline:hover { background: #f1f5f9; }
+        .btn-success { background: #059669; color: white; border: none; }
+        .btn-danger { background: #dc2626; color: white; border: none; }
+        .btn-sm { padding: 4px 14px; font-size: 12px; }
+        .btn-refresh { background: #8b5cf6; color: white; border: none; }
+        .btn-refresh:hover { background: #7c3aed; }
+        .btn-design { background: #0f172a; color: white; border: none; }
+        .btn-design:hover { background: #1e293b; }
 
         .view-toggle {
             display: flex;
@@ -151,37 +103,44 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
 
-        .nav-controls {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
-        .nav-controls .btn {
-            padding: 6px 12px;
+        .range-label {
             font-size: 13px;
-        }
-        .nav-label {
-            font-size: 14px;
             font-weight: 500;
-            color: #475569;
-            min-width: 80px;
-            text-align: center;
+            color: #64748b;
+            white-space: nowrap;
         }
+
+        .date-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 60px;
+            padding: 4px 14px 4px 16px;
+        }
+        .date-control label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+        }
+        .date-control input[type="date"] {
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            color: #1e293b;
+            background: transparent;
+        }
+        .date-control input[type="date"]:focus { outline: none; }
 
         .calendar-grid {
             display: grid;
             gap: 14px;
             margin-top: 12px;
         }
-        .month-view {
-            grid-template-columns: repeat(5, 1fr);
-        }
-        .week-view {
-            grid-template-columns: repeat(7, 1fr);
-        }
-        .day-view {
-            grid-template-columns: 1fr;
-        }
+        .month-view { grid-template-columns: repeat(5, 1fr); }
+        .week-view { grid-template-columns: repeat(7, 1fr); }
+        .day-view { grid-template-columns: 1fr; }
 
         .day-card {
             background: white;
@@ -192,24 +151,22 @@
             transition: all 0.25s ease;
             animation: fadeUp 0.3s ease forwards;
         }
-        .day-card:hover {
-            border-color: #cbd5e1;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.04);
-            transform: translateY(-3px);
-        }
+        .day-card:hover { border-color: #cbd5e1; box-shadow: 0 8px 24px rgba(0,0,0,0.04); transform: translateY(-3px); }
         .day-number {
             font-weight: 600;
             font-size: 18px;
             color: #1e293b;
-            margin-bottom: 8px;
+            margin-bottom: 2px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: baseline;
         }
-        .day-number small {
-            font-weight: 400;
-            font-size: 13px;
-            color: #64748b;
+        .day-number small { font-weight: 400; font-size: 13px; color: #64748b; }
+        .day-date {
+            font-size: 12px;
+            color: #8b5cf6;
+            font-weight: 600;
+            margin-bottom: 10px;
         }
         .topic-title {
             font-weight: 600;
@@ -235,22 +192,10 @@
             letter-spacing: 0.3px;
             margin: 4px 4px 4px 0;
         }
-        .tag-ig {
-            background: #fce4ec;
-            color: #c62828;
-        }
-        .tag-yt {
-            background: #ffebee;
-            color: #b71c1c;
-        }
-        .tag-li {
-            background: #e3f2fd;
-            color: #0d47a1;
-        }
-        .tag-all {
-            background: #e8f5e9;
-            color: #1b5e20;
-        }
+        .tag-ig { background: #fce4ec; color: #c62828; }
+        .tag-yt { background: #ffebee; color: #b71c1c; }
+        .tag-li { background: #e3f2fd; color: #0d47a1; }
+        .tag-all { background: #e8f5e9; color: #1b5e20; }
 
         .audience-tag {
             display: inline-block;
@@ -262,16 +207,8 @@
             letter-spacing: 0.3px;
             margin: 4px 4px 4px 0;
         }
-        .aud-client {
-            background: #fff7ed;
-            color: #c2410c;
-            border: 1px solid #fed7aa;
-        }
-        .aud-student {
-            background: #eef2ff;
-            color: #4338ca;
-            border: 1px solid #c7d2fe;
-        }
+        .aud-client { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+        .aud-student { background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
 
         .hook-text {
             font-size: 13px;
@@ -303,22 +240,17 @@
             color: #2563eb;
             font-weight: 500;
         }
-
         .design-thumb {
             width: 100%;
             border-radius: 14px;
             margin: 8px 0;
             border: 1px solid #eef2f6;
-            cursor: pointer;
             display: block;
         }
 
         .modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.3);
             backdrop-filter: blur(4px);
             display: none;
@@ -327,9 +259,7 @@
             z-index: 1000;
             padding: 20px;
         }
-        .modal-overlay.show {
-            display: flex;
-        }
+        .modal-overlay.show { display: flex; }
         .modal {
             background: white;
             border-radius: 32px;
@@ -341,19 +271,8 @@
             animation: fadeUp 0.25s ease;
             box-shadow: 0 30px 80px rgba(0,0,0,0.15);
         }
-        .modal.wide {
-            max-width: 1080px;
-        }
-        .modal h2 {
-            margin-bottom: 20px;
-            font-size: 22px;
-        }
-        .modal label {
-            font-weight: 500;
-            font-size: 14px;
-            display: block;
-            margin: 12px 0 4px;
-        }
+        .modal h2 { margin-bottom: 20px; font-size: 22px; }
+        .modal label { font-weight: 500; font-size: 14px; display: block; margin: 12px 0 4px; }
         .modal input, .modal textarea, .modal select {
             width: 100%;
             padding: 12px 16px;
@@ -363,116 +282,13 @@
             font-size: 14px;
             transition: 0.2s;
         }
-        .modal input:focus, .modal textarea:focus, .modal select:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
-        }
-        .modal textarea {
-            min-height: 60px;
-            resize: vertical;
-        }
-        .modal-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            margin-top: 24px;
-            flex-wrap: wrap;
-        }
+        .modal input:focus, .modal textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .modal textarea { min-height: 60px; resize: vertical; }
+        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
 
-        .flex {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .gap-1 {
-            gap: 4px;
-        }
-        .text-muted {
-            color: #64748b;
-            font-size: 13px;
-        }
-        .hint {
-            font-size: 12px;
-            color: #94a3b8;
-            margin-top: 4px;
-        }
-
-        /* Design studio layout */
-        .design-studio {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 20px;
-        }
-        @media (max-width: 760px) {
-            .design-studio {
-                grid-template-columns: 1fr;
-            }
-        }
-        .design-canvas-wrap {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-        .design-canvas-wrap canvas {
-            width: 100%;
-            max-width: 380px;
-            border-radius: 14px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-            background: #111;
-        }
-        .design-fields {
-            max-height: 60vh;
-            overflow-y: auto;
-            padding-right: 6px;
-        }
-        .design-fields h4 {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #64748b;
-            margin: 16px 0 6px;
-        }
-        .design-fields h4:first-child {
-            margin-top: 0;
-        }
-        .field-row {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 6px;
-        }
-        .field-row input[type="color"] {
-            width: 40px;
-            padding: 2px;
-            height: 36px;
-            flex: 0 0 40px;
-        }
-        .text-block-card {
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        .text-block-card .field-row input, .text-block-card .field-row select {
-            font-size: 12px;
-            padding: 8px 10px;
-        }
-        .remove-block {
-            background: #fee2e2;
-            color: #b91c1c;
-            border: none;
-            border-radius: 10px;
-            padding: 4px 8px;
-            font-size: 11px;
-            cursor: pointer;
-        }
-        .ai-status {
-            font-size: 12px;
-            color: #7c3aed;
-            min-height: 16px;
-        }
+        .flex { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .gap-1 { gap: 4px; }
+        .text-muted { color: #64748b; font-size: 13px; }
 
         .toast {
             position: fixed;
@@ -489,13 +305,8 @@
             z-index: 2000;
             pointer-events: none;
         }
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-        .toast.error {
-            background: #b91c1c;
-        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.error { background: #b91c1c; }
 
         @keyframes fadeUp {
             0% { opacity: 0; transform: translateY(16px); }
@@ -525,19 +336,13 @@
                 <button class="btn" data-view="week"><i class="fas fa-calendar-day"></i> Week</button>
                 <button class="btn" data-view="day"><i class="fas fa-list-ul"></i> Day</button>
             </div>
-            <div class="nav-controls">
-                <button class="btn btn-outline" id="monthPrev" title="Previous month"><i class="fas fa-chevron-left"></i></button>
-                <span class="nav-label" id="navLabel">Month Year</span>
-                <button class="btn btn-outline" id="monthNext" title="Next month"><i class="fas fa-chevron-right"></i></button>
-            </div>
-            <div class="nav-controls" style="margin-left:8px;">
-                <button class="btn btn-outline" id="navPrev"><i class="fas fa-chevron-left"></i></button>
-                <button class="btn btn-outline" id="navNext"><i class="fas fa-chevron-right"></i></button>
+            <span class="range-label" id="rangeLabel"></span>
+            <div class="date-control">
+                <label for="startDateInput">Day 1 =</label>
+                <input type="date" id="startDateInput">
             </div>
             <button class="btn btn-refresh" id="refreshData" title="Reload from storage"><i class="fas fa-sync-alt"></i></button>
-            <button class="btn btn-outline" id="openSettings" title="API settings"><i class="fas fa-gear"></i></button>
-            <a href="planner.html" class="btn btn-outline" title="Go to Planner"><i class="fas fa-calendar-check"></i> Planner</a>
-            <button class="btn btn-ai" id="openAiPlanner"><i class="fas fa-wand-magic-sparkles"></i> AI Generate</button>
+            <a class="btn btn-design" href="planner.html"><i class="fas fa-wand-magic-sparkles"></i> Planner</a>
             <button class="btn btn-primary" id="openAddModal"><i class="fas fa-plus"></i> Add</button>
             <button class="btn btn-outline" id="exportData"><i class="fas fa-download"></i> Export</button>
             <button class="btn btn-outline" id="importData"><i class="fas fa-upload"></i> Import</button>
@@ -548,7 +353,7 @@
     <div class="calendar-grid month-view" id="calendarGrid"></div>
 </div>
 
-<!-- ADD/EDIT CONTENT MODAL -->
+<!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
         <h2 id="modalTitle">Add Content</h2>
@@ -578,134 +383,15 @@
     </div>
 </div>
 
-<!-- SETTINGS MODAL -->
-<div class="modal-overlay" id="settingsOverlay">
-    <div class="modal">
-        <h2><i class="fas fa-gear"></i> Settings</h2>
-        <label>AI API Endpoint</label>
-        <input type="text" id="settingsBaseUrl" placeholder="https://smagents.vercel.app/api/chat" />
-        <div class="hint">This must be a POST endpoint accepting <code>{model, messages}</code> and returning an OpenAI-style chat completion. CORS must be open on the endpoint (yours already is).</div>
-        <label>Model</label>
-        <select id="settingsModel">
-            <option value="deepseek-ai/deepseek-v4-flash">deepseek-ai/deepseek-v4-flash (fast)</option>
-            <option value="deepseek-ai/deepseek-v4-pro">deepseek-ai/deepseek-v4-pro (higher quality)</option>
-            <option value="meta/llama-3.3-70b-instruct">meta/llama-3.3-70b-instruct</option>
-            <option value="moonshotai/kimi-k2.6">moonshotai/kimi-k2.6</option>
-            <option value="mistralai/mistral-large-3-675b-instruct-2512">mistralai/mistral-large-3-675b-instruct-2512</option>
-        </select>
-
-        <label style="margin-top:20px;">Database Endpoint <span class="text-muted">(optional)</span></label>
-        <input type="text" id="settingsDbUrl" placeholder="https://smagents.vercel.app/api/content" />
-        <div class="hint">Leave blank to keep using this chat's built-in storage. Set this to your deployed Appwrite-backed endpoint to use a real, shareable database instead.</div>
-        <label>Database Secret <span class="text-muted">(optional)</span></label>
-        <input type="text" id="settingsDbSecret" placeholder="shared secret, only if your endpoint requires one" />
-
-        <div class="modal-actions">
-            <button class="btn btn-outline" id="closeSettings">Cancel</button>
-            <button class="btn btn-primary" id="saveSettings">Save</button>
-        </div>
-    </div>
-</div>
-
-<!-- AI PLANNER GENERATOR MODAL -->
-<div class="modal-overlay" id="aiPlannerOverlay">
-    <div class="modal">
-        <h2><i class="fas fa-wand-magic-sparkles"></i> AI Content Planner Generator</h2>
-        <label>Month</label>
-        <select id="aiPlannerMonth">
-            <option value="1">January</option>
-            <option value="2">February</option>
-            <option value="3">March</option>
-            <option value="4">April</option>
-            <option value="5">May</option>
-            <option value="6">June</option>
-            <option value="7">July</option>
-            <option value="8">August</option>
-            <option value="9">September</option>
-            <option value="10">October</option>
-            <option value="11">November</option>
-            <option value="12">December</option>
-        </select>
-        <label>Year</label>
-        <input type="number" id="aiPlannerYear" min="2024" max="2030" value="2026" />
-        <label>Prompt / Topic Theme</label>
-        <textarea id="aiPlannerPrompt" placeholder="e.g. Generate content ideas for a full-stack developer teaching coding, sharing client projects, and promoting WhatsApp automation tools..." rows="4"></textarea>
-        <div class="hint">Describe your content theme, target audience, and goals. AI will generate unique ideas for each day of the selected month.</div>
-        <div class="flex" style="margin-top:12px;">
-            <span class="ai-status" id="aiPlannerStatus"></span>
-        </div>
-        <div class="modal-actions">
-            <button class="btn btn-outline" id="closeAiPlanner">Cancel</button>
-            <button class="btn btn-ai" id="generateAiPlanner"><i class="fas fa-sparkles"></i> Generate Full Month</button>
-        </div>
-    </div>
-</div>
-
-<!-- DESIGN STUDIO MODAL -->
-<div class="modal-overlay" id="designOverlay">
-    <div class="modal wide">
-        <h2><i class="fas fa-wand-magic-sparkles"></i> Design Studio <span id="designDayLabel" class="text-muted" style="font-size:14px;font-weight:400;"></span></h2>
-        <div class="flex" style="margin-bottom:10px;">
-            <button class="btn btn-ai btn-sm" id="aiGenerateDesign"><i class="fas fa-sparkles"></i> Generate with AI</button>
-            <span class="ai-status" id="designAiStatus"></span>
-        </div>
-        <div class="design-studio">
-            <div class="design-fields" id="designFields"></div>
-            <div class="design-canvas-wrap">
-                <canvas id="designCanvas" width="1080" height="1350"></canvas>
-                <div class="flex">
-                    <select id="canvasPreset" style="width:auto;">
-                        <option value="1080x1350">Portrait 4:5</option>
-                        <option value="1080x1080">Square 1:1</option>
-                        <option value="1080x1920">Story 9:16</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-        <div class="modal-actions">
-            <button class="btn btn-outline" id="closeDesign">Close</button>
-            <button class="btn btn-outline" id="addTextBlockBtn"><i class="fas fa-plus"></i> Text block</button>
-            <button class="btn btn-outline" id="exportDesignPng"><i class="fas fa-download"></i> Export PNG</button>
-            <button class="btn btn-design" id="saveDesignToCard"><i class="fas fa-save"></i> Save to card</button>
-        </div>
-    </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
     // ================================================================
-    // CONSTANTS
+    // DATA LAYER — persistent artifact storage (shared with planner.html)
     // ================================================================
-    const FONTS = ['Inter','DM Sans','Space Mono','Bebas Neue','Playfair Display','Oswald','Montserrat','Raleway','Syne'];
-    const DEFAULT_API = { baseUrl: 'https://smagents.vercel.app/api/chat', model: 'deepseek-ai/deepseek-v4-flash' };
-    // Leave baseUrl blank to keep using Claude's built-in artifact storage.
-    // Point it at your deployed pages/api/content.js endpoint to switch to the Appwrite DB.
-    const DEFAULT_DB = { baseUrl: '', secret: '' };
-
     let contentData = [];
-    let apiConfig = { ...DEFAULT_API };
-    let dbConfig = { ...DEFAULT_DB };
-    let designImages = {}; // { itemId: dataUrl }
-
-    function useRemoteDb() { return !!dbConfig.baseUrl; }
-
-    async function dbFetch(query, options = {}) {
-        const url = dbConfig.baseUrl.replace(/\/$/, '') + query;
-        const headers = { 'Content-Type': 'application/json' };
-        if (dbConfig.secret) headers['x-api-secret'] = dbConfig.secret;
-        const res = await fetch(url, { ...options, headers });
-        if (!res.ok) {
-            let detail = '';
-            try { detail = JSON.stringify(await res.json()); } catch (e) {}
-            throw new Error(`DB error ${res.status} ${detail}`.slice(0, 200));
-        }
-        return res.json();
-    }
-
-    // Local artifact storage keeps base64 design images out of the main blob
-    // (single keys are capped at 5MB) — the remote DB doesn't need this split.
-    function stripImages(arr) { return arr.map(({ designImage, ...rest }) => rest); }
+    let calendarConfig = { startDate: null };
+    let designImages = {}; // { itemId: dataUrl } — read-only here, edited in planner.html
 
     function toast(msg, type = 'success') {
         const el = document.getElementById('toast');
@@ -714,9 +400,6 @@
         setTimeout(() => el.className = 'toast', 3200);
     }
 
-    // ================================================================
-    // STORAGE (persistent artifact storage — no localStorage)
-    // ================================================================
     async function storageGet(key, fallback = null) {
         try {
             const res = await window.storage.get(key, false);
@@ -726,44 +409,93 @@
     async function storageSet(key, value) {
         try { await window.storage.set(key, JSON.stringify(value), false); } catch (e) { console.error('storage set failed', e); }
     }
-    async function storageDelete(key) {
-        try { await window.storage.delete(key, false); } catch (e) {}
+
+    // ================================================================
+    // DATE HELPERS — "Day N" maps onto a real calendar date
+    // ================================================================
+    function pad2(n) { return String(n).padStart(2, '0'); }
+    function isoDate(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+    function parseISO(str) {
+        const [y, m, d] = str.split('-').map(Number);
+        return new Date(y, m - 1, d);
+    }
+    function defaultStartDate() {
+        const t = new Date();
+        return isoDate(new Date(t.getFullYear(), t.getMonth(), 1)); // 1st of current month
+    }
+    function dateForDay(dayNum) {
+        const start = parseISO(calendarConfig.startDate || defaultStartDate());
+        return new Date(start.getFullYear(), start.getMonth(), start.getDate() + (dayNum - 1));
+    }
+    function fmtShort(d) { return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); }
+    function fmtFull(d) { return d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); }
+    function daysBetween(a, b) {
+        const A = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+        const B = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+        return Math.round((B - A) / 86400000);
+    }
+    function currentDayIndex() {
+        const start = parseISO(calendarConfig.startDate || defaultStartDate());
+        const idx = daysBetween(start, new Date()) + 1;
+        return Math.max(1, Math.min(31, idx));
     }
 
     // ================================================================
-    // NO DEMO DATA - Data loads from planner table only
+    // DEMO DATA
     // ================================================================
+    function addDemoData() {
+        return [
+            { id: 'd1', day: 1, audience: 'client', raw: "WhatsApp tools cost too much every month", refined: "Why Pay ₹3,000+/Month for WATI or AiSensy When You Can Own It for ₹2,500 Once?", platforms: ["ig","yt","li"], hook: "Coaches and clinics are renting WhatsApp automation for ₹3,000+/month. I sell the same thing for ₹2,500 — once.", description: "GOwa is a self-hosted WhatsApp server: bulk messages, auto-replies, CRM hooks. No subscription, no lock-in. You own the server.", cta: "DM 'WHATSAPP' or message me directly for a free quote.", hashtags: "#whatsappautomation #smallbusiness #saas" },
+            { id: 'd2', day: 2, audience: 'student', raw: "People want to learn how I build all this", refined: "I'm Opening My Full-Stack Build System to Students — Here's What's Inside", platforms: ["yt","li"], hook: "Everything I sell to clients, I now teach. Android, Web, Windows, Infra — one unified system.", description: "Build with Sanjay isn't pre-recorded fluff. It's the exact stack I use for client work: shared auth, shared databases, one AI backend across every app you build.", cta: "Full curriculum + pricing in bio. Apply for the ₹25,000 bundle or pick a single module.", hashtags: "#learntobuild #fullstack #buildwithsanjay" },
+            { id: 'd3', day: 3, audience: 'client', raw: "Agencies overquote simple apps", refined: "An Agency Quoted a Client ₹80,000 and 3 Months. I Did It in 5 Days.", platforms: ["ig","yt","li"], hook: "₹80,000. Three months. That's what an agency quoted for a simple business app. I build the same thing in 3–7 days.", description: "React, Flutter, Supabase — one codebase for web, Android and iOS. Fixed price from ₹5,000. You only pay after you confirm it works.", cta: "Tell me your problem on WhatsApp — free consultation, no commitment.", hashtags: "#webdev #appdevelopment #startupindia" },
+            { id: 'd4', day: 4, audience: 'student', raw: "Show the infra module value", refined: "The ₹15,000 Module Most Students Skip — And Why It's the One That Actually Matters", platforms: ["yt","li"], hook: "Everyone wants to learn the flashy app. Almost nobody wants to learn deployment, auth, and databases. That's the mistake.", description: "The Infrastructure module covers deploy, DB, auth, APIs, Docker, Supabase, Cloudflare — the unglamorous skills that make every other app actually ship.", cta: "Module breakdown and pricing at the course pricing page — link in bio.", hashtags: "#webdevelopment #supabase #learntocode" },
+            { id: 'd5', day: 5, audience: 'client', raw: "Proof: GOwa saved a client real money", refined: "This Client Was Paying ₹4,000/Month Just to Send WhatsApp Messages. Not Anymore.", platforms: ["ig","yt","li"], hook: "₹48,000+ saved a year. That's what switching from WATI/Interakt to a self-hosted server actually looks like.", description: "GOwa is live, not a mockup — a self-hosted WhatsApp API server I deploy for businesses who are tired of renting basic messaging tools.", cta: "Want the same setup? Message me — fixed price, pay after it works.", hashtags: "#whatsappapi #costsaving #smallbusinessindia" },
+            { id: 'd6', day: 6, audience: 'student', raw: "Android module — what you actually build", refined: "In the Android Module, You Don't Just Learn Kotlin — You Ship 3 Real Apps", platforms: ["yt","li"], hook: "₹8,000 and you walk away with PocketAI, CGLive, and StreamStudio — real, working apps, not toy projects.", description: "This is the same engineering I use for paying clients, broken into a module you can finish on your own timeline.", cta: "See the full module list and the bundle discount — course pricing in bio.", hashtags: "#androiddev #buildwithsanjay #appdev" },
+            { id: 'd7', day: 7, audience: 'client', raw: "Why my clients trust a solo dev over an agency", refined: "18+ Brands Trust One Developer Over an Agency. Here's Why That Works.", platforms: ["ig","li"], hook: "No account managers. No handoffs. You talk to the person actually building your product — every time.", description: "7+ years building for businesses across gaming, tech, food, real estate, fashion and education. Fixed price, 3 free revisions, you pay only after approval.", cta: "Free consultation — tell me your problem on WhatsApp.", hashtags: "#solodev #buildinpublic #indianbusiness" },
+            { id: 'd8', day: 8, audience: 'student', raw: "Web Apps module breakdown", refined: "₹7,000 Gets You n8n, an AI Chatbot, an HR Tool, and a Calendly Clone — Here's the Module", platforms: ["yt","li"], hook: "Four real products in one module. This is what 'learn by building' actually means.", description: "The Web Apps module walks you through n8n automation, AI chat interfaces, HR dashboards, and scheduling tools — the exact builds I sell to clients.", cta: "Full module breakdown on the pricing page — link in bio.", hashtags: "#n8n #automation #learntocode" },
+            { id: 'd9', day: 9, audience: 'client', raw: "AI integration is confusing for business owners", refined: "\"My Competitors Use AI. I Don't Know Where to Start.\" — Here's the Fix.", platforms: ["yt","li"], hook: "You don't need to understand AI. You need someone to wire it into what you already have.", description: "Groq, Gemini, OpenAI, ElevenLabs — I connect real AI to your product: chatbots that answer real questions, document Q&A, voice synthesis. Starts at ₹1,500.", cta: "Message 'AI' on WhatsApp for a free scoping call.", hashtags: "#aiintegration #chatbot #businessautomation" },
+            { id: 'd10', day: 10, audience: 'student', raw: "Windows module — desktop AI agent", refined: "₹5,000 Module: Build a Desktop AI Agent + Browser Extension From Scratch", platforms: ["yt","li"], hook: "Most courses skip desktop apps entirely. I built my business on them. Here's the module.", description: "The Windows module teaches the exact desktop-agent architecture I use for client tools — lightweight, fast, and sellable.", cta: "Course pricing and module list — link in bio.", hashtags: "#desktopapp #buildwithsanjay #windevs" },
+            { id: 'd11', day: 11, audience: 'client', raw: "Social media management pitch", refined: "\"We Post Randomly and Get Zero Traction.\" Sound Familiar?", platforms: ["ig","yt","li"], hook: "Posting isn't a strategy. A content calendar, designed posts, and monthly reports is.", description: "Strategy-first social media management from ₹4,999/month — Instagram, Facebook, LinkedIn, GMB. Done for you, not post-and-pray.", cta: "DM 'SOCIAL' for a free audit of your current page.", hashtags: "#socialmediamanagement #contentstrategy #digitalmarketing" },
+            { id: 'd12', day: 12, audience: 'student', raw: "Why the bundle beats single modules", refined: "Why I Tell Students to Buy the ₹25,000 Bundle, Not Single Modules", platforms: ["yt","li"], hook: "Five separate modules teach you five separate apps. The bundle teaches you one system where they all talk to each other.", description: "One auth system, one shared database, one AI backend across Android, Web, Desktop, and Extension. That's the actual unlock — not the code, the architecture.", cta: "Apply for the bundle — link in bio, course pricing page.", hashtags: "#fullstackdeveloper #systemdesign #buildwithsanjay" },
+            { id: 'd13', day: 13, audience: 'client', raw: "Chrome extension delivered in 24h for a client", refined: "A Client Needed to See Where Their Remote Team's Time Was Going. I Shipped This in 24 Hours.", platforms: ["yt","li"], hook: "No spyware. No invasive tracking software. Just a lightweight Chrome extension that respects the team and answers the question.", description: "Built with vanilla JS, zero dependencies, data never leaves the browser. Delivered same-day. Chrome extensions start at ₹1,500.", cta: "Need something similar? Message me your use case.", hashtags: "#chromeextension #remotework #automation" },
+            { id: 'd14', day: 14, audience: 'student', raw: "Websites module value", refined: "₹6,000 Module: Portfolio, Ecom, Flipbook, Wedding Site, AI Chatbot — All in One Track", platforms: ["yt","li"], hook: "Five different website types. One module. Real client-grade builds, not templates.", description: "The Websites module is the fastest way to start taking freelance website projects — you finish with five deployable site types in your portfolio.", cta: "See the full curriculum on the pricing page — link in bio.", hashtags: "#webdesign #freelancing #learntocode" },
+            { id: 'd15', day: 15, audience: 'client', raw: "Pay after it works — trust pitch", refined: "I Don't Get Paid Until You Confirm It Works. Here's Why That Matters.", platforms: ["ig","li"], hook: "Freelancer disappeared mid-project? That's not how I work. Fixed price upfront. You approve, then you pay.", description: "No hourly billing. No invoice surprises. 3 free revisions included. Zero upfront, zero risk on your side — every single project.", cta: "Tell me your problem — free consultation, no commitment.", hashtags: "#trust #freelancerindia #fixedprice" },
+            { id: 'd16', day: 16, audience: 'student', raw: "Real student testimonial", refined: "\"It Was a Wonderful Month With Lots of Learning\" — A Student's Honest Review", platforms: ["ig","li"], hook: "I'm not posting this to brag. I'm posting it because this is what 1-on-1 training is supposed to feel like.", description: "Personalised video editing and dev training — Mobile or PC, taught with depth and patience, not generic pre-recorded lessons.", cta: "Enquire about 1-on-1 training — link in bio.", hashtags: "#studentreview #mentorship #learnonline" },
+            { id: 'd17', day: 17, audience: 'client', raw: "Income tax calculator case study", refined: "People Were Paying CAs Just to Estimate Their Tax. I Built a Free Calculator With AI Q&A Instead.", platforms: ["yt","li"], hook: "FY 2024-25, old regime, new regime, every income head — and an AI that answers your specific question. Free.", description: "This is a live tool, not a portfolio mockup. It shows exactly the kind of fintech + AI work I take on for clients.", cta: "Need a custom calculator or fintech tool for your business? Message me.", hashtags: "#fintech #aiQA #indiantax" },
+            { id: 'd18', day: 18, audience: 'student', raw: "Who the course is actually for", refined: "You Don't Need to Be 'Technical' to Start — Here's Who This Course Is Really For", platforms: ["ig","yt","li"], hook: "If you can describe a problem in plain language, you can finish this course. That's the only requirement.", description: "Every module is built the same way I build for clients: start from the problem, not the jargon. Beginners included.", cta: "Pick your starting module — pricing page link in bio.", hashtags: "#beginnerfriendly #codingforbeginners #buildwithsanjay" },
+            { id: 'd19', day: 19, audience: 'client', raw: "Business automation pain point", refined: "If Someone on Your Team Copy-Pastes Data Every Day, That's a ₹1,500 Problem to Fix", platforms: ["yt","li"], hook: "The same manual task, every single day — that's automatable, and it's usually cheaper to fix than to keep doing.", description: "Scripts, n8n workflows, API integrations — I replace repetitive ops work with scheduled jobs that connect to your existing stack.", cta: "Tell me the repetitive task. I'll tell you if it's automatable and what it costs.", hashtags: "#businessautomation #n8n #operations" },
+            { id: 'd20', day: 20, audience: 'student', raw: "GMB rank tracker as a teaching example", refined: "I Taught Myself to Track Google Maps Rankings — Then Turned It Into a Product Worth Selling", platforms: ["yt","li"], hook: "Every tool I teach in this course exists because I needed it first, then sold it. That's the real lesson.", description: "The GMB Rank Tracker module shows the exact build process — from personal tool to one-time-purchase product clients pay for.", cta: "Learn to build sellable tools, not just toy projects — course link in bio.", hashtags: "#buildinpublic #seo #indiehacker" },
+            { id: 'd21', day: 21, audience: 'client', raw: "Backend & API service pitch", refined: "\"My App Has No Real Backend — It Breaks Under Load.\" I Fix That From ₹2,000.", platforms: ["yt","li"], hook: "A backend that wasn't built to scale will break exactly when your app starts succeeding. Fix it before that happens.", description: "Supabase auth, database, realtime, storage, plus custom servers and Razorpay/PayPal integration — scalable from day one.", cta: "Send me your current setup — I'll tell you what's at risk.", hashtags: "#backend #supabase #appfounders" },
+            { id: 'd22', day: 22, audience: 'student', raw: "Cross-app architecture explained simply", refined: "What 'Cross-App Communication' Actually Means (Explained for Beginners)", platforms: ["yt","li"], hook: "Your Android app, your website, and your desktop tool should be able to talk to each other. Most courses never teach this.", description: "One authentication system, shared databases that sync across platforms, a centralized AI backend — that's the architecture behind the full bundle.", cta: "This is exactly what the ₹25,000 bundle teaches — link in bio.", hashtags: "#systemarchitecture #fullstack #buildwithsanjay" },
+            { id: 'd23', day: 23, audience: 'client', raw: "Video and design services pitch", refined: "\"Our Videos Look Cheap and Nobody Watches Them.\" Let's Fix That.", platforms: ["ig","yt","li"], hook: "Premiere Pro edits, After Effects motion, Blender 3D, brand identity — built for YouTube, Reels, and ads that actually hold attention.", description: "7+ years editing, 2+ years running digital marketing for real brands. Custom pricing based on scope.", cta: "Send me a video you're unhappy with — I'll tell you what's fixable.", hashtags: "#videoediting #motiongraphics #branding" },
+            { id: 'd24', day: 24, audience: 'student', raw: "1-on-1 training pitch, separate from the dev course", refined: "Want to Edit Your Own Content Instead of Paying Someone Every Month? Learn It Properly.", platforms: ["ig","li"], hook: "CapCut, Inshot, VN on mobile. Premiere Pro and After Effects on PC. Taught at your pace, with real projects.", description: "Not pre-recorded generic lessons. One-on-one video editing training that builds an actual portfolio as you go.", cta: "Enquire about training — link in bio.", hashtags: "#videoediting #1on1training #learnonline" },
+            { id: 'd25', day: 25, audience: 'client', raw: "Site Sheet — editable site without code", refined: "A Website Your Client Can Edit Like a Spreadsheet — No Code, No Developer Needed After Launch", platforms: ["ig","yt","li"], hook: "Most clients don't want to learn a CMS. They want something that feels like Google Sheets. So I built that.", description: "SiteSheet is a one-time-purchase website with a spreadsheet-like editing UI — content updates without touching code.", cta: "Want a site your team can actually maintain? Message me.", hashtags: "#nocode #webdesign #smallbusinesswebsite" },
+            { id: 'd26', day: 26, audience: 'student', raw: "Compare module price vs agency price", refined: "The Infra Module Costs ₹15,000. An Agency Would Charge That Per Month.", platforms: ["yt","li"], hook: "Learn deployment, databases, auth, and Docker once — or keep paying someone else to handle it forever.", description: "This module exists because clients kept asking me to 'just teach them' instead of hiring me every time something needed deploying.", cta: "Course pricing breakdown — link in bio.", hashtags: "#devops #docker #learntocode" },
+            { id: 'd27', day: 27, audience: 'client', raw: "Free tools as a trust-building lead magnet", refined: "I Give Away 4 Tools for Free — No Account, No Catch. Here's Why.", platforms: ["ig","yt"], hook: "Godot Visual Coder, an AI Coder app, Blender on mobile, a livestreaming app — all free. Try before you ever pay me for anything.", description: "If the free tools are useful, the paid work speaks for itself. That's the whole strategy.", cta: "Try a free tool first — link in bio. Then tell me what you actually need built.", hashtags: "#freetools #buildinpublic #godotdev" },
+            { id: 'd28', day: 28, audience: 'student', raw: "Show real client logos as proof for course credibility", refined: "18+ Real Businesses Use What I Teach in This Course. Not Theory — Production Code.", platforms: ["li"], hook: "Every module in this course is something I've already shipped to a paying client. You're not learning hypotheticals.", description: "From dental clinics to fintech to fashion brands — the same patterns taught in the course are running live for real businesses today.", cta: "See the module list and pick where to start — link in bio.", hashtags: "#realworldskills #buildwithsanjay #portfolio" },
+            { id: 'd29', day: 29, audience: 'client', raw: "Process transparency — how a project actually goes", refined: "From \"I Have a Problem\" to Live: My Exact 4-Step Process", platforms: ["ig","li"], hook: "Tell me the problem. Get one fixed number. I build with daily WhatsApp updates. You approve, then you pay.", description: "No hourly billing, no radio silence, no surprise invoices. This is the same process for every client, every time.", cta: "Start with step one — tell me your problem on WhatsApp.", hashtags: "#transparentpricing #freelancerindia #process" },
+            { id: 'd30', day: 30, audience: 'student', raw: "Direct comparison: course vs hiring me", refined: "Hire Me for ₹80,000+, or Learn to Build It Yourself for ₹25,000 — Here's an Honest Comparison", platforms: ["yt","li"], hook: "I'll say this even though it costs me client work: if you're building long-term, learning might be the better investment.", description: "Hiring gets you one product. The course gets you the skill to build the next ten yourself — that's the actual trade-off.", cta: "Decide which one fits you — both links in bio.", hashtags: "#learnvshire #buildwithsanjay #honestmarketing" },
+            { id: 'd31', day: 31, audience: 'client', raw: "Month-end recap + dual CTA", refined: "31 Days, 9+ Tools, 18+ Brands — Here's Everything I Can Build or Teach You", platforms: ["ig","yt","li"], hook: "If you scrolled through this month and saw something that matched your problem, this is your reminder to actually message me.", description: "Business owner? I'll quote you a fixed price. Want to learn to build it yourself? I'll point you to the right module.", cta: "Business owners: WhatsApp me. Future builders: check the course pricing page. Both links in bio.", hashtags: "#recap #buildwithsanjay #cta" }
+        ];
+    }
 
-    async function loadData(selectedMonth = null, selectedYear = null) {
-        const dbCfg = await storageGet('dbConfig', null);
-        dbConfig = dbCfg && typeof dbCfg.baseUrl === 'string' ? dbCfg : { ...DEFAULT_DB };
-
-        if (useRemoteDb()) {
-            try {
-                let query = '?table=planner';
-                if (selectedMonth !== null && selectedYear !== null) {
-                    query += `&month=${selectedMonth}&year=${selectedYear}`;
-                }
-                const { items } = await dbFetch(query, { method: 'GET' });
-                contentData = items || [];
-                designImages = {};
-                contentData.forEach(item => { if (item.designImage) designImages[item.id] = item.designImage; });
-            } catch (err) {
-                console.error('DB load failed, falling back to local storage', err);
-                toast(`DB connection failed (${err.message}) — using local storage`, 'error');
-                await loadLocalData();
-            }
+    async function loadData() {
+        const stored = await storageGet('contentData', null);
+        if (stored && Array.isArray(stored) && stored.length) {
+            contentData = stored;
         } else {
-            await loadLocalData();
+            contentData = addDemoData();
+            await storageSet('contentData', contentData);
         }
 
-        const cfg = await storageGet('apiConfig', null);
-        apiConfig = cfg && cfg.baseUrl ? cfg : { ...DEFAULT_API };
-    }
+        const cfg = await storageGet('calendarConfig', null);
+        if (cfg && cfg.startDate) {
+            calendarConfig = cfg;
+        } else {
+            calendarConfig = { startDate: defaultStartDate() };
+            await storageSet('calendarConfig', calendarConfig);
+        }
 
-    async function loadLocalData() {
-        const stored = await storageGet('contentData', null);
-        contentData = (stored && Array.isArray(stored)) ? stored : [];
         designImages = {};
         try {
             const list = await window.storage.list('design:', false);
@@ -777,409 +509,34 @@
         } catch (e) { /* no designs yet */ }
     }
 
-    function getDayData(day) { return contentData.filter(item => item.day === day || item.dayOfMonth === day); }
-
-    async function addContent(item) {
-        if (useRemoteDb()) {
-            try { await dbFetch('', { method: 'POST', body: JSON.stringify(item) }); }
-            catch (err) { toast(`DB save failed: ${err.message}`, 'error'); }
-        }
-        contentData.push(item);
-        if (!useRemoteDb()) await storageSet('contentData', stripImages(contentData));
+    async function saveData() {
+        await storageSet('contentData', contentData);
         renderCalendar();
     }
 
+    async function saveCalendarConfig() {
+        await storageSet('calendarConfig', calendarConfig);
+        renderCalendar();
+    }
+
+    function getDayData(day) { return contentData.filter(item => item.day === day); }
+
+    async function addContent(item) { contentData.push(item); await saveData(); }
     async function updateContent(id, updated) {
         const index = contentData.findIndex(item => item.id === id);
-        if (index === -1) return;
-        contentData[index] = { ...contentData[index], ...updated };
-        if (useRemoteDb()) {
-            try { await dbFetch('', { method: 'POST', body: JSON.stringify(contentData[index]) }); }
-            catch (err) { toast(`DB save failed: ${err.message}`, 'error'); }
-        } else {
-            await storageSet('contentData', stripImages(contentData));
-        }
-        renderCalendar();
+        if (index !== -1) { contentData[index] = { ...contentData[index], ...updated }; await saveData(); }
     }
-
     async function deleteContent(id) {
         contentData = contentData.filter(item => item.id !== id);
-        delete designImages[id];
-        if (useRemoteDb()) {
-            try { await dbFetch(`?id=${encodeURIComponent(id)}`, { method: 'DELETE' }); }
-            catch (err) { toast(`DB delete failed: ${err.message}`, 'error'); }
-        } else {
-            await storageDelete(`design:${id}`);
-            await storageSet('contentData', stripImages(contentData));
-        }
-        renderCalendar();
+        await saveData();
     }
 
     function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
     // ================================================================
-    // AI CALLS
-    // ================================================================
-    async function callAI(messages, { temperature = 0.8, max_tokens = 900 } = {}) {
-        if (!apiConfig.baseUrl) throw new Error('No API endpoint configured — open Settings (gear icon)');
-        const res = await fetch(apiConfig.baseUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: apiConfig.model, messages, stream: false, temperature, max_tokens })
-        });
-        if (!res.ok) {
-            let detail = '';
-            try { detail = JSON.stringify(await res.json()); } catch (e) {}
-            throw new Error(`API error ${res.status} ${detail}`.slice(0, 200));
-        }
-        const data = await res.json();
-        const text = data.choices?.[0]?.message?.content;
-        if (!text) throw new Error('Empty response from model');
-        return text;
-    }
-
-    function parseJsonFromModel(text) {
-        let cleaned = text.trim();
-        cleaned = cleaned.replace(/^```(json)?/i, '').replace(/```$/, '').trim();
-        const start = cleaned.indexOf('{');
-        const end = cleaned.lastIndexOf('}');
-        if (start !== -1 && end !== -1) cleaned = cleaned.slice(start, end + 1);
-        return JSON.parse(cleaned);
-    }
-
-    async function generateContentAI(id) {
-        const item = contentData.find(d => d.id === id);
-        if (!item) return;
-        if (!item.raw) { toast('Add a raw idea first', 'error'); return; }
-        const btn = document.querySelector(`[data-ai-write="${id}"]`);
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Writing...'; }
-        try {
-            const sys = `You are a senior short-form content strategist for social media. Given a raw idea, audience type, and target platforms, write scroll-stopping content. Output ONLY a single valid JSON object, no markdown, no commentary, no code fences, with exactly these keys: refined (string, a punchy title under 110 characters), hook (string, 1-2 sentences, the first line that grabs attention), description (string, 2-4 sentences, the post body), cta (string, one specific call to action), hashtags (string, 4-6 relevant hashtags separated by spaces).`;
-            const user = `Raw idea: ${item.raw}\nAudience: ${item.audience || 'general'}\nPlatforms: ${(item.platforms || []).join(', ') || 'all'}`;
-            const text = await callAI([{ role: 'system', content: sys }, { role: 'user', content: user }]);
-            const json = parseJsonFromModel(text);
-            await updateContent(id, {
-                refined: json.refined || item.refined,
-                hook: json.hook || item.hook,
-                description: json.description || item.description,
-                cta: json.cta || item.cta,
-                hashtags: json.hashtags || item.hashtags
-            });
-            toast('Content generated');
-        } catch (err) {
-            console.error(err);
-            toast(`AI write failed: ${err.message}`, 'error');
-        } finally {
-            renderCalendar();
-        }
-    }
-
-    // ================================================================
-    // DESIGN STUDIO
-    // ================================================================
-    let currentDesignItemId = null;
-    let designSpec = null;
-
-    function defaultDesignSpec(item) {
-        return {
-            canvasW: 1080, canvasH: 1350,
-            bg: { type: 'linear', color: '#111827', c1: '#1e1b4b', c2: '#312e81', angle: 135 },
-            textBlocks: [
-                { id: 't1', text: item.refined || item.raw || 'Headline', x: 50, y: 36, font: 'Syne', size: 60, weight: 700, color: '#ffffff', align: 'center', maxWidth: 86 },
-                { id: 't2', text: item.hook || '', x: 50, y: 56, font: 'Inter', size: 28, weight: 500, color: '#e5e7eb', align: 'center', maxWidth: 80 }
-            ],
-            icons: [],
-            brand: { text: '@yourhandle', color: '#a5b4fc', size: 22 }
-        };
-    }
-
-    function openDesignModal(itemId) {
-        const item = contentData.find(d => d.id === itemId);
-        if (!item) return;
-        currentDesignItemId = itemId;
-        designSpec = item.designSpec ? JSON.parse(JSON.stringify(item.designSpec)) : defaultDesignSpec(item);
-        document.getElementById('designDayLabel').textContent = `— Day ${item.day}`;
-        document.getElementById('designAiStatus').textContent = '';
-        document.getElementById('canvasPreset').value = `${designSpec.canvasW}x${designSpec.canvasH}`;
-        renderDesignFields();
-        redrawCanvas();
-        document.getElementById('designOverlay').classList.add('show');
-    }
-
-    function closeDesignModal() {
-        document.getElementById('designOverlay').classList.remove('show');
-        currentDesignItemId = null;
-        designSpec = null;
-    }
-
-    function fieldRowColor(label, value, onChange) {
-        return `<div class="field-row"><input type="color" value="${value}" data-field="${onChange}"><span class="text-muted" style="font-size:12px;align-self:center;">${label}</span></div>`;
-    }
-
-    function renderDesignFields() {
-        const wrap = document.getElementById('designFields');
-        let html = '';
-
-        html += `<h4>Background</h4>
-            <div class="field-row">
-                <select id="bgType" style="font-size:12px;">
-                    <option value="solid" ${designSpec.bg.type==='solid'?'selected':''}>Solid</option>
-                    <option value="linear" ${designSpec.bg.type==='linear'?'selected':''}>Linear gradient</option>
-                </select>
-            </div>`;
-        if (designSpec.bg.type === 'solid') {
-            html += `<div class="field-row"><input type="color" id="bgColor" value="${designSpec.bg.color}"></div>`;
-        } else {
-            html += `<div class="field-row">
-                <input type="color" id="bgC1" value="${designSpec.bg.c1}">
-                <input type="color" id="bgC2" value="${designSpec.bg.c2}">
-                <input type="number" id="bgAngle" value="${designSpec.bg.angle}" min="0" max="360" placeholder="angle" style="font-size:12px;">
-            </div>`;
-        }
-
-        html += `<h4>Text blocks</h4>`;
-        designSpec.textBlocks.forEach((b, i) => {
-            html += `<div class="text-block-card" data-block-index="${i}">
-                <textarea class="tb-text" rows="2" style="font-size:13px;">${b.text || ''}</textarea>
-                <div class="field-row">
-                    <select class="tb-font">${FONTS.map(f => `<option value="${f}" ${f===b.font?'selected':''}>${f}</option>`).join('')}</select>
-                    <input type="number" class="tb-size" value="${b.size}" min="12" max="120" title="size">
-                </div>
-                <div class="field-row">
-                    <input type="color" class="tb-color" value="${b.color}">
-                    <select class="tb-align">
-                        <option value="left" ${b.align==='left'?'selected':''}>Left</option>
-                        <option value="center" ${b.align==='center'?'selected':''}>Center</option>
-                        <option value="right" ${b.align==='right'?'selected':''}>Right</option>
-                    </select>
-                </div>
-                <div class="field-row">
-                    <input type="number" class="tb-x" value="${b.x}" min="0" max="100" title="X %">
-                    <input type="number" class="tb-y" value="${b.y}" min="0" max="100" title="Y %">
-                    <input type="number" class="tb-maxw" value="${b.maxWidth || 80}" min="20" max="95" title="max width %">
-                </div>
-                <button class="remove-block" data-remove-block="${i}">Remove</button>
-            </div>`;
-        });
-
-        html += `<h4>Icons (icons8 URLs, comma separated)</h4>
-            <textarea id="iconUrls" rows="2" style="font-size:12px;">${(designSpec.icons || []).map(ic => ic.url).join(', ')}</textarea>
-
-            <h4>Brand / watermark</h4>
-            <div class="field-row">
-                <input type="text" id="brandText" value="${designSpec.brand?.text || ''}" placeholder="@yourhandle">
-                <input type="color" id="brandColor" value="${designSpec.brand?.color || '#a5b4fc'}">
-            </div>`;
-
-        wrap.innerHTML = html;
-        attachDesignFieldListeners();
-    }
-
-    function attachDesignFieldListeners() {
-        const wrap = document.getElementById('designFields');
-
-        const bgType = document.getElementById('bgType');
-        if (bgType) bgType.addEventListener('change', () => { designSpec.bg.type = bgType.value; renderDesignFields(); redrawCanvas(); });
-        const bgColor = document.getElementById('bgColor');
-        if (bgColor) bgColor.addEventListener('input', () => { designSpec.bg.color = bgColor.value; redrawCanvas(); });
-        const bgC1 = document.getElementById('bgC1'), bgC2 = document.getElementById('bgC2'), bgAngle = document.getElementById('bgAngle');
-        if (bgC1) bgC1.addEventListener('input', () => { designSpec.bg.c1 = bgC1.value; redrawCanvas(); });
-        if (bgC2) bgC2.addEventListener('input', () => { designSpec.bg.c2 = bgC2.value; redrawCanvas(); });
-        if (bgAngle) bgAngle.addEventListener('input', () => { designSpec.bg.angle = parseFloat(bgAngle.value) || 0; redrawCanvas(); });
-
-        wrap.querySelectorAll('.text-block-card').forEach(card => {
-            const i = parseInt(card.dataset.blockIndex);
-            const b = designSpec.textBlocks[i];
-            card.querySelector('.tb-text').addEventListener('input', e => { b.text = e.target.value; redrawCanvas(); });
-            card.querySelector('.tb-font').addEventListener('change', e => { b.font = e.target.value; redrawCanvas(); });
-            card.querySelector('.tb-size').addEventListener('input', e => { b.size = parseFloat(e.target.value) || 30; redrawCanvas(); });
-            card.querySelector('.tb-color').addEventListener('input', e => { b.color = e.target.value; redrawCanvas(); });
-            card.querySelector('.tb-align').addEventListener('change', e => { b.align = e.target.value; redrawCanvas(); });
-            card.querySelector('.tb-x').addEventListener('input', e => { b.x = parseFloat(e.target.value) || 0; redrawCanvas(); });
-            card.querySelector('.tb-y').addEventListener('input', e => { b.y = parseFloat(e.target.value) || 0; redrawCanvas(); });
-            card.querySelector('.tb-maxw').addEventListener('input', e => { b.maxWidth = parseFloat(e.target.value) || 80; redrawCanvas(); });
-        });
-        wrap.querySelectorAll('[data-remove-block]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                designSpec.textBlocks.splice(parseInt(btn.dataset.removeBlock), 1);
-                renderDesignFields();
-                redrawCanvas();
-            });
-        });
-
-        const iconUrls = document.getElementById('iconUrls');
-        if (iconUrls) iconUrls.addEventListener('input', () => {
-            const urls = iconUrls.value.split(',').map(s => s.trim()).filter(Boolean);
-            designSpec.icons = urls.map((url, idx) => {
-                const existing = (designSpec.icons || [])[idx];
-                return existing && existing.url === url ? existing : { url, x: 15 + idx * 22, y: 14, size: 70 };
-            });
-            redrawCanvas();
-        });
-
-        const brandText = document.getElementById('brandText'), brandColor = document.getElementById('brandColor');
-        if (brandText) brandText.addEventListener('input', () => { designSpec.brand = designSpec.brand || {}; designSpec.brand.text = brandText.value; redrawCanvas(); });
-        if (brandColor) brandColor.addEventListener('input', () => { designSpec.brand = designSpec.brand || {}; designSpec.brand.color = brandColor.value; redrawCanvas(); });
-    }
-
-    function loadImage(url) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = () => resolve(img);
-            img.onerror = () => reject(new Error('image failed: ' + url));
-            img.src = url;
-        });
-    }
-
-    function wrapLines(ctx, text, maxWidthPx) {
-        const words = (text || '').split(/\s+/).filter(Boolean);
-        const lines = [];
-        let line = '';
-        for (const w of words) {
-            const test = line ? line + ' ' + w : w;
-            if (ctx.measureText(test).width > maxWidthPx && line) { lines.push(line); line = w; }
-            else line = test;
-        }
-        if (line) lines.push(line);
-        return lines.length ? lines : [''];
-    }
-
-    async function redrawCanvas() {
-        if (!designSpec) return;
-        const canvas = document.getElementById('designCanvas');
-        const W = designSpec.canvasW || 1080, H = designSpec.canvasH || 1350;
-        canvas.width = W; canvas.height = H;
-        const ctx = canvas.getContext('2d');
-
-        try { await document.fonts.ready; } catch (e) {}
-
-        // background
-        if (designSpec.bg.type === 'solid') {
-            ctx.fillStyle = designSpec.bg.color || '#111827';
-            ctx.fillRect(0, 0, W, H);
-        } else {
-            const angle = ((designSpec.bg.angle || 135) * Math.PI) / 180;
-            const x1 = W / 2 - Math.cos(angle) * W, y1 = H / 2 - Math.sin(angle) * H;
-            const x2 = W / 2 + Math.cos(angle) * W, y2 = H / 2 + Math.sin(angle) * H;
-            const grad = ctx.createLinearGradient(x1, y1, x2, y2);
-            grad.addColorStop(0, designSpec.bg.c1 || '#1e1b4b');
-            grad.addColorStop(1, designSpec.bg.c2 || '#312e81');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, W, H);
-        }
-
-        // icons
-        for (const icon of (designSpec.icons || [])) {
-            try {
-                const img = await loadImage(icon.url);
-                const s = icon.size || 70;
-                ctx.drawImage(img, (icon.x / 100) * W - s / 2, (icon.y / 100) * H - s / 2, s, s);
-            } catch (e) { /* skip broken icon */ }
-        }
-
-        // text blocks
-        for (const b of (designSpec.textBlocks || [])) {
-            const x = (b.x / 100) * W, y = (b.y / 100) * H;
-            const maxWidthPx = ((b.maxWidth || 80) / 100) * W;
-            ctx.font = `${b.weight || 600} ${b.size || 40}px "${b.font || 'Inter'}"`;
-            ctx.fillStyle = b.color || '#ffffff';
-            ctx.textAlign = b.align || 'center';
-            ctx.textBaseline = 'middle';
-            const lines = wrapLines(ctx, b.text, maxWidthPx);
-            const lineHeight = (b.size || 40) * 1.22;
-            const startY = y - ((lines.length - 1) * lineHeight) / 2;
-            lines.forEach((l, i) => ctx.fillText(l, x, startY + i * lineHeight));
-        }
-
-        // brand
-        if (designSpec.brand && designSpec.brand.text) {
-            ctx.font = `600 ${designSpec.brand.size || 22}px Inter`;
-            ctx.fillStyle = designSpec.brand.color || '#a5b4fc';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'bottom';
-            ctx.fillText(designSpec.brand.text, 50, H - 40);
-        }
-    }
-
-    async function aiGenerateDesign() {
-        if (!currentDesignItemId) return;
-        const item = contentData.find(d => d.id === currentDesignItemId);
-        const statusEl = document.getElementById('designAiStatus');
-        statusEl.textContent = 'Designing...';
-        const btn = document.getElementById('aiGenerateDesign');
-        btn.disabled = true;
-        try {
-            const sys = `You are a social media graphic designer. Output ONLY a single valid JSON object, no markdown, no commentary, no code fences, matching exactly this schema:
-{
- "bg": {"type":"solid"|"linear","color":"#hex","c1":"#hex","c2":"#hex","angle":number},
- "textBlocks": [{"text":string,"x":number(0-100),"y":number(0-100),"font":one of [${FONTS.join(', ')}],"size":number(18-90),"weight":400|500|600|700|800,"color":"#hex","align":"left"|"center"|"right","maxWidth":number(40-95)}],
- "icons": [{"url":"https://img.icons8.com/fluency/96/ICONNAME.png","x":number(0-100),"y":number(0-100),"size":number(40-120)}],
- "brand": {"text":string,"color":"#hex","size":number}
-}
-Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small caption). Pick a bold gradient or solid background that fits the platform and audience tone. Add 0-4 relevant icons from img.icons8.com using real plausible icon names. Keep all text within canvas bounds (canvas is ${designSpec.canvasW}x${designSpec.canvasH}px) and do not let text blocks overlap vertically.`;
-            const user = `Title: ${item.refined || item.raw}\nHook: ${item.hook || ''}\nDescription: ${item.description || ''}\nAudience: ${item.audience || 'general'}\nPlatforms: ${(item.platforms || []).join(', ') || 'all'}`;
-            const text = await callAI([{ role: 'system', content: sys }, { role: 'user', content: user }], { temperature: 0.9 });
-            const json = parseJsonFromModel(text);
-            designSpec.bg = json.bg || designSpec.bg;
-            designSpec.textBlocks = (json.textBlocks || []).map((b, i) => ({ id: 't' + i, ...b }));
-            designSpec.icons = json.icons || [];
-            designSpec.brand = json.brand || designSpec.brand;
-            renderDesignFields();
-            await redrawCanvas();
-            statusEl.textContent = 'Done';
-            setTimeout(() => statusEl.textContent = '', 1500);
-        } catch (err) {
-            console.error(err);
-            statusEl.textContent = '';
-            toast(`AI design failed: ${err.message}`, 'error');
-        } finally {
-            btn.disabled = false;
-        }
-    }
-
-    async function exportDesignPNG() {
-        const canvas = document.getElementById('designCanvas');
-        try {
-            const dataUrl = canvas.toDataURL('image/png');
-            const item = contentData.find(d => d.id === currentDesignItemId);
-            const a = document.createElement('a');
-            a.href = dataUrl;
-            a.download = `day${item ? item.day : 'x'}_design.png`;
-            a.click();
-        } catch (err) {
-            toast('Export blocked — one of the icon images may not allow canvas export (CORS). Try removing icons and export again.', 'error');
-        }
-    }
-
-    async function saveDesignToCard() {
-        if (!currentDesignItemId) return;
-        const canvas = document.getElementById('designCanvas');
-        try {
-            const dataUrl = canvas.toDataURL('image/png');
-            designImages[currentDesignItemId] = dataUrl;
-            const payload = { designSpec: JSON.parse(JSON.stringify(designSpec)), designImage: dataUrl };
-            await updateContent(currentDesignItemId, payload);
-            if (!useRemoteDb()) await storageSet(`design:${currentDesignItemId}`, dataUrl);
-            toast('Design saved to card');
-            closeDesignModal();
-        } catch (err) {
-            toast(`Save failed: ${err.message}`, 'error');
-        }
-    }
-
-    // ================================================================
     // RENDER CALENDAR
     // ================================================================
     let currentView = 'month';
-    let weekOffset = 0;
-    let dayOffset = 0;
-    let currentMonth = new Date().getMonth() + 1; // 1-12
-    let currentYear = new Date().getFullYear();
-
-    function getDaysInMonth(month, year) {
-        return new Date(year, month, 0).getDate();
-    }
 
     function renderCalendar() {
         const grid = document.getElementById('calendarGrid');
@@ -1187,24 +544,21 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
         grid.innerHTML = '';
 
         let daysToShow = [];
-        const label = document.getElementById('navLabel');
+        const rangeLabel = document.getElementById('rangeLabel');
 
         if (currentView === 'month') {
-            const daysInMonth = getDaysInMonth(currentMonth, currentYear);
-            for (let d = 1; d <= daysInMonth; d++) daysToShow.push(d);
-            const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-            label.textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
+            for (let d = 1; d <= 31; d++) daysToShow.push(d);
+            rangeLabel.textContent = `${fmtShort(dateForDay(1))} – ${fmtShort(dateForDay(31))}`;
         } else if (currentView === 'week') {
-            const today = new Date().getDate();
-            const start = Math.max(1, Math.min(25, today + weekOffset * 7));
+            const idx = currentDayIndex();
+            const start = Math.max(1, Math.min(25, idx - 3));
             const end = Math.min(31, start + 6);
             for (let d = start; d <= end; d++) daysToShow.push(d);
-            label.textContent = `Day ${start}-${end}`;
+            rangeLabel.textContent = `${fmtShort(dateForDay(start))} – ${fmtShort(dateForDay(end))}`;
         } else {
-            const today = new Date().getDate();
-            let day = Math.max(1, Math.min(31, today + dayOffset));
-            daysToShow = [day];
-            label.textContent = `Day ${day}`;
+            const idx = currentDayIndex();
+            daysToShow = [idx];
+            rangeLabel.textContent = fmtFull(dateForDay(idx));
         }
 
         daysToShow.forEach(day => {
@@ -1216,6 +570,11 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
             dayHeader.className = 'day-number';
             dayHeader.innerHTML = `<span>Day ${day}</span> <small>${items.length} items</small>`;
             card.appendChild(dayHeader);
+
+            const dateLine = document.createElement('div');
+            dateLine.className = 'day-date';
+            dateLine.textContent = fmtShort(dateForDay(day));
+            card.appendChild(dateLine);
 
             if (items.length === 0) {
                 const empty = document.createElement('div');
@@ -1242,12 +601,14 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
 
                     const tagRow = document.createElement('div');
                     tagRow.className = 'flex gap-1';
+
                     if (item.audience) {
                         const audTag = document.createElement('span');
                         audTag.className = `audience-tag aud-${item.audience}`;
                         audTag.textContent = item.audience;
                         tagRow.appendChild(audTag);
                     }
+
                     (item.platforms || ['all']).forEach(p => {
                         const tag = document.createElement('span');
                         tag.className = `platform-tag tag-${p}`;
@@ -1262,18 +623,21 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
                         hook.innerHTML = `<i class="fas fa-bolt" style="color:#2563eb;margin-right:6px;"></i> ${item.hook}`;
                         wrapper.appendChild(hook);
                     }
+
                     if (item.description) {
                         const desc = document.createElement('div');
                         desc.className = 'desc-text';
                         desc.textContent = item.description;
                         wrapper.appendChild(desc);
                     }
+
                     if (item.cta) {
                         const cta = document.createElement('div');
                         cta.className = 'cta-text';
                         cta.innerHTML = `<i class="fas fa-arrow-right" style="margin-right:6px;"></i> ${item.cta}`;
                         wrapper.appendChild(cta);
                     }
+
                     if (item.hashtags) {
                         const hash = document.createElement('div');
                         hash.className = 'hashtags';
@@ -1285,38 +649,21 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
                         const thumb = document.createElement('img');
                         thumb.className = 'design-thumb';
                         thumb.src = designImages[item.id];
-                        thumb.title = 'Click to edit design';
-                        thumb.onclick = () => openDesignModal(item.id);
+                        thumb.title = 'Open Planner to edit this design';
                         wrapper.appendChild(thumb);
                     }
 
                     const actions = document.createElement('div');
                     actions.className = 'flex';
                     actions.style.marginTop = '8px';
-
-                    const aiBtn = document.createElement('button');
-                    aiBtn.className = 'btn btn-sm btn-ai';
-                    aiBtn.setAttribute('data-ai-write', item.id);
-                    aiBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> AI Write';
-                    aiBtn.onclick = () => generateContentAI(item.id);
-
-                    const designBtn = document.createElement('button');
-                    designBtn.className = 'btn btn-sm btn-design';
-                    designBtn.innerHTML = '<i class="fas fa-image"></i> Design';
-                    designBtn.onclick = () => openDesignModal(item.id);
-
                     const editBtn = document.createElement('button');
                     editBtn.className = 'btn btn-sm btn-outline';
                     editBtn.innerHTML = '<i class="fas fa-edit"></i>';
                     editBtn.onclick = () => openEditModal(item.id);
-
                     const delBtn = document.createElement('button');
                     delBtn.className = 'btn btn-sm btn-danger';
                     delBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                    delBtn.onclick = () => { if (confirm('Delete this?')) deleteContent(item.id); };
-
-                    actions.appendChild(aiBtn);
-                    actions.appendChild(designBtn);
+                    delBtn.onclick = () => { if(confirm('Delete this?')) deleteContent(item.id); };
                     actions.appendChild(editBtn);
                     actions.appendChild(delBtn);
                     wrapper.appendChild(actions);
@@ -1335,7 +682,7 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     }
 
     // ================================================================
-    // ADD/EDIT MODAL LOGIC
+    // MODAL LOGIC
     // ================================================================
     let isEditing = false;
     let editId = null;
@@ -1345,7 +692,7 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
         editId = null;
         document.getElementById('modalTitle').textContent = 'Add Content';
         document.getElementById('editId').value = '';
-        document.getElementById('formDay').value = day || 1;
+        document.getElementById('formDay').value = day || currentDayIndex();
         document.getElementById('formRaw').value = '';
         document.getElementById('formRefined').value = '';
         document.getElementById('formAudience').value = '';
@@ -1376,10 +723,12 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
         document.getElementById('modalOverlay').classList.add('show');
     }
 
-    function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('show');
+    }
 
     async function saveFromModal() {
-        const day = parseInt(document.getElementById('formDay').value) || 1;
+        const day = Math.max(1, Math.min(31, parseInt(document.getElementById('formDay').value) || 1));
         const raw = document.getElementById('formRaw').value.trim();
         const refined = document.getElementById('formRefined').value.trim();
         const audience = document.getElementById('formAudience').value.trim().toLowerCase();
@@ -1392,6 +741,7 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
         if (!raw) { alert('Raw idea is required'); return; }
 
         const data = { day, raw, refined, audience, platforms, hook, description, cta, hashtags };
+
         if (isEditing && editId) {
             await updateContent(editId, data);
         } else {
@@ -1399,139 +749,6 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
             await addContent(data);
         }
         closeModal();
-    }
-
-    // ================================================================
-    // SETTINGS MODAL
-    // ================================================================
-    function openSettings() {
-        document.getElementById('settingsBaseUrl').value = apiConfig.baseUrl || DEFAULT_API.baseUrl;
-        document.getElementById('settingsModel').value = apiConfig.model || DEFAULT_API.model;
-        document.getElementById('settingsDbUrl').value = dbConfig.baseUrl || '';
-        document.getElementById('settingsDbSecret').value = dbConfig.secret || '';
-        document.getElementById('settingsOverlay').classList.add('show');
-    }
-    function closeSettings() { document.getElementById('settingsOverlay').classList.remove('show'); }
-    async function saveSettings() {
-        apiConfig = {
-            baseUrl: document.getElementById('settingsBaseUrl').value.trim() || DEFAULT_API.baseUrl,
-            model: document.getElementById('settingsModel').value
-        };
-        const newDbUrl = document.getElementById('settingsDbUrl').value.trim();
-        const newDbSecret = document.getElementById('settingsDbSecret').value.trim();
-        const dbChanged = newDbUrl !== (dbConfig.baseUrl || '');
-        dbConfig = { baseUrl: newDbUrl, secret: newDbSecret };
-        await storageSet('apiConfig', apiConfig);
-        await storageSet('dbConfig', dbConfig);
-        closeSettings();
-        toast('Settings saved');
-        if (dbChanged) await refreshData();
-    }
-
-    // ================================================================
-    // AI PLANNER GENERATOR
-    // ================================================================
-    function openAiPlanner() {
-        const monthSelect = document.getElementById('aiPlannerMonth');
-        monthSelect.value = currentMonth;
-        document.getElementById('aiPlannerYear').value = currentYear;
-        document.getElementById('aiPlannerPrompt').value = '';
-        document.getElementById('aiPlannerStatus').textContent = '';
-        document.getElementById('aiPlannerOverlay').classList.add('show');
-    }
-    function closeAiPlanner() { document.getElementById('aiPlannerOverlay').classList.remove('show'); }
-    
-    async function generateAiPlanner() {
-        const month = parseInt(document.getElementById('aiPlannerMonth').value);
-        const year = parseInt(document.getElementById('aiPlannerYear').value);
-        const prompt = document.getElementById('aiPlannerPrompt').value.trim();
-        const statusEl = document.getElementById('aiPlannerStatus');
-        const btn = document.getElementById('generateAiPlanner');
-        
-        if (!prompt) {
-            toast('Please enter a prompt describing your content theme', 'error');
-            return;
-        }
-        
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-        statusEl.textContent = 'AI is generating content ideas for each day...';
-        
-        try {
-            const daysInMonth = new Date(year, month, 0).getDate();
-            const generatedItems = [];
-            
-            for (let day = 1; day <= daysInMonth; day++) {
-                statusEl.textContent = `Generating day ${day}/${daysInMonth}...`;
-                
-                const sys = `You are a senior content strategist. Generate ONE unique social media content idea for day ${day} of ${month}/${year}. Output ONLY a valid JSON object with exactly these keys: raw (string, brief topic idea under 60 chars), refined (string, punchy title under 110 chars), audience (either "client" or "student"), platforms (array like ["ig","yt","li"]), hook (string, 1-2 sentences), description (string, 2-4 sentences), cta (string, one call to action), hashtags (string, 4-6 hashtags). Make each day's content unique and varied.`;
-                const user = `Theme: ${prompt}\nDay: ${day} of ${daysInMonth}\nMonth: ${month}/${year}\n\nEnsure this day's content is distinct from other days - vary the topics, angles, and formats.`;
-                
-                const text = await callAI([{ role: 'system', content: sys }, { role: 'user', content: user }], { max_tokens: 600 });
-                const json = parseJsonFromModel(text);
-                
-                const postingDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                generatedItems.push({
-                    id: `ai_${year}_${month}_${day}`,
-                    day: day,
-                    month: month,
-                    year: year,
-                    postingDate: postingDate,
-                    dayOfMonth: day,
-                    raw: json.raw || `Content idea for day ${day}`,
-                    refined: json.refined || '',
-                    audience: json.audience || 'client',
-                    platforms: json.platforms || ['ig', 'yt', 'li'],
-                    hook: json.hook || '',
-                    description: json.description || '',
-                    cta: json.cta || '',
-                    hashtags: json.hashtags || '',
-                    status: 'draft'
-                });
-            }
-            
-            // Save to planner_item table (temporary storage)
-            statusEl.textContent = 'Saving to planner...';
-            if (useRemoteDb()) {
-                await dbFetch('?table=planner_item&bulk=1', { method: 'POST', body: JSON.stringify({ items: generatedItems }) });
-            }
-            
-            toast(`Generated ${daysInMonth} content ideas! Check the Planner tab.`);
-            closeAiPlanner();
-        } catch (err) {
-            console.error(err);
-            statusEl.textContent = '';
-            toast(`AI generation failed: ${err.message}`, 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-sparkles"></i> Generate Full Month';
-        }
-    }
-
-    // ================================================================
-    // NAVIGATION
-    // ================================================================
-    function navPrev() { if (currentView === 'week') weekOffset--; else if (currentView === 'day') dayOffset--; renderCalendar(); }
-    function navNext() { if (currentView === 'week') weekOffset++; else if (currentView === 'day') dayOffset++; renderCalendar(); }
-    
-    async function monthPrev() {
-        currentMonth--;
-        if (currentMonth < 1) {
-            currentMonth = 12;
-            currentYear--;
-        }
-        await loadData(currentMonth, currentYear);
-        renderCalendar();
-    }
-    
-    async function monthNext() {
-        currentMonth++;
-        if (currentMonth > 12) {
-            currentMonth = 1;
-            currentYear++;
-        }
-        await loadData(currentMonth, currentYear);
-        renderCalendar();
     }
 
     // ================================================================
@@ -1553,28 +770,13 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
             try {
                 const imported = JSON.parse(e.target.result);
                 if (Array.isArray(imported)) {
-                    contentData = imported.map(item => ({ ...item, id: item.id || genId() }));
-                    designImages = {};
-                    contentData.forEach(item => { if (item.designImage) designImages[item.id] = item.designImage; });
-
-                    if (useRemoteDb()) {
-                        try {
-                            await dbFetch('?bulk=1', { method: 'POST', body: JSON.stringify({ items: contentData }) });
-                        } catch (err) {
-                            toast(`DB bulk import failed: ${err.message}`, 'error');
-                        }
-                    } else {
-                        await storageSet('contentData', stripImages(contentData));
-                        for (const item of contentData) {
-                            if (item.designImage) await storageSet(`design:${item.id}`, item.designImage);
-                        }
-                    }
-                    renderCalendar();
+                    contentData = imported;
+                    await saveData();
                     toast('Import successful!');
                 } else {
                     toast('Invalid JSON format. Expected an array.', 'error');
                 }
-            } catch (err) {
+            } catch(err) {
                 toast('Error parsing JSON: ' + err.message, 'error');
             }
         };
@@ -1582,10 +784,9 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     }
 
     async function refreshData() {
-        await loadData(currentMonth, currentYear);
-        weekOffset = 0;
-        dayOffset = 0;
+        await loadData();
         renderCalendar();
+        toast('Reloaded from storage');
     }
 
     // ================================================================
@@ -1593,8 +794,6 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     // ================================================================
     function setView(view) {
         currentView = view;
-        weekOffset = 0;
-        dayOffset = 0;
         document.querySelectorAll('.view-toggle .btn').forEach(btn => btn.classList.remove('active'));
         document.querySelector(`.view-toggle .btn[data-view="${view}"]`).classList.add('active');
         renderCalendar();
@@ -1604,57 +803,41 @@ Rules: produce 2-3 textBlocks max (headline, hook/subtitle, optional small capti
     // INIT
     // ================================================================
     document.addEventListener('DOMContentLoaded', async function() {
-        await loadData(currentMonth, currentYear);
+        await loadData();
+        document.getElementById('startDateInput').value = calendarConfig.startDate;
         renderCalendar();
 
         document.querySelectorAll('.view-toggle .btn').forEach(btn => {
             btn.addEventListener('click', () => setView(btn.dataset.view));
         });
 
-        document.getElementById('monthPrev').addEventListener('click', monthPrev);
-        document.getElementById('monthNext').addEventListener('click', monthNext);
-        document.getElementById('navPrev').addEventListener('click', navPrev);
-        document.getElementById('navNext').addEventListener('click', navNext);
+        document.getElementById('startDateInput').addEventListener('change', async (e) => {
+            if (!e.target.value) return;
+            calendarConfig.startDate = e.target.value;
+            await saveCalendarConfig();
+        });
+
         document.getElementById('refreshData').addEventListener('click', refreshData);
         document.getElementById('openAddModal').addEventListener('click', () => openAddModal());
         document.getElementById('closeModal').addEventListener('click', closeModal);
         document.getElementById('saveContent').addEventListener('click', saveFromModal);
-        document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeModal(); });
-
-        document.getElementById('openSettings').addEventListener('click', openSettings);
-        document.getElementById('closeSettings').addEventListener('click', closeSettings);
-        document.getElementById('saveSettings').addEventListener('click', saveSettings);
-        document.getElementById('settingsOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeSettings(); });
-
-        document.getElementById('openAiPlanner').addEventListener('click', openAiPlanner);
-        document.getElementById('closeAiPlanner').addEventListener('click', closeAiPlanner);
-        document.getElementById('generateAiPlanner').addEventListener('click', generateAiPlanner);
-        document.getElementById('aiPlannerOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeAiPlanner(); });
-
-        document.getElementById('closeDesign').addEventListener('click', closeDesignModal);
-        document.getElementById('designOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeDesignModal(); });
-        document.getElementById('aiGenerateDesign').addEventListener('click', aiGenerateDesign);
-        document.getElementById('exportDesignPng').addEventListener('click', exportDesignPNG);
-        document.getElementById('saveDesignToCard').addEventListener('click', saveDesignToCard);
-        document.getElementById('addTextBlockBtn').addEventListener('click', () => {
-            designSpec.textBlocks.push({ id: 't' + Date.now(), text: 'New text', x: 50, y: 75, font: 'Inter', size: 28, weight: 600, color: '#ffffff', align: 'center', maxWidth: 80 });
-            renderDesignFields();
-            redrawCanvas();
-        });
-        document.getElementById('canvasPreset').addEventListener('change', (e) => {
-            const [w, h] = e.target.value.split('x').map(Number);
-            designSpec.canvasW = w; designSpec.canvasH = h;
-            redrawCanvas();
+        document.getElementById('modalOverlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeModal();
         });
 
         document.getElementById('exportData').addEventListener('click', exportData);
-        document.getElementById('importData').addEventListener('click', () => document.getElementById('fileInput').click());
+        document.getElementById('importData').addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
         document.getElementById('fileInput').addEventListener('change', (e) => {
-            if (e.target.files.length) { importData(e.target.files[0]); e.target.value = ''; }
+            if (e.target.files.length) {
+                importData(e.target.files[0]);
+                e.target.value = '';
+            }
         });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') { closeModal(); closeSettings(); closeAiPlanner(); closeDesignModal(); }
+            if (e.key === 'Escape') closeModal();
         });
     });
 </script>
