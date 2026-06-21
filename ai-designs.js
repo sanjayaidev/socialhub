@@ -30,11 +30,19 @@ async function apiCall(endpoint, method = 'POST', data = {}) {
 // DB operations via API
 async function dbLoadAIImages(planId = null) {
   const data = planId ? { planId } : {};
-  return await apiCall('/api/content/ai-images', 'POST', data);
+  return await apiCall('/api/content-plans?action=getAIImages', 'POST', data);
+}
+
+async function dbSaveAIImage(data) {
+  return await apiCall('/api/content-plans?action=saveAIImage', 'POST', data);
 }
 
 async function dbDeleteAIImage({ id }) {
-  return await apiCall('/api/content/ai-image', 'DELETE', { id });
+  return await apiCall('/api/content-plans?action=deleteAIImage', 'DELETE', { id });
+}
+
+async function dbRegenerateAIImage(data) {
+  return await apiCall('/api/content-plans?action=regenerateAIImage', 'POST', data);
 }
 
 function dbMsg(action, data = {}) {
@@ -42,9 +50,11 @@ function dbMsg(action, data = {}) {
   if (typeof chrome === 'undefined' || !chrome.runtime) {
     // Web app mode - use API calls
     switch (action) {
-      case 'dbLoadPlans': return apiCall('/api/content/plans', 'GET');
+      case 'dbLoadPlans': return apiCall('/api/content-plans?action=getAllPlans', 'GET');
       case 'dbLoadAIImages': return dbLoadAIImages(data.planId);
+      case 'dbSaveAIImage': return dbSaveAIImage(data);
       case 'dbDeleteAIImage': return dbDeleteAIImage(data);
+      case 'dbRegenerateAIImage': return dbRegenerateAIImage(data);
       default: throw new Error('Unknown action: ' + action);
     }
   }
@@ -142,7 +152,7 @@ async function regenerateImage() {
   try {
     // Web app mode - use API for regeneration
     if (typeof chrome === 'undefined' || !chrome.runtime) {
-      const result = await apiCall('/api/content/regenerate-ai-image', 'POST', {
+      const result = await dbRegenerateAIImage({
         id: currentRegenerateId,
         prompt: newPrompt,
         aspectRatio: image.aspectRatio || '1:1',

@@ -36,23 +36,23 @@ async function apiCall(endpoint, method = 'POST', data = {}) {
 
 // DB operations via API
 async function dbLoadPlans() {
-  return await apiCall('/api/content/plans', 'GET');
+  return await apiCall('/api/content-plans?action=getAllPlans', 'GET');
 }
 
 async function dbSavePlan({ month, year, posts, planId }) {
-  return await apiCall('/api/content/plans', 'POST', { month, year, posts, planId });
+  return await apiCall('/api/content-plans?action=savePlan', 'POST', { month, year, posts, planId });
 }
 
 async function dbLoadPlanDetails({ planId }) {
-  return await apiCall('/api/content/plan-details', 'POST', { planId });
+  return await apiCall('/api/content-plans?action=getPlanDetails', 'POST', { planId });
 }
 
 async function dbDeletePost({ postId }) {
-  return await apiCall('/api/content/post', 'DELETE', { postId });
+  return await apiCall('/api/content-plans?action=deletePost', 'DELETE', { postId });
 }
 
 async function dbDeletePlan({ planId }) {
-  return await apiCall('/api/content/plan', 'DELETE', { planId });
+  return await apiCall('/api/content-plans?action=deletePlan', 'DELETE', { planId });
 }
 
 function dbMsg(action, data = {}) {

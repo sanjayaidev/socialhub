@@ -434,11 +434,11 @@ async function saveImgbbKey() {
 
 // ── DB operations via API ──
 async function dbSavePlan(month, year, posts) {
-  return await apiCall('/api/content/plans', 'POST', { month, year, posts });
+  return await apiCall('/api/content-plans?action=savePlan', 'POST', { month, year, posts });
 }
 
 async function dbLoadPlans() {
-  return await apiCall('/api/content/plans', 'GET');
+  return await apiCall('/api/content-plans?action=getAllPlans', 'GET');
 }
 
 // ── Main generation workflow ──
