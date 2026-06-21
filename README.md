@@ -65,6 +65,7 @@ The database migration runs automatically on first page load:
    - `/api/content/plan-details` - Get plan details
    - `/api/content/delete-plan` - Delete a plan
    - `/api/content/post` - Post operations
+   - `/api/chat` - AI chat endpoint with NVIDIA NIM models (streaming & non-streaming)
 4. **Static Assets**: HTML, CSS, JS files served directly
 
 ## Railway Configuration
@@ -96,6 +97,7 @@ npm start
 
 ## Environment Variables Required
 - `DATABASE_URL` - Neon PostgreSQL connection string (required for database operations)
+- `NVIDIA_API_KEY` - NVIDIA API key for AI chat functionality (required for /api/chat endpoint)
 
 ## Notes
 - The `vercel.json` file is kept for reference but is not used in Railway deployment

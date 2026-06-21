@@ -1,16 +1,1 @@
-```
-# Dependencies
-node_modules/
-
-# Environment
-.env
-.env.local
-.env.*
-
-# Logs
-*.log
-
-# Temporary files
-*.tmp
-*.swp
-```
+Nothing should be ignored based on the provided file changes, as they only include source files (.js) and configuration files (.md, .sql).
