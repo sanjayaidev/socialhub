@@ -51,8 +51,8 @@
       if (!window.ContentDesignerAPI || typeof window.ContentDesignerAPI.loadPresetsFromURL !== 'function') {
         throw new Error('ContentDesignerAPI not ready. Refresh the page.');
       }
-      // Use extension URL if internal, else fallback (though fallback won't work without chrome API)
-      const isInternal = !!chrome.runtime.id;
+      // Use extension URL if internal, else fallback to relative path for web app
+      const isInternal = typeof chrome !== 'undefined' && !!chrome.runtime?.id;
       const url = isInternal ? chrome.runtime.getURL(PRESET_FILES[cat]) : PRESET_FILES[cat];
       
       const data = await window.ContentDesignerAPI.loadPresetsFromURL(url);
