@@ -554,44 +554,111 @@
         return demo;
     }
 
-    function loadData() {
+    async function loadData() {
+    try {
+        const response = await fetch('/api/content-items');
+        if (response.ok) {
+            const data = await response.json();
+            contentData = data;
+            
+            // Backfill month for any items that don't have it (safety check)
+            contentData.forEach(item => { 
+                if (!item.month) item.month = 7; 
+                if (!item.platforms) item.platforms = []; // Ensure platforms is always an array
+                if (typeof item.platforms === 'string') {
+                    try {
+                        item.platforms = JSON.parse(item.platforms);
+                    } catch(e) {
+                        item.platforms = item.platforms.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+                    }
+                }
+            });
+            renderCalendar();
+        } else {
+            // Fallback to localStorage if API fails
+            const stored = localStorage.getItem('contentPlannerData');
+            if (stored) {
+                try {
+                    contentData = JSON.parse(stored);
+                } catch(e) {
+                    contentData = addDemoData();
+                }
+            } else {
+                contentData = addDemoData();
+            }
+            contentData.forEach(item => { 
+                if (!item.month) item.month = 7; 
+                if (!item.platforms) item.platforms = []; 
+            });
+            renderCalendar();
+        }
+    } catch(error) {
+        console.error('Error loading data:', error);
+        // Fallback to localStorage or demo data
         const stored = localStorage.getItem('contentPlannerData');
         if (stored) {
             try {
                 contentData = JSON.parse(stored);
-                if (!contentData || contentData.length === 0) {
-                    contentData = addDemoData();
-                    persistOnly();
-                }
             } catch(e) {
                 contentData = addDemoData();
-                persistOnly();
             }
         } else {
             contentData = addDemoData();
-            persistOnly();
         }
-        // backfill: anything saved before the month field existed defaults to month 7
-        contentData.forEach(item => { if (!item.month) item.month = 7; });
+        contentData.forEach(item => { 
+            if (!item.month) item.month = 7; 
+            if (!item.platforms) item.platforms = []; 
+        });
+        renderCalendar();
     }
+}
 
     function persistOnly() {
         localStorage.setItem('contentPlannerData', JSON.stringify(contentData));
     }
 
-    function saveData() {
-        persistOnly();
-        renderCalendar();
+    async function saveData() {
+    persistOnly(); // Keep localStorage as backup
+    
+    try {
+        // Send all data to backend
+        const response = await fetch('/api/content-items', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(contentData)
+        });
+        
+        if (!response.ok) {
+            console.error('Failed to sync with server');
+        }
+    } catch(error) {
+        console.error('Error saving to server:', error);
     }
+    
+    renderCalendar();
+}
 
     function getDayData(month, day) {
-        return contentData.filter(item => item.month === month && item.day === day);
-    }
+    return contentData.filter(item => 
+        parseInt(item.month) === parseInt(month) && 
+        parseInt(item.day) === parseInt(day)
+    );
+}
 
     function addContent(item) {
-        contentData.push(item);
-        saveData();
+    // Ensure month is set
+    if (!item.month) {
+        item.month = cursorDate.getMonth() + 1;
     }
+    // Ensure platforms is an array
+    if (typeof item.platforms === 'string') {
+        item.platforms = item.platforms.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    }
+    contentData.push(item);
+    saveData();
+}
 
     function updateContent(id, updated) {
         const index = contentData.findIndex(item => item.id === id);
