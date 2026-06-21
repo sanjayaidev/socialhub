@@ -235,6 +235,14 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 
 <div class="toast" id="toast"></div>
 
+<!-- FIX: hidden same-origin bridge to the Designer page. dashboard.js
+     now talks to window.ContentDesignerAPI / window.DesignerAgentAPI
+     inside this iframe directly (no postMessage needed, same origin)
+     instead of chrome.runtime.sendMessage, which only existed in the
+     Chrome-extension build and had no web equivalent at all. -->
+<iframe id="designerBridge" src="designer.html" title="designer-bridge"
+        style="position:fixed;width:1px;height:1px;border:0;opacity:0;pointer-events:none;left:-9999px;top:-9999px;"></iframe>
+
 <script src="dashboard.js"></script>
 </body>
 </html>
