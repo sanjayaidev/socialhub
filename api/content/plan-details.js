@@ -30,10 +30,35 @@ function getPool() {
 function rowToPost(row) {
   // Parse metadata jsonb back into post object
   const metadata = typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata;
+  
+  // Build images array from post_slides if available
+  let images = [];
+  if (row.slides && Array.isArray(row.slides)) {
+    // Sort slides by slide_index and extract generated_asset URLs
+    const sortedSlides = [...row.slides].sort((a, b) => a.slide_index - b.slide_index);
+    images = sortedSlides
+      .filter(slide => slide.generated_asset)
+      .map(slide => slide.generated_asset);
+  }
+  
+  // Build slides array with status info if available
+  let slides = null;
+  if (row.slides && Array.isArray(row.slides)) {
+    const sortedSlides = [...row.slides].sort((a, b) => a.slide_index - b.slide_index);
+    slides = sortedSlides.map(slide => ({
+      role: slide.role,
+      design_spec: slide.design_spec,
+      generated_asset: slide.generated_asset,
+      status: slide.status
+    }));
+  }
+  
   return {
     postId: row.id,
     day: row.day,
     type: row.type,
+    images,
+    slides,
     ...metadata,
   };
 }
@@ -53,11 +78,28 @@ export default async function handler(req) {
 
     const pool = getPool();
     try {
-      const result = await pool.query(
-        'select id, day, type, metadata from daily_posts where plan_id = $1 order by day asc',
-        [planId]
-      );
-      return json(result.rows.map(rowToPost));
+      // Fetch posts with their slides from post_slides table using LEFT JOIN LATERAL
+      const result = await pool.query(`
+        SELECT 
+          dp.id, 
+          dp.day, 
+          dp.type, 
+          dp.metadata,
+          COALESCE(
+            (SELECT json_agg(slides ORDER BY slides.slide_index)
+             FROM (
+               SELECT ps.slide_index, ps.role, ps.design_spec, ps.generated_asset, ps.status
+               FROM post_slides ps
+               WHERE ps.post_id = dp.id
+               ORDER BY ps.slide_index
+             ) slides
+            ), '[]'::json
+          ) as slides
+        FROM daily_posts dp
+        WHERE dp.plan_id = $1
+        ORDER BY dp.day ASC
+      `, [planId]);
+      return result.rows.map(rowToPost);
     } finally {
       await pool.end();
     }
