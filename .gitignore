@@ -1,1 +1,31 @@
-Nothing needs to be added to the .gitignore file based on the provided file changes. The changes consist only of JavaScript source files and configuration files (vercel.json), which should not be ignored according to the rules.
+```
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# Distribution and build folders
+dist/
+build/
+target/
+```

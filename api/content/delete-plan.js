@@ -1,9 +1,7 @@
-// pages/api/content/delete-plan.js
+// api/content/delete-plan.js
 //
 // DELETE /api/content/plan { planId } -> { ok: true }
 // Cascades to content_posts via the FK's ON DELETE CASCADE.
-
-export const config = { runtime: 'edge' };
 
 import { Pool } from '@neondatabase/serverless';
 
