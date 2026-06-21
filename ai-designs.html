@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Designs Gallery</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#07090F; --s1:#0D1018; --s2:#111520; --s3:#161C2C;
+  --border:#1C2438; --border2:#263048;
+  --accent:#4DFFA0; --accent2:#4D9FFF; --accent3:#FF6B4D;
+  --text:#DCE6F8; --muted:#4A5A7A; --muted2:#6A7A9A;
+  --mono:'Space Mono',monospace; --sans:'DM Sans',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;}
+.header{position:sticky;top:0;background:rgba(7,9,15,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:16px;}
+.header-title{font-family:var(--mono);font-size:15px;font-weight:700;}
+.header-title span{color:var(--accent);}
+.header-actions{margin-left:auto;display:flex;gap:8px;}
+.btn{background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-family:var(--mono);font-size:10px;cursor:pointer;}
+.btn-primary{background:var(--accent);color:#000;border-color:var(--accent);}
+.btn-danger{color:var(--error);border-color:rgba(255,77,107,0.3);}
+.plan-selector{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;}
+select{background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:11px;}
+.gallery{padding:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;}
+.image-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:transform 0.2s;}
+.image-card:hover{transform:translateY(-3px);border-color:var(--accent2);}
+.image-preview{background:var(--s3);height:320px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.image-preview img{width:100%;height:100%;object-fit:cover;}
+.card-info{padding:12px;}
+.card-day{font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:4px;}
+.card-prompt{font-size:10px;color:var(--muted2);margin-bottom:8px;max-height:60px;overflow:hidden;cursor:pointer;font-style:italic;}
+.card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--s1);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:600px;}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;}
+.modal-title{font-family:var(--mono);font-size:13px;color:var(--accent);}
+.modal-close{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;}
+.modal-body{padding:20px;}
+.modal-textarea{width:100%;background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:12px;font-family:var(--sans);font-size:12px;resize:vertical;min-height:150px;}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:10px 16px;font-family:var(--mono);font-size:11px;z-index:2000;transform:translateY(20px);opacity:0;transition:all 0.3s;}
+.toast.show{transform:translateY(0);opacity:1;}
+.empty-state{text-align:center;padding:80px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">AI <span>Designs Gallery</span></div>
+  <div class="header-actions">
+    <button class="btn" id="refreshBtn">↻ Refresh</button>
+    <button class="btn" id="backToDashboardBtn">← Dashboard</button>
+  </div>
+</div>
+
+<div class="plan-selector">
+  <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">PLAN</span>
+  <select id="planSelect"></select>
+  <span id="stats" style="margin-left:auto;font-size:11px;color:var(--muted2);"></span>
+</div>
+
+<div class="gallery" id="gallery">
+  <div class="empty-state">Loading AI designs...</div>
+</div>
+
+<div class="modal-overlay" id="regenerateModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✎ Edit & Regenerate</span>
+      <button class="modal-close" id="regenerateModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-label" style="font-family:var(--mono);font-size:9px;color:var(--muted2);margin-bottom:6px;">Edit prompt below:</div>
+      <textarea class="modal-textarea" id="regeneratePromptInput" rows="8"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="regenerateModalCancel">Cancel</button>
+      <button class="btn btn-primary" id="regenerateModalConfirm">✨ Regenerate</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="ai-designs.js"></script>
+</body>
+</html>
