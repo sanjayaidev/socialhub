@@ -1,17 +1,34 @@
-// agent.js — Design Agent v3.4 (fixed JSON parsing & newline escaping)
+// agent.js — Design Agent v3.5 (webapp build)
+//
+// Changes from v3.4:
+//   - The DeepSeek call that generates the design JSON spec no longer
+//     goes through chrome.runtime.sendMessage to an extension
+//     background script (that mechanism doesn't exist in a plain
+//     webapp tab — it would just hang/reject). It now calls your
+//     Railway NIM endpoint directly with deepseek-ai/deepseek-v4-pro.
+//   - Every remaining chrome.* call is guarded so this script can't
+//     crash on load just because `chrome` is undefined outside an
+//     extension context.
 (function () {
 'use strict';
 
-const EXTENSION_ID = 'noapjcmepjdbbnhdddiflndjbodlamph';
+// Your deployed NIM proxy. Change this if you redeploy elsewhere.
+const NIM_ENDPOINT = 'https://nimrailway-production.up.railway.app/api/chat';
+const NIM_MODEL = 'deepseek-ai/deepseek-v4-pro';
+
+function hasChromeRuntime() {
+  return typeof chrome !== 'undefined' && !!chrome.runtime;
+}
 
 function sendToExt(message) {
   return new Promise((resolve, reject) => {
-    if (typeof chrome === 'undefined' || !chrome.runtime) {
-      reject(new Error('Chrome API not available'));
+    if (!hasChromeRuntime()) {
+      reject(new Error('Chrome extension API not available — this is a webapp build.'));
       return;
     }
     try {
       const isInternal = !!chrome.runtime.id;
+      const EXTENSION_ID = 'noapjcmepjdbbnhdddiflndjbodlamph';
       const target = isInternal ? null : EXTENSION_ID;
       chrome.runtime.sendMessage(target, message, (response) => {
         if (chrome.runtime.lastError) { reject(new Error(chrome.runtime.lastError.message)); return; }
@@ -23,12 +40,30 @@ function sendToExt(message) {
   });
 }
 
+// ── Direct call to your Railway NIM proxy (replaces the extension hop) ──
+async function callDeepSeek(prompt) {
+  const response = await fetch(NIM_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages: [{ role: 'user', content: prompt }],
+      model: NIM_MODEL,
+      stream: false,
+      temperature: 0.7,
+      max_tokens: 8192, // design specs are long JSON objects
+    }),
+  });
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`NIM API error: ${response.status} - ${errText}`);
+  }
+  const result = await response.json();
+  return result.choices?.[0]?.message?.content || '';
+}
+
 const conversationStore = new Map();
 const MAX_HISTORY = 10;
 const RESET_KEYWORD = '[COMPLETE RESET]';
-
-const _agentProcessedRequests = new Map();
-const _AGENT_DEDUP_TIMEOUT = 5000;
 
 let _processingLock = false;
 const _processingQueue = [];
@@ -50,7 +85,6 @@ function releaseLock() {
   }
 }
 
-// [SYSTEM_PROMPT remains exactly the same as your original file]
 const SYSTEM_PROMPT = `You are DESIGN AGENT — a professional design executor that creates complete, production-ready Instagram/social media designs. Output ONLY a valid JSON design spec. No markdown, no commentary, no code fences.
 ═══════════════════════════════════════════════════════════════
 ABSOLUTE RULES (NON-NEGOTIABLE):
@@ -116,7 +150,7 @@ ALWAYS ENSURE:
 ═══════════════════════════════════════════════════════════════
 RESOURCE SOURCES (APPROVED):
 ═══════════════════════════════════════════════════════════════
-ICONS (use icons8 PNG URLs — these are CORS-safe and render reliably in the extension):
+ICONS (use icons8 PNG URLs — these are CORS-safe and render reliably):
 Format: https://img.icons8.com/fluency/96/[name].png   ← color/fluency style
         https://img.icons8.com/ios-filled/96/HEXCOLOR/[name].png  ← monochrome, replace HEXCOLOR with hex (no #)
 
@@ -405,77 +439,40 @@ Output ONLY the complete JSON design spec now. Remember:
 - Use real Unsplash URLs for images (not local paths)
 - Output valid JSON only — no markdown, no commentary.`;
 
-const PROVIDER = 'deepseek';
-
-// ✅ FIX: Completely rewritten to correctly escape actual newline characters inside JSON strings
 function repairJSON(s) {
   if (!s) return s;
-  // Remove trailing commas
   let result = s.replace(/,\s*([]}])/g, '$1');
-  
-  // Fix unescaped newlines, carriage returns, and tabs inside strings
-  // This regex matches valid JSON strings (handling escaped quotes inside them)
   result = result.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, p1) => {
-    // Replace actual newline characters with the literal string \n so JSON.parse succeeds
     return '"' + p1.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t') + '"';
   });
-  
-  // Fix single quotes for keys/values (basic repair)
   result = result.replace(/'\s*:/g, '":');
   result = result.replace(/:\s*'/g, ':"');
-  
   return result;
 }
 
-function resetCanvasState() {
-  const resetId = `reset_${Date.now()}`;
-  return {
-    canvas: { width: 1080, height: 1350 },
-    bg: { type: 'solid', color: '#0A0A14' },
-    textBlocks: [],
-    icons: [],
-    brands: [],
-    hasLogo: false
-  };
-}
-
-// ✅ FIX: Fixed backslash handling so it doesn't break when encountering \ outside of strings
 function extractJSON(s) {
   if (!s) return null;
   let cleaned = s.replace(/```json\s*([\s\S]*?)```/gi, '$1').replace(/```\s*([\s\S]*?)```/gi, '$1').trim();
   const start = cleaned.indexOf('{');
   if (start === -1) return null;
-  
+
   let depth = 0, inStr = false, escape = false, end = -1;
   for (let i = start; i < cleaned.length; i++) {
     const c = cleaned[i];
     if (escape) { escape = false; continue; }
-    
-    // ✅ FIX: Only treat backslash as an escape character if we are INSIDE a string
-    if (c === '\\') { 
-      if (inStr) escape = true; 
-      continue; 
-    }
-    
+    if (c === '\\') { if (inStr) escape = true; continue; }
     if (c === '"') { inStr = !inStr; continue; }
     if (inStr) continue;
-    
     if (c === '{') depth++;
-    if (c === '}') {
-      depth--;
-      if (depth === 0) { end = i; break; }
-    }
+    if (c === '}') { depth--; if (depth === 0) { end = i; break; } }
   }
-  
+
   let candidate = end !== -1 ? cleaned.slice(start, end + 1) : cleaned.slice(start);
-  
+
   try { return JSON.parse(candidate); } catch (e) {}
-  
   const repaired = repairJSON(candidate);
   try { return JSON.parse(repaired); } catch (e) {}
-  
   try { return JSON.parse(repairJSON(cleaned)); } catch (e) {}
-  
   return null;
 }
 
@@ -499,7 +496,7 @@ function buildPrompt(userMessage, conversationId, canvasState = null) {
     ? conversation.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n')
     : '(first message in this conversation)';
   const stateText = canvasState ? JSON.stringify(canvasState, null, 2) : '{}';
-  
+
   return SYSTEM_PROMPT
     .replace('{{CANVAS_STATE}}', stateText)
     .replace('{{HISTORY}}', historyText)
@@ -536,73 +533,72 @@ async function waitForBgImage(timeoutMs = 8000) {
 async function processPrompt(options) {
   const { prompt, conversationId, canvasState = null, autoApply = true, autoExport = false, returnDataUrl = false, clearCanvasFirst = false } = options;
   if (!prompt) throw new Error('Prompt is required');
-  
+
   let actualPrompt = prompt;
   let forceReset = false;
   const trimmedPrompt = prompt.trim();
-  
+
   if (trimmedPrompt.startsWith(RESET_KEYWORD)) {
     forceReset = true;
     actualPrompt = trimmedPrompt.slice(RESET_KEYWORD.length).trim();
     console.log('[Agent] Force reset triggered, clearing conversation');
   }
-  
+
   let convId;
   if (forceReset) {
     convId = `reset_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
-    console.log('[Agent] New conversation ID for reset:', convId);
   } else {
     convId = conversationId || `default_${Date.now()}`;
   }
-  
+
   const startTime = Date.now();
   await acquireLock();
-  
+
   try {
-    if (forceReset) {
-      conversationStore.delete(convId);
-    }
-    
+    if (forceReset) conversationStore.delete(convId);
+
     const effectiveCanvasState = forceReset ? { reset: true, timestamp: Date.now() } : canvasState;
     const fullPrompt = buildPrompt(actualPrompt, convId, effectiveCanvasState);
-    console.log('[Agent] Sending to DeepSeek, reset mode:', forceReset);
-    
-    const raw = await sendToExt({ action: 'execute', provider: PROVIDER, actionType: 'prompt', params: { message: fullPrompt } });
-    
+    console.log('[Agent] Sending to DeepSeek (Railway NIM), reset mode:', forceReset);
+
+    // ── This is the key fix: direct call to your Railway endpoint,
+    //    no more chrome.runtime hop to a nonexistent background script.
+    const raw = await callDeepSeek(fullPrompt);
+
     addToConversation(convId, 'user', prompt);
     addToConversation(convId, 'assistant', raw);
-    
+
     let spec = extractJSON(raw);
     if (!spec) {
       console.warn('[Agent API] First parse failed, sending fix prompt...');
       try {
         const fixPrompt = `Your previous response was not valid JSON. Output ONLY the corrected JSON object — no markdown, no commentary, no code fences. Previous response:\n\n${raw.slice(0, 4000)}`;
-        const raw2 = await sendToExt({ action: 'execute', provider: PROVIDER, actionType: 'prompt', params: { message: fixPrompt } });
+        const raw2 = await callDeepSeek(fixPrompt);
         addToConversation(convId, 'assistant', raw2);
         spec = extractJSON(raw2);
       } catch (retryErr) {}
     }
-    
+
     if (!spec) throw new Error('JSON parse failed after retry');
-    
+
     let result = { success: true, spec, conversationId: convId };
-    
+
     if (autoApply && window.ContentDesignerAPI) {
       const shouldClearFirst = clearCanvasFirst || forceReset;
-      
+
       if (shouldClearFirst && window.ContentDesignerAPI.resetState) {
         console.log('[Agent] Clearing canvas before applying new design...');
         await window.ContentDesignerAPI.resetState();
         await new Promise(r => setTimeout(r, 200));
       }
-      
+
       await window.ContentDesignerAPI.applyDesign(spec);
       result.applied = true;
-      
+
       await waitForBgImage(8000);
       await waitForImagesToLoad(12000);
       await new Promise(r => setTimeout(r, 500));
-      
+
       if (autoExport && window.ContentDesignerAPI.autoExport) {
         const filename = `design-${convId}-${Date.now()}.png`;
         const exportResult = await window.ContentDesignerAPI.autoExport(filename);
@@ -614,7 +610,7 @@ async function processPrompt(options) {
         if (canvas) result.dataUrl = canvas.toDataURL('image/png');
       }
     }
-    
+
     result.duration = Date.now() - startTime;
     return result;
   } catch (err) {
@@ -643,7 +639,7 @@ async function handleSend() {
   window.DesignerAgentUI?.busy(true);
   window.DesignerAgentUI?.setStatus(`thinking · DeepSeek`);
   window.DesignerAgentUI?.addTyping();
-  
+
   try {
     const result = await processPrompt({
       prompt: userMsg,
@@ -652,7 +648,7 @@ async function handleSend() {
       autoExport: false,
       returnDataUrl: false
     });
-    
+
     window.DesignerAgentUI?.removeTyping();
     window.DesignerAgentUI?.addMessage('bot', '<span class="applied-badge ok">✓ applied</span>', [
       { label: '💾 Save JSON', onClick: () => downloadJSON(result.spec) },
@@ -673,78 +669,66 @@ function escapeHTML(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
 
+// Plain browser download — no extension hop needed for this.
 function downloadJSON(spec) {
   const json = JSON.stringify(spec, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  sendToExt({ action: 'download', url, filename: `agent-design-${Date.now()}.json` }).catch(err => alert('Download failed: ' + err.message));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `agent-design-${Date.now()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'agentProcessPrompt') {
-    const requestKey = `${request.prompt}_${request.options?.conversationId || request.conversationId || ''}`;
-    const now = Date.now();
-    
-    if (_agentProcessedRequests.has(requestKey)) {
-      const lastRequest = _agentProcessedRequests.get(requestKey);
-      if (now - lastRequest < _AGENT_DEDUP_TIMEOUT) {
-        console.warn('[Agent] Duplicate request ignored:', requestKey);
-        sendResponse({ success: false, error: 'Duplicate request ignored' });
-        return true;
-      }
-    }
-    
-    _agentProcessedRequests.set(requestKey, now);
-    
-    for (const [key, timestamp] of _agentProcessedRequests.entries()) {
-      if (now - timestamp > _AGENT_DEDUP_TIMEOUT) {
-        _agentProcessedRequests.delete(key);
-      }
-    }
-    
-    processPrompt(request.options || {
-      prompt: request.prompt,
-      conversationId: request.conversationId,
-      canvasState: request.canvasState,
-      autoApply: request.autoApply !== false,
-      autoExport: request.autoExport || false,
-      returnDataUrl: request.returnDataUrl || false,
-      clearCanvasFirst: request.clearCanvasFirst || false
-    })
-      .then(result => {
-        sendResponse({ success: true, result });
+// Guarded: only attach this listener if running inside an actual
+// extension context. Without this guard, `chrome` being undefined in
+// a plain browser tab throws here and the WHOLE script stops running.
+if (hasChromeRuntime()) {
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'agentProcessPrompt') {
+      processPrompt(request.options || {
+        prompt: request.prompt,
+        conversationId: request.conversationId,
+        canvasState: request.canvasState,
+        autoApply: request.autoApply !== false,
+        autoExport: request.autoExport || false,
+        returnDataUrl: request.returnDataUrl || false,
+        clearCanvasFirst: request.clearCanvasFirst || false
       })
-      .catch(error => {
-        sendResponse({ success: false, error: error.message });
-      });
-    return true;
-  }
-  
-  if (request.action === 'agentClearConversation') {
-    clearConversation(request.conversationId);
-    sendResponse({ success: true });
-    return true;
-  }
-  
-  if (request.action === 'agentGetHistory') {
-    const history = getConversationHistory(request.conversationId);
-    sendResponse({ success: true, history });
-    return true;
-  }
-});
+        .then(result => sendResponse({ success: true, result }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+      return true;
+    }
+
+    if (request.action === 'agentClearConversation') {
+      clearConversation(request.conversationId);
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (request.action === 'agentGetHistory') {
+      const history = getConversationHistory(request.conversationId);
+      sendResponse({ success: true, history });
+      return true;
+    }
+  });
+}
 
 window.DesignerAgentAPI = {
   processPrompt,
   clearConversation,
   getConversationHistory,
-  version: '3.4.0'
+  version: '3.5.0'
 };
 
 const sendBtn = document.getElementById('agentSend');
 if (sendBtn) sendBtn.addEventListener('click', handleSend);
 
 const subtitle = document.getElementById('agentSubtitle');
-if (subtitle) subtitle.textContent = 'Ready · DeepSeek API · CDN icons · Auto-spacing';
+if (subtitle) subtitle.textContent = 'Ready · DeepSeek (Railway) · Auto-spacing';
 
-console.log('[Agent API] v3.4 Ready. Fixed JSON parsing & newline escaping.');
+console.log('[Agent API] v3.5 Ready. Talking directly to Railway NIM endpoint.');
 })();
