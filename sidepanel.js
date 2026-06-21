@@ -37,31 +37,28 @@ async function apiCall(endpoint, method = 'POST', data = {}) {
 
 // NIM API call for content generation
 async function callNIM(prompt, options = {}) {
-  const nimEndpoint = options.endpoint || '/api/nim/generate';
-  const apiKey = options.apiKey || '';
-  
+  const nimEndpoint = options.endpoint || 'https://nimrailway-production.up.railway.app/api/chat';
+
   try {
     const response = await fetch(nimEndpoint, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        prompt,
-        model: options.model || 'meta/llama-3.1-70b-instruct',
+        messages: [{ role: 'user', content: prompt }],
+        model: options.model || 'deepseek-ai/deepseek-v4-pro',
+        stream: false,
         temperature: options.temperature || 0.7,
         max_tokens: options.max_tokens || 4096
       })
     });
-    
+
     if (!response.ok) {
       const error = await response.text();
       throw new Error(`NIM API error: ${response.status} - ${error}`);
     }
-    
+
     const result = await response.json();
-    return result.choices?.[0]?.message?.content || result.output || '';
+    return result.choices?.[0]?.message?.content || '';
   } catch (err) {
     console.error('NIM API call failed:', err);
     throw err;
@@ -332,7 +329,7 @@ OUTPUT: JSON array only. No markdown. Start with [ end with ].`;
   
   if (total <= BATCH_SIZE) {
     log(`→ NIM: generating ${total} posts...`, 'step');
-    const raw = await callNIM(buildBatchPrompt(postTypes, 1));
+    const raw = await callNIM(buildBatchPrompt(postTypes, 1), { model: 'deepseek-ai/deepseek-v4-pro', max_tokens: 4096 });
     return parseDeepSeekArray(raw);
   }
   
@@ -349,7 +346,7 @@ OUTPUT: JSON array only. No markdown. Start with [ end with ].`;
     log(`→ Batch ${batchNum}/${totalBatches}: days ${day}–${day + batchPosts.length - 1}...`, 'step');
     setProgress(`Generating batch ${batchNum}/${totalBatches}...`, stats.done, total);
     
-    const raw = await callNIM(buildBatchPrompt(batchPosts, day));
+    const raw = await callNIM(buildBatchPrompt(batchPosts, day), { model: 'deepseek-ai/deepseek-v4-pro', max_tokens: 4096 });
     const ideas = parseDeepSeekArray(raw);
     
     ideas.forEach((idea, idx) => { idea.day = day + idx; });
