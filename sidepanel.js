@@ -637,9 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('startBtn').addEventListener('click', startWorkflow);
   document.getElementById('stopBtn').addEventListener('click', stopWorkflow);
   document.getElementById('dashBtn').addEventListener('click', openDashboard);
-  document.getElementById('openDesignerBtn').addEventListener('click', () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL('designer.html') });
-  });
+  document.getElementById('openDesignerBtn').addEventListener('click', openDesigner);
   
   // Initial state
   document.getElementById('brandFields').style.display = 'none';

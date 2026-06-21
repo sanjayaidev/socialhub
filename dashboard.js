@@ -18,7 +18,57 @@ function toast(msg, type = 'success') {
   setTimeout(() => el.className = 'toast', 2500);
 }
 
+// Web app mode - direct fetch to API endpoints
+async function apiCall(endpoint, method = 'POST', data = {}) {
+  try {
+    const response = await fetch(endpoint, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: method !== 'GET' ? JSON.stringify(data) : undefined
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.error('API call failed:', err);
+    throw err;
+  }
+}
+
+// DB operations via API
+async function dbLoadPlans() {
+  return await apiCall('/api/content/plans', 'GET');
+}
+
+async function dbSavePlan({ month, year, posts, planId }) {
+  return await apiCall('/api/content/plans', 'POST', { month, year, posts, planId });
+}
+
+async function dbLoadPlanDetails({ planId }) {
+  return await apiCall('/api/content/plan-details', 'POST', { planId });
+}
+
+async function dbDeletePost({ postId }) {
+  return await apiCall('/api/content/post', 'DELETE', { postId });
+}
+
+async function dbDeletePlan({ planId }) {
+  return await apiCall('/api/content/plan', 'DELETE', { planId });
+}
+
 function dbMsg(action, data = {}) {
+  // Check if we're in web app mode (not Chrome extension)
+  if (typeof chrome === 'undefined' || !chrome.runtime) {
+    // Web app mode - use API calls
+    switch (action) {
+      case 'dbLoadPlans': return dbLoadPlans();
+      case 'dbLoadPlanDetails': return dbLoadPlanDetails(data);
+      case 'dbSavePlan': return dbSavePlan(data);
+      case 'dbDeletePost': return dbDeletePost(data);
+      case 'dbDeletePlan': return dbDeletePlan(data);
+      default: throw new Error('Unknown action: ' + action);
+    }
+  }
+  // Chrome extension mode
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage({ action, ...data }, (res) => {
       if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
@@ -1047,12 +1097,14 @@ function openSlideInDesigner(day, slideIndex, postId) {
 }
 
 // ── Listen for slide updates saved back from designer ──
-chrome.runtime.onMessage.addListener((request) => {
-  if (request.action === 'slideUpdatedInDB') {
-    toast('✓ Slide edit saved — refreshing...', 'success');
-    loadPlan(currentPlanKey);
-  }
-});
+if (typeof chrome !== 'undefined' && chrome.runtime) {
+  chrome.runtime.onMessage.addListener((request) => {
+    if (request.action === 'slideUpdatedInDB') {
+      toast('✓ Slide edit saved — refreshing...', 'success');
+      loadPlan(currentPlanKey);
+    }
+  });
+}
 
 // ── Event listeners ──
 document.getElementById('planSelect').addEventListener('change', (e) => loadPlan(e.target.value));
@@ -1092,7 +1144,11 @@ if (headerActions) {
   aiGalleryBtn.style.marginRight = 'auto';
   aiGalleryBtn.style.marginLeft = '10px';
   aiGalleryBtn.addEventListener('click', () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL('ai-designs.html') });
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.create({ url: chrome.runtime.getURL('ai-designs.html') });
+    } else {
+      window.location.href = 'ai-designs.html';
+    }
   });
   headerActions.insertBefore(aiGalleryBtn, headerActions.firstChild);
 }
