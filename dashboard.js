@@ -919,8 +919,29 @@ document.querySelectorAll('#tab-dashboard .modal-overlay').forEach(overlay => {
 
 document.getElementById('deletePlanBtn')?.addEventListener('click', deletePlan);
 
+// ── Log helper for dashboard
+function dashLog(msg, type='info') {
+  const scroll = document.getElementById('dashboardLogScroll');
+  if (!scroll) return;
+  const t = new Date().toLocaleTimeString('en',{ hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  const line = document.createElement('div');
+  line.style.marginBottom = '4px';
+  let color = 'var(--muted2)';
+  if (type === 'success') color = 'var(--accent)';
+  else if (type === 'error') color = 'var(--error)';
+  else if (type === 'step') color = 'var(--accent2)';
+  line.innerHTML = `<span style="color:${color};">[${t}] ${msg}</span>`;
+  scroll.appendChild(line);
+  scroll.scrollTop = scroll.scrollHeight;
+  // Keep only last 50 lines
+  while (scroll.children.length > 50) {
+    scroll.removeChild(scroll.firstChild);
+  }
+}
+
 // ── Load on start ──
 loadPlans().catch(err => {
   console.error('Failed to load plans:', err);
+  dashLog(`Error loading plans: ${err.message}`, 'error');
   document.getElementById('calendar').innerHTML = `<div class="empty-state"><h2>Error loading plans</h2><p>${err.message}</p></div>`;
 });

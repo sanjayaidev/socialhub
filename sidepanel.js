@@ -519,29 +519,14 @@ function injectChatStyles() {
 function buildChatSection() {
   injectChatStyles();
 
-  // Replace the existing simple chat section with the full streaming one
-  const section = document.querySelector('.section:last-of-type');
-  if (!section) return;
+  // Target the #chatContainer div instead of searching for sections
+  const container = document.getElementById('chatContainer');
+  if (!container) return;
 
-  // Find the section that contains "AI ASSISTANT CHAT"
-  const allSections = document.querySelectorAll('.section');
-  let chatSection = null;
-  allSections.forEach(s => {
-    if (s.querySelector('.section-title')?.textContent?.includes('AI ASSISTANT')) {
-      chatSection = s;
-    }
-  });
-  if (!chatSection) return;
-
-  chatSection.innerHTML = `
-    <div class="section-title">
-      🤖 AI ASSISTANT CHAT
-      <span>live streaming</span>
-    </div>
-
+  container.innerHTML = `
     <div class="sp-chat-wrap">
       <div class="sp-chat-msgs" id="spMsgs">
-        <div class="sp-msg system">Ask DeepSeek about your content plan, copy ideas, hashtags…</div>
+        <div class="sp-msg system">AI output will appear here during generation...</div>
       </div>
 
       <div class="sp-token-bar" id="spTokenBar">● streaming…</div>

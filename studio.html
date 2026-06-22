@@ -37,8 +37,10 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 #tab-dashboard .header-meta{font-size:11px;color:var(--muted2);margin-left:4px;}
 #tab-dashboard .header-actions{margin-left:auto;display:flex;gap:8px;}
 
-#tab-dashboard .plan-selector{position:relative;z-index:1;padding:16px 24px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+#tab-dashboard .plan-selector{position:relative;z-index:10;padding:16px 24px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
 #tab-dashboard .plan-selector select{background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:11px;cursor:pointer;}
+#tab-dashboard .plan-selector select:focus{outline:none;border-color:var(--accent);z-index:15;}
+#tab-dashboard .plan-selector select option{background:var(--s2);color:var(--text);}
 #tab-dashboard .plan-stats{display:flex;gap:16px;margin-left:auto;}
 #tab-dashboard .plan-stat{text-align:center;}
 #tab-dashboard .plan-stat .n{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent);}
@@ -411,6 +413,14 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <!-- Logs Panel for Dashboard -->
+  <div style="position:fixed;bottom:24px;left:24px;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:12px;width:300px;max-height:200px;overflow-y:auto;z-index:2000;">
+    <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">📋 Activity Log</div>
+    <div id="dashboardLogScroll" style="font-family:var(--mono);font-size:10px;line-height:1.5;">
+      <div style="color:var(--muted2);">Ready...</div>
+    </div>
+  </div>
 </div>
 
 <!-- ════════════════════ DESIGNER TAB ════════════════════ -->

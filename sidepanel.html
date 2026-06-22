@@ -230,31 +230,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent2);}
 <div class="section" style="margin-top:16px;">
   <div class="section-title">
     🤖 AI ASSISTANT CHAT
-    <span>live streaming</span>
+    <span>output stream</span>
   </div>
   
-  <div class="chat-messages" id="chatMessages" style="max-height:200px;overflow-y:auto;margin-bottom:12px;">
-    <div class="chat-msg system">Ask DeepSeek anything about your content plan...</div>
-  </div>
-  
-  <div class="chat-input-row" style="display:flex;gap:8px;">
-    <textarea id="chatInput" rows="2" placeholder="Type your question..." style="flex:1;resize:none;"></textarea>
-    <button class="btn" id="chatSendBtn" style="width:auto;margin:0;padding:0 16px;">SEND</button>
-  </div>
-  
-  <!-- Model Selector Dropdown -->
-  <div class="field" style="margin-top:12px;">
-    <label>AI Model</label>
-    <select id="modelSelect" style="width:100%;">
-      <option value="moonshotai/kimi-k2.6">moonshotai/kimi-k2.6</option>
-      <option value="nvidia/llama-3.1-nemoguard-8b-content-safety">nvidia/llama-3.1-nemoguard-8b-content-safety</option>
-      <option value="deepseek-ai/deepseek-v4-flash">deepseek-ai/deepseek-v4-flash</option>
-      <option value="deepseek-ai/deepseek-v4-pro" selected>deepseek-ai/deepseek-v4-pro</option>
-      <option value="mistralai/mistral-large-3-675b-instruct-2512">mistralai/mistral-large-3-675b-instruct-2512</option>
-    </select>
-  </div>
-  
-  <div class="chat-status" id="chatStatus" style="font-size:9px;color:var(--muted);margin-top:6px;font-family:var(--mono);">idle</div>
+  <!-- This div will be replaced by buildChatSection() with streaming UI -->
+  <div id="chatContainer"></div>
 </div>
 
 <!-- Debug Panel (F4) -->
