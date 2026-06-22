@@ -497,16 +497,15 @@ async function openDashboard() {
       alert('No plans found. Generate ideas first.');
       return;
     }
-    window.location.href = 'dashboard.html';
+    window.location.href = 'studio.html?tab=dashboard';
   } catch (err) {
     log('Dashboard error: ' + err.message, 'error');
   }
 }
 
 async function openDesigner() {
-  window.location.href = 'designer.html';
+  window.location.href = 'studio.html?tab=designer';
 }
-
 // ── Event listeners ──
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('brandEnabled').addEventListener('change', (e) => {
