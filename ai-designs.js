@@ -209,13 +209,8 @@ document.getElementById('regenerateModalCancel').addEventListener('click', () =>
 document.getElementById('regenerateModalConfirm').addEventListener('click', regenerateImage);
 document.getElementById('refreshBtn').addEventListener('click', () => loadImages(currentPlanId));
 document.getElementById('backToDashboardBtn').addEventListener('click', () => {
-  if (typeof chrome !== 'undefined' && chrome.tabs) {
-    chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') });
-  } else {
-    window.location.href = 'dashboard.html';
-  }
+  window.location.href = 'studio.html?tab=dashboard';
 });
-
 // Close modal on overlay click
 document.getElementById('regenerateModal').addEventListener('click', (e) => {
   if (e.target === document.getElementById('regenerateModal')) {
