@@ -126,9 +126,11 @@ function setProgress(msg, done, total) {
   const el    = document.getElementById('progressStatus');
   const bar   = document.getElementById('progressBar');
   const count = document.getElementById('progressCount');
+  const dayEl = document.getElementById('dayStatus');
   if (el)    el.textContent    = msg;
   if (bar)   bar.style.width   = (total>0 ? Math.round((done/total)*100) : 0) + '%';
   if (count) count.textContent = `${done}/${total}`;
+  if (dayEl) dayEl.textContent = `Current: Day ${done + 1} of ${total}`;
   stats.done = done;
 }
 
@@ -268,52 +270,109 @@ function parseDeepSeekArray(raw) {
 }
 
 // ── Content generation ────────────────────────────────────────────────
-async function generateContentWithNIM(brief, month, year, postTypes) {
-  const BATCH_SIZE = 15;
-  const total      = postTypes.length;
+// New flow: Generate one day at a time instead of batches
 
-  const buildBatchPrompt = (batchPosts, startDay) => {
-    const batchTypes = batchPosts.map((p,i)=>`Day ${startDay+i}: type ${p}`);
+async function generateContentWithNIM(brief, month, year, postTypes) {
+  const total = postTypes.length;
+  const allIdeas = [];
+
+  const buildDayPrompt = (postType, dayNum) => {
     return `You are an expert Instagram content strategist AND copywriter.
 CONTENT BRIEF: ${brief}
 MONTH: ${month} ${year}
+DAY: ${dayNum}
+POST TYPE: ${postType}
 
-CRITICAL: Output EXACTLY ${batchPosts.length} post objects. No more, no less.
+CRITICAL: Output EXACTLY 1 post object for Day ${dayNum}.
 
-POST TYPES (must match exactly): ${batchTypes.join(', ')}
+Every post must have: day (exact number ${dayNum}), type (${postType}), title, caption (150-300 chars with emojis), hashtags (15-20 array no # prefix), image_prompt (detailed visual desc), hook, bullets (single only 3-item array), audience (one of: client, student), platforms (array, any of: ig, yt, li), slides (carousel only: array of first/content/last each with title body image_prompt)
 
-Every post must have: day (exact numbers), type, title, caption (150-300 chars with emojis), hashtags (15-20 array no # prefix), image_prompt (detailed visual desc), hook, bullets (single only 3-item array), audience (one of: client, student), platforms (array, any of: ig, yt, li), slides (carousel only: array of first/content/last each with title body image_prompt)
-
-OUTPUT: JSON array only. No markdown. Start with [ end with ].`;
+OUTPUT: JSON object only (no array wrapper). No markdown. Start with { end with }.`;
   };
 
-  if (total <= BATCH_SIZE) {
-    log(`→ DeepSeek: generating ${total} posts…`, 'step');
-    const raw = await callNIM(buildBatchPrompt(postTypes, 1), { model:'deepseek-ai/deepseek-v4-pro', max_tokens:4096 });
-    return parseDeepSeekArray(raw);
-  }
+  // Parse single object response (for day-by-day generation)
+  const parseSingleObject = (raw) => {
+    let cleaned = raw
+      .replace(/```json\s*([\s\S]*?)```/gi,'$1')
+      .replace(/```\s*([\s\S]*?)```/gi,'$1')
+      .trim();
+    
+    // Fix unescaped newlines inside strings
+    let fixed='', inStr=false, esc=false;
+    for (let i=0; i<cleaned.length; i++) {
+      const c = cleaned[i];
+      if (esc)         { esc=false; fixed+=c; continue; }
+      if (c==='\\'&&inStr) { esc=true; fixed+=c; continue; }
+      if (c==='"')     { inStr=!inStr; fixed+=c; continue; }
+      if (inStr) {
+        if (c==='\n')  { fixed+='\\n'; continue; }
+        if (c==='\r')  { fixed+='\\r'; continue; }
+        if (c==='\t')  { fixed+='\\t'; continue; }
+      }
+      fixed += c;
+    }
+    cleaned = fixed;
+    
+    const start = cleaned.indexOf('{');
+    if (start===-1) throw new Error('No JSON object found');
+    let depth=0, inStr2=false, escape=false;
+    for (let i=start; i<cleaned.length; i++) {
+      const c=cleaned[i];
+      if (escape) { escape=false; continue; }
+      if (c==='\\'&&inStr2) { escape=true; continue; }
+      if (c==='"') { inStr2=!inStr2; continue; }
+      if (inStr2) continue;
+      if (c==='{') depth++;
+      if (c==='}') {
+        depth--;
+        if (depth===0) {
+          const slice = cleaned.slice(start,i+1);
+          try { return JSON.parse(slice); } catch(e) { throw new Error('JSON parse failed: '+e.message); }
+        }
+      }
+    }
+    throw new Error('Could not extract JSON object');
+  };
 
-  const allIdeas   = [];
-  let day          = 1;
-  let batchNum     = 0;
-  const totalBatches = Math.ceil(total / BATCH_SIZE);
+  log(`→ Starting day-by-day generation for ${total} days…`, 'step');
 
-  while (day <= total) {
+  for (let day = 1; day <= total; day++) {
     if (stopRequested) break;
-    const batchEnd   = Math.min(day + BATCH_SIZE - 1, total);
-    const batchPosts = postTypes.slice(day-1, batchEnd);
-    batchNum++;
-    log(`→ Batch ${batchNum}/${totalBatches}: days ${day}–${day+batchPosts.length-1}…`, 'step');
-    setProgress(`Generating batch ${batchNum}/${totalBatches}…`, stats.done, total);
+    
+    const postType = postTypes[day - 1];
+    log(`→ Generating Day ${day}/${total} (${postType})…`, 'step');
+    setProgress(`Generating Day ${day}/${total}…`, stats.done, total);
 
-    const raw  = await callNIM(buildBatchPrompt(batchPosts, day), { model:'deepseek-ai/deepseek-v4-pro', max_tokens:4096 });
-    const ideas = parseDeepSeekArray(raw);
-    ideas.forEach((idea,idx) => { idea.day = day + idx; });
-    log(`✓ Batch ${batchNum}: ${ideas.length} posts (days ${day}–${day+ideas.length-1})`, 'success');
-    allIdeas.push(...ideas);
-    day += batchPosts.length;
-    await new Promise(r => setTimeout(r, 500));
+    try {
+      const raw = await callNIM(buildDayPrompt(postType, day), { model:'deepseek-ai/deepseek-v4-pro', max_tokens:4096 });
+      const idea = parseSingleObject(raw);
+      idea.day = day;
+      idea.type = postType;
+      
+      log(`✓ Day ${day} complete: "${idea.title?.slice(0,40) || 'Untitled'}"`, 'success');
+      allIdeas.push(idea);
+      stats.done = day;
+      setProgress(`Day ${day} complete`, stats.done, total);
+      
+      // Update AI stream box with current day output (append mode for accumulation)
+      if (window.appendAIStream) {
+        const dayOutput = `=== DAY ${day} (${postType}) ===\n${JSON.stringify(idea, null, 2)}`;
+        window.appendAIStream(dayOutput);
+      } else if (window.updateAIStream) {
+        window.updateAIStream(JSON.stringify(idea, null, 2), false);
+      }
+      
+      await new Promise(r => setTimeout(r, 300));
+    } catch (err) {
+      log(`✗ Day ${day} failed: ${err.message}`, 'error');
+      debugLog(`❌ Day ${day} error: ${err.message}`, 'error');
+      // Continue to next day instead of stopping
+      stats.errors++;
+      // Update progress to show we're moving past this day
+      setProgress(`Day ${day} failed, continuing...`, stats.done, total);
+    }
   }
+  
   return allIdeas;
 }
 
@@ -367,17 +426,25 @@ async function startWorkflow() {
   log('🚀 Content Planner — Generating with brand + distribution', 'success');
 
   try {
-    setProgress('Generating content ideas…', 0, totalPosts);
-    log('→ Asking DeepSeek for all posts…', 'step');
+    setProgress('Generating content ideas day-by-day…', 0, totalPosts);
+    log('→ Starting day-by-day generation with DeepSeek…', 'step');
+    
+    // Clear AI stream box at start
+    if (window.updateAIStream) {
+      window.updateAIStream('', true);
+    }
 
+    // generateContentWithNIM now handles day-by-day generation and saves each day
+    // as it completes. The allPostsData array is populated inside the function.
     const ideas = await generateContentWithNIM(brief, month, year, postTypes);
-    log(`✓ Got ${ideas.length} ideas from DeepSeek`, 'success');
+    log(`✓ Generated ${ideas.length} days of content`, 'success');
 
+    // Build records from generated ideas
     for (let i=0; i<ideas.length && !stopRequested; i++) {
       const idea = ideas[i];
       const day  = idea.day || (i+1);
       const type = idea.type || postTypes[i] || 'single';
-      setProgress(`Saving Day ${day}/${totalPosts}…`, stats.done, totalPosts);
+      
       const record = {
         day, type,
         title:        idea.title        || '',
@@ -396,14 +463,11 @@ async function startWorkflow() {
         brandSettings: brandSettings.enabled ? brandSettings : null,
       };
       allPostsData.push(record);
-      stats.done++;
-      setProgress(`Day ${day} saved`, stats.done, totalPosts);
-      log(`✓ Day ${day} (${type}): "${record.title.slice(0,40)}"`, 'success');
     }
 
     if (allPostsData.length > 0) {
-      log('→ Saving to database…', 'step');
-      setProgress('Saving to database…', stats.done, totalPosts);
+      log('→ Saving complete plan to database…', 'step');
+      setProgress('Saving to database…', allPostsData.length, totalPosts);
       await dbSavePlan(month, year, allPostsData);
       log(`✓ Saved ${allPostsData.length} posts to database`, 'success');
     }
@@ -416,9 +480,13 @@ async function startWorkflow() {
 
   } catch (err) {
     log(`✗ Fatal: ${err.message}`, 'error');
+    debugLog(`❌ FATAL ERROR: ${err.message}`, 'error');
     setProgress('Error — see log', stats.done, totalPosts);
   } finally {
     isRunning = false;
+    if (window.updateAIStream) {
+      window.updateAIStream('', false);
+    }
     document.getElementById('startBtn').disabled = false;
     document.getElementById('stopBtn').style.display = 'none';
   }
@@ -768,12 +836,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Expose function for streaming updates
+  // Expose function for streaming updates (used by day-by-day generation)
   window.updateAIStream = function(content, isStreaming = false) {
     if (aiStreamContent) aiStreamContent.textContent = content;
     if (streamStatusDot) {
       if (isStreaming) streamStatusDot.classList.add('streaming');
       else streamStatusDot.classList.remove('streaming');
+    }
+  };
+  
+  // Expose function to append to AI stream (for day-by-day accumulation)
+  window.appendAIStream = function(content) {
+    if (aiStreamContent) {
+      const current = aiStreamContent.textContent || '';
+      if (current.length > 0) {
+        aiStreamContent.textContent = current + '\n\n---\n\n' + content;
+      } else {
+        aiStreamContent.textContent = content;
+      }
+      // Auto-scroll to bottom
+      aiStreamContent.scrollTop = aiStreamContent.scrollHeight;
     }
   };
 
