@@ -741,6 +741,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Chat section removed per user request (bottom prompt box)
 
+  // AI Stream Response Box functionality
+  const clearStreamBtn = document.getElementById('clearStreamBtn');
+  const copyStreamBtn = document.getElementById('copyStreamBtn');
+  const aiStreamContent = document.getElementById('aiStreamContent');
+  const streamStatusDot = document.getElementById('streamStatusDot');
+
+  if (clearStreamBtn) {
+    clearStreamBtn.addEventListener('click', () => {
+      if (aiStreamContent) aiStreamContent.textContent = '';
+      if (streamStatusDot) streamStatusDot.classList.remove('streaming');
+    });
+  }
+
+  if (copyStreamBtn) {
+    copyStreamBtn.addEventListener('click', async () => {
+      if (aiStreamContent && aiStreamContent.textContent) {
+        try {
+          await navigator.clipboard.writeText(aiStreamContent.textContent);
+          copyStreamBtn.textContent = '✓ Copied!';
+          setTimeout(() => { copyStreamBtn.textContent = '📋 Copy'; }, 2000);
+        } catch (err) {
+          console.error('Failed to copy:', err);
+        }
+      }
+    });
+  }
+
+  // Expose function for streaming updates
+  window.updateAIStream = function(content, isStreaming = false) {
+    if (aiStreamContent) aiStreamContent.textContent = content;
+    if (streamStatusDot) {
+      if (isStreaming) streamStatusDot.classList.add('streaming');
+      else streamStatusDot.classList.remove('streaming');
+    }
+  };
+
   // Init UI state
   document.getElementById('brandFields').style.display      = 'none';
   document.getElementById('distributionFields').style.display= 'block';
