@@ -90,7 +90,17 @@ app.all('/api/content/post', (req, res) => {
 app.all('/api/content/ai-images', (req, res) => {
   apiHandler(req, res, join(__dirname, 'api', 'content', 'ai-images.js'));
 });
+app.all('/api/content/calendar-month', (req, res) => {
+  apiHandler(req, res, join(__dirname, 'api', 'content', 'calendar-month.js'));
+});
 
+app.all('/api/content/calendar-day', (req, res) => {
+  apiHandler(req, res, join(__dirname, 'api', 'content', 'calendar-day.js'));
+});
+
+app.all('/api/content/sync-calendar', (req, res) => {
+  apiHandler(req, res, join(__dirname, 'api', 'content', 'sync-calendar.js'));
+});
 app.all('/api/content/ai-image', (req, res) => {
   apiHandler(req, res, join(__dirname, 'api', 'content', 'ai-image.js'));
 });
