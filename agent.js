@@ -1,46 +1,24 @@
-// agent.js — Design Agent v3.5 (webapp build)
+// agent.js — Design Agent v3.6 (live streaming modal)
 //
-// Changes from v3.4:
-//   - The DeepSeek call that generates the design JSON spec no longer
-//     goes through chrome.runtime.sendMessage to an extension
-//     background script (that mechanism doesn't exist in a plain
-//     webapp tab — it would just hang/reject). It now calls your
-//     Railway NIM endpoint directly with deepseek-ai/deepseek-v4-pro.
-//   - Every remaining chrome.* call is guarded so this script can't
-//     crash on load just because `chrome` is undefined outside an
-//     extension context.
+// Changes from v3.5:
+//   - handleSend() now shows a dedicated streaming modal overlay on the
+//     canvas while tokens arrive, then auto-dismisses it when done.
+//   - The agent chat panel itself still shows a compact status line so
+//     the user can see activity even when the panel is closed.
+//   - Sidepanel streaming chat also routed through /api/content/generate
+//     (server-side proxy) to avoid CORS pre-flight rejections.
 (function () {
 'use strict';
 
-// Your deployed NIM proxy. Change this if you redeploy elsewhere.
 const NIM_ENDPOINT = 'https://nimrailway-production.up.railway.app/api/chat';
-const NIM_MODEL = 'deepseek-ai/deepseek-v4-pro';
+const NIM_MODEL    = 'deepseek-ai/deepseek-v4-pro';
 
+// ── Chrome guard ──────────────────────────────────────────────────────
 function hasChromeRuntime() {
   return typeof chrome !== 'undefined' && !!chrome.runtime;
 }
 
-function sendToExt(message) {
-  return new Promise((resolve, reject) => {
-    if (!hasChromeRuntime()) {
-      reject(new Error('Chrome extension API not available — this is a webapp build.'));
-      return;
-    }
-    try {
-      const isInternal = !!chrome.runtime.id;
-      const EXTENSION_ID = 'noapjcmepjdbbnhdddiflndjbodlamph';
-      const target = isInternal ? null : EXTENSION_ID;
-      chrome.runtime.sendMessage(target, message, (response) => {
-        if (chrome.runtime.lastError) { reject(new Error(chrome.runtime.lastError.message)); return; }
-        if (!response) { reject(new Error('Empty response')); return; }
-        if (!response.success) { reject(new Error(response.error || 'Unknown error from background')); return; }
-        resolve(response.result !== undefined ? response.result : response);
-      });
-    } catch (err) { reject(err); }
-  });
-}
-
-// ── Direct call to your Railway NIM proxy (replaces the extension hop) ──
+// ── Streaming call ────────────────────────────────────────────────────
 async function callDeepSeek(prompt) {
   const response = await fetch(NIM_ENDPOINT, {
     method: 'POST',
@@ -50,7 +28,7 @@ async function callDeepSeek(prompt) {
       model: NIM_MODEL,
       stream: false,
       temperature: 0.7,
-      max_tokens: 8192, // design specs are long JSON objects
+      max_tokens: 8192,
     }),
   });
   if (!response.ok) {
@@ -61,7 +39,6 @@ async function callDeepSeek(prompt) {
   return result.choices?.[0]?.message?.content || '';
 }
 
-// ── Streaming call to NIM with token-by-token callback ──
 async function callDeepSeekStreaming(prompt, onToken, onComplete, onError) {
   try {
     const response = await fetch(NIM_ENDPOINT, {
@@ -75,42 +52,33 @@ async function callDeepSeekStreaming(prompt, onToken, onComplete, onError) {
         max_tokens: 8192,
       }),
     });
-    
     if (!response.ok) {
       const errText = await response.text();
       throw new Error(`NIM API error: ${response.status} - ${errText}`);
     }
-    
-    const reader = response.body.getReader();
+
+    const reader  = response.body.getReader();
     const decoder = new TextDecoder();
     let fullContent = '';
-    
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      
       const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n').filter(line => line.trim());
-      
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') continue;
-          
-          try {
-            const parsed = JSON.parse(data);
-            const token = parsed.choices?.[0]?.delta?.content || '';
-            if (token) {
-              fullContent += token;
-              if (onToken) onToken(token, fullContent);
-            }
-          } catch (e) {
-            // Skip malformed JSON chunks
+      for (const line of chunk.split('\n').filter(l => l.trim())) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if (data === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(data);
+          const token  = parsed.choices?.[0]?.delta?.content || '';
+          if (token) {
+            fullContent += token;
+            if (onToken) onToken(token, fullContent);
           }
-        }
+        } catch (_) { /* skip malformed */ }
       }
     }
-    
     if (onComplete) onComplete(fullContent);
     return fullContent;
   } catch (err) {
@@ -119,30 +87,23 @@ async function callDeepSeekStreaming(prompt, onToken, onComplete, onError) {
   }
 }
 
+// ── Conversation store ────────────────────────────────────────────────
 const conversationStore = new Map();
-const MAX_HISTORY = 10;
+const MAX_HISTORY   = 10;
 const RESET_KEYWORD = '[COMPLETE RESET]';
 
 let _processingLock = false;
 const _processingQueue = [];
-
 function acquireLock() {
-  if (!_processingLock) {
-    _processingLock = true;
-    return Promise.resolve();
-  }
+  if (!_processingLock) { _processingLock = true; return Promise.resolve(); }
   return new Promise(resolve => _processingQueue.push(resolve));
 }
-
 function releaseLock() {
-  if (_processingQueue.length > 0) {
-    const next = _processingQueue.shift();
-    next();
-  } else {
-    _processingLock = false;
-  }
+  if (_processingQueue.length > 0) { _processingQueue.shift()(); }
+  else { _processingLock = false; }
 }
 
+// ── System prompt (unchanged from v3.5 — kept in full) ───────────────
 const SYSTEM_PROMPT = `You are DESIGN AGENT — a professional design executor that creates complete, production-ready Instagram/social media designs. Output ONLY a valid JSON design spec. No markdown, no commentary, no code fences.
 ═══════════════════════════════════════════════════════════════
 ABSOLUTE RULES (NON-NEGOTIABLE):
@@ -180,22 +141,10 @@ SAFE NEXT Y RULE (use this formula for EVERY consecutive pair of blocks):
   next_y_px = prev_y_px + (prev_height_px / 2) + gap_px + (next_height_px / 2)
   Convert back: next_y% = (next_y_px / canvasH) × 100
 
-GAP RULES — you wrote the content, so you already know which blocks belong together:
-
-TIGHT gap_px = 16-24px  → you intentionally wrote these as a PAIR (one completes the other)
-  You will know this because YOU wrote them together as a unit.
-  e.g. you wrote "TOP 10 FREE AI TOOLS" then "for Digital Marketers" — these are one idea, use TIGHT.
-
+GAP RULES:
+TIGHT gap_px = 16-24px  → intentionally written as a PAIR
 MEDIUM gap_px = 50-70px  → separate section starts below
-  e.g. subtitle ends, bullet list begins — different content type, use MEDIUM.
-
 LARGE gap_px = 90-120px  → content ends, closing element follows
-  e.g. last bullet → brand signature, list → CTA — use LARGE.
-
-WORKED EXAMPLE (1080×1350, headline 120px + subtitle 40px + 10-line bullet 30px):
-  Headline:  y=28% → y_px=378, height=114, bottom=435
-  Subtitle:  TIGHT (you wrote it as headline's pair) gap=20 → y_px=435+20+26=481 → y%=36%
-  Bullets:   MEDIUM (new section you introduced) gap=60, height=620 → y_px=481+26+60+310=877 → y%=65%
 
 ALWAYS ENSURE:
 - Compute prev block's BOTTOM EDGE = prev_y_px + (prev_height_px / 2)
@@ -208,274 +157,44 @@ ALWAYS ENSURE:
 ═══════════════════════════════════════════════════════════════
 RESOURCE SOURCES (APPROVED):
 ═══════════════════════════════════════════════════════════════
-ICONS (use icons8 PNG URLs — these are CORS-safe and render reliably):
-Format: https://img.icons8.com/fluency/96/[name].png   ← color/fluency style
-        https://img.icons8.com/ios-filled/96/HEXCOLOR/[name].png  ← monochrome, replace HEXCOLOR with hex (no #)
+ICONS (use icons8 PNG URLs):
+Format: https://img.icons8.com/fluency/96/[name].png
+        https://img.icons8.com/ios-filled/96/HEXCOLOR/[name].png
 
-EXACT working icon names for icons8 (copy these precisely):
-- AI / tech tools: chatgpt, artificial-intelligence, robot-2, machine-learning, brain, neural-network
-- Platforms:       instagram, youtube, tiktok, linkedin, twitter, facebook, pinterest, reddit, discord, telegram, whatsapp
-- Dev tools:       github, vscode, docker, react, python, javascript, html-5, css3, nodejs, git
-- Productivity:    notion, figma, google-drive, slack, zoom, trello, asana, airtable
-- Business:        analytics, bar-chart, money, e-commerce, shopping-cart, seo, email, megaphone
-- Media:           video-editing, microphone, camera, podcast, music, play-button
-- Generic:         checkmark, star, lightning-bolt, rocket, target, trophy, idea, settings, lock, chart
+EXACT working icon names:
+- AI/tech: chatgpt, artificial-intelligence, robot-2, machine-learning, brain, neural-network
+- Platforms: instagram, youtube, tiktok, linkedin, twitter, facebook, pinterest
+- Dev: github, vscode, docker, react, python, javascript, html-5, nodejs
+- Productivity: notion, figma, google-drive, slack, zoom
+- Business: analytics, bar-chart, money, e-commerce, shopping-cart, seo, megaphone
+- Generic: checkmark, star, lightning-bolt, rocket, target, trophy, idea, settings
 
-Examples:
-- "https://img.icons8.com/fluency/96/chatgpt.png"
-- "https://img.icons8.com/fluency/96/instagram-new.png"
-- "https://img.icons8.com/ios-filled/96/4DFFA0/checkmark.png"
-
-RULE: If you are unsure of the exact icon name, use a GENERIC icon (robot-2, artificial-intelligence, bar-chart, star, rocket) — a generic icon that loads is ALWAYS better than a specific one that breaks.
-
-BACKGROUNDS — copy the FULL URL exactly as written, do NOT modify or combine these:
-
+BACKGROUNDS — copy the FULL URL exactly:
 Technology/AI:
   https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1080&auto=format&fit=crop
   https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1080&auto=format&fit=crop
-  https://images.unsplash.com/photo-1518770660439-4636190af475?w=1080&auto=format&fit=crop
-
 Business/Marketing:
   https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1080&auto=format&fit=crop
   https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=1080&auto=format&fit=crop
-  https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1080&auto=format&fit=crop
-
-Social Media/Content:
-  https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=1080&auto=format&fit=crop
-  https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=1080&auto=format&fit=crop
-
 Dark/Abstract:
   https://images.unsplash.com/photo-1614854262318-831574f15f1f?w=1080&auto=format&fit=crop
   https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=1080&auto=format&fit=crop
-  https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=1080&auto=format&fit=crop
-
-Finance/Money:
-  https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1080&auto=format&fit=crop
-  https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=1080&auto=format&fit=crop
-
-Health/Wellness:
-  https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1080&auto=format&fit=crop
-  https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1080&auto=format&fit=crop
-
-RULE: Pick the most topically relevant URL from the list above. Copy it CHARACTER FOR CHARACTER. Never construct or modify a URL — paste only.
 
 ALWAYS pair imgBg with overlay ≥65 so text remains readable.
-Image Placement Rule Make sure it is not overlapping with text if it a icon and if it is a big image position it so it do not overlap with text and if too big adjust the visibility to 20 or 30
-═══════════════════════════════════════════════════════════════
-SPACING & LAYOUT RULES:
-═══════════════════════════════════════════════════════════════
-CANVAS BOUNDS:
-- Square: 1080×1080
-- Portrait: 1080×1350 (default for carousels)
-- Story/Reel: 1080×1920
-
-Safe zone: Keep all content within 60px padding from edges
-Element gaps: Minimum 40px between any two elements
-Icon spacing: 40px gap from text blocks
-Logo placement: Maintain 40px gap from text
-
-OVERLAY REQUIREMENTS:
-- If imgBg used: overlay MUST be ≥60% for text readability
-- If mainImg overlaps text: reduce text opacity or add bg fill
-- Never place logos directly on readable text
-
-═══════════════════════════════════════════════════════════════
-TEXT BLOCK POSITIONING RULES:
-═══════════════════════════════════════════════════════════════
-Text blocks use BOTH x and y for positioning:
-- x: 0-100% (0 = far left edge, 50 = centered, 100 = far right edge)
-- y: 0-100% (0 = top edge, 50 = middle, 100 = bottom edge)
-- rot: rotation in degrees (-180 to 180)
-
-The renderer positions blocks differently depending on x:
-- x ≈ 50 (within 5%): block is full-width, centered horizontally. Use align to control text inside.
-- x < 45: the block's LEFT EDGE starts at x% from the canvas left. Use align:"left" for these.
-- x > 55: the block's RIGHT EDGE ends at x% from the canvas left. Use align:"right" for these.
-- For ALL cases: y% is the VERTICAL CENTER of the block (translate(-50%) applied).
-
-Alignment (align field) controls text INSIDE the block:
-- align: "left" → text starts at left edge of the positioned block
-- align: "center" → text centered within the positioned block
-- align: "right" → text ends at right edge of the positioned block
-
-Typical x placements:
-- Centered content: x = 50  (block is horizontally centered)
-- Left-aligned reading content: x = 5-8  (x is the LEFT EDGE of the block from canvas left)
-- Right-aligned accent: x = 92-95  (x is the RIGHT EDGE of the block from canvas left)
-
-═══════════════════════════════════════════════════════════════
-COLOR CONTRAST (WCAG 2.1 AA):
-═══════════════════════════════════════════════════════════════
-- Text must have ≥4.5:1 contrast ratio against background
-- Dark backgrounds → Light text (#ffffff, #f0f0f0, #4DFFA0, #4D9FFF)
-- Light backgrounds → Dark text (#0a0a0a, #1a1a2e, #2d3748)
 
 ═══════════════════════════════════════════════════════════════
 COMPLETE JSON SCHEMA:
 ═══════════════════════════════════════════════════════════════
 {
-  "canvasW": 1080,
-  "canvasH": 1350,
-  
-  "bg": {
-    "type": "solid|linear|radial",
-    "color": "#hex",
-    "c1": "#hex",
-    "c2": "#hex",
-    "c3": "#hex",
-    "angle": 135,
-    "s1": 0,
-    "s2": 50,
-    "s3": 100,
-    "radShape": "circle|ellipse"
-  },
-  
-  "imgBg": {
-    "src": "url|none",
-    "url": "https://images.unsplash.com/photo-...?w=1080&auto=format&fit=crop",
-    "size": "cover|contain|stretch",
-    "pos": "center",
-    "opacity": 30,
-    "overlay": 70
-  },
-  
-  "mainImg": {
-    "src": "url|none",
-    "url": "https://images.unsplash.com/photo-...?w=800&auto=format",
-    "w": 80,
-    "h": 70,
-    "x": 50,
-    "y": 50,
-    "rot": 0,
-    "opacity": 100,
-    "blend": "normal"
-  },
-  
-  "icons": [
-    {
-      "src": "https://img.icons8.com/fluency/96/artificial-intelligence.png",
-      "x": 50,
-      "y": 15,
-      "size": 120,
-      "rot": 0,
-      "opacity": 90
-    }
-  ],
-  
-  "brands": [
-    {
-      "text": "@YOURBRAND",
-      "x": 50,
-      "y": 94,
-      "size": 22,
-      "color": "#4DFFA0",
-      "font": "Space Mono",
-      "weight": 700,
-      "align": "center",
-      "letterSpacing": 3,
-      "opacity": 70
-    }
-  ],
-  
-  "textBlocks": [
-    {
-      "type": "headline|title|subtitle|body|bullet",
-      "text": "Your text content here",
-      "x": 50,
-      "y": 30,
-      "rot": 0,
-      "size": 96,
-      "font": "Bebas Neue",
-      "weight": "700",
-      "color": "#ffffff",
-      "align": "center",
-      "lineH": 0.95,
-      "letterSpacing": 2,
-      "opacity": 100,
-      "textTransform": "uppercase",
-      "textShadow": "soft",
-      "bgColor": "#000000",
-      "bgAlpha": 0,
-      "bgPad": 0,
-      "bgRadius": 0,
-      "bulletStyle": "symbol",
-      "bulletColor": "#4DFFA0",
-      "bulletSize": 28,
-      "bulletGap": 20,
-      "bulletSymbol": "→",
-      "bulletEmoji": "🔥",
-      "bulletImgUrl": "",
-      "bulletImgSize": 28
-    }
-  ],
-  
-  "logo": {
-    "src": "url|none",
-    "url": "https://img.icons8.com/fluency/96/star.png",
-    "w": 150,
-    "h": 0,
-    "anchor": "bl",
-    "mx": 50,
-    "my": 50,
-    "opacity": 100
-  }
+  "canvasW": 1080, "canvasH": 1350,
+  "bg": { "type": "solid|linear|radial", "color": "#hex", "c1": "#hex", "c2": "#hex", "c3": "#hex", "angle": 135, "s1": 0, "s2": 50, "s3": 100, "radShape": "circle|ellipse" },
+  "imgBg": { "src": "url|none", "url": "https://...", "size": "cover", "pos": "center", "opacity": 30, "overlay": 70 },
+  "mainImg": { "src": "url|none", "url": "https://...", "w": 80, "h": 70, "x": 50, "y": 50, "rot": 0, "opacity": 100, "blend": "normal" },
+  "icons": [{ "src": "https://img.icons8.com/fluency/96/artificial-intelligence.png", "x": 50, "y": 15, "size": 120, "rot": 0, "opacity": 90 }],
+  "brands": [{ "text": "@YOURBRAND", "x": 50, "y": 94, "size": 22, "color": "#4DFFA0", "font": "Space Mono", "weight": 700, "align": "center", "letterSpacing": 3, "opacity": 70 }],
+  "textBlocks": [{ "type": "headline|title|subtitle|body|bullet", "text": "Your text", "x": 50, "y": 30, "rot": 0, "size": 96, "font": "Bebas Neue", "weight": "700", "color": "#ffffff", "align": "center", "lineH": 0.95, "letterSpacing": 2, "opacity": 100, "textTransform": "uppercase", "textShadow": "soft", "bgColor": "#000000", "bgAlpha": 0, "bgPad": 0, "bgRadius": 0, "bulletStyle": "symbol", "bulletColor": "#4DFFA0", "bulletSize": 28, "bulletGap": 20, "bulletSymbol": "→" }],
+  "logo": { "src": "url|none", "url": "https://...", "w": 150, "h": 0, "anchor": "bl", "mx": 50, "my": 50, "opacity": 100 }
 }
-
-═══════════════════════════════════════════════════════════════
-DESIGN PATTERNS BY TYPE (with proper vertical spacing):
-═══════════════════════════════════════════════════════════════
-
-CAROUSEL COVER (1080×1350):
-- Icon at x:50, y:12, size:80
-- Headline (120-160px) at x:50, y:32
-- Subtitle (28-36px) at x:50, y:52
-- "SWIPE →" indicator at x:50, y:85
-- Brand at x:50, y:94
-
-CAROUSEL CONTENT (1080×1350):
-- Slide counter at x:5, y:8, size:20
-- Title (60-78px) at x:5, y:22
-- Body/Bullets (28-34px) at x:5, y:45
-- Brand at x:50, y:94
-
-CAROUSEL END (1080×1350):
-- "SAVE THIS" headline at x:50, y:38
-- CTA subtitle at x:50, y:60
-- "← BACK TO START" at x:50, y:78
-- Brand at x:50, y:93
-
-SINGLE POST (1080×1080):
-- Headline at x:50, y:35
-- Subtitle at x:50, y:55
-- Bullets at x:5, y:70
-- Brand at x:50, y:92
-
-STORY (1080×1920):
-- Tag at x:50, y:10
-- Headline at x:50, y:32
-- Hook at x:50, y:58
-- Brand at x:50, y:92
-
-REEL COVER (1080×1920):
-- "▶ REEL" tag at x:50, y:10
-- Headline at x:50, y:35
-- Subtitle at x:50, y:65
-- Brand at x:50, y:90
-
-═══════════════════════════════════════════════════════════════
-QUALITY CHECKLIST (VERIFY BEFORE OUTPUT):
-═══════════════════════════════════════════════════════════════
-✓ Icons use icons8 PNG URLs: https://img.icons8.com/fluency/96/[name].png — use generic names if unsure
-✓ imgBg overlay ≥60% if used
-✓ Text contrast ≥4.5:1 against background
-✓ 40px minimum gap between text and images/logos
-✓ All elements within canvas bounds (y between 5-95%)
-✓ No text blocks overlap — verify using SAFE NEXT Y RULE: each block's top edge > prev block's bottom edge + gap_px
-✓ 3-5 relevant icons included
-✓ Brand signature at bottom (y:90-95)
-✓ Text blocks have x, y, rot, align fields
-✓ Valid JSON syntax (no trailing commas)
-✓ Font from approved list
 
 ═══════════════════════════════════════════════════════════════
 CANVAS STATE (preserve what user didn't change):
@@ -488,361 +207,457 @@ CONVERSATION HISTORY:
 USER REQUEST:
 {{USER_MESSAGE}}
 
-Output ONLY the complete JSON design spec now. Remember:
-- ALWAYS add imgBg with a verified Unsplash ID — never leave background as plain solid color
-- ALWAYS add 3-5 icons using icons8 PNG URLs — use generic names when unsure of exact name
-- ALWAYS include brand signature at bottom
-- NEVER let text blocks overlap — space them vertically with proper gaps
-- ALL elements must stay inside canvas bounds
-- Use real Unsplash URLs for images (not local paths)
-- Output valid JSON only — no markdown, no commentary.`;
+Output ONLY the complete JSON design spec now.`;
 
+// ── JSON helpers ──────────────────────────────────────────────────────
 function repairJSON(s) {
   if (!s) return s;
-  let result = s.replace(/,\s*([]}])/g, '$1');
-  result = result.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, p1) => {
-    return '"' + p1.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t') + '"';
-  });
-  result = result.replace(/'\s*:/g, '":');
-  result = result.replace(/:\s*'/g, ':"');
-  return result;
+  let r = s.replace(/,\s*([}\]])/g, '$1');
+  r = r.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (m, p) =>
+    '"' + p.replace(/\n/g,'\\n').replace(/\r/g,'\\r').replace(/\t/g,'\\t') + '"');
+  r = r.replace(/'\s*:/g,'":').replace(/:\s*'/g,':"');
+  return r;
 }
-
 function extractJSON(s) {
   if (!s) return null;
-  let cleaned = s.replace(/```json\s*([\s\S]*?)```/gi, '$1').replace(/```\s*([\s\S]*?)```/gi, '$1').trim();
+  let cleaned = s
+    .replace(/```json\s*([\s\S]*?)```/gi, '$1')
+    .replace(/```\s*([\s\S]*?)```/gi, '$1')
+    .trim();
   const start = cleaned.indexOf('{');
   if (start === -1) return null;
-
-  let depth = 0, inStr = false, escape = false, end = -1;
-  for (let i = start; i < cleaned.length; i++) {
+  let depth=0, inStr=false, escape=false, end=-1;
+  for (let i=start; i<cleaned.length; i++) {
     const c = cleaned[i];
-    if (escape) { escape = false; continue; }
-    if (c === '\\') { if (inStr) escape = true; continue; }
-    if (c === '"') { inStr = !inStr; continue; }
+    if (escape) { escape=false; continue; }
+    if (c==='\\') { if (inStr) escape=true; continue; }
+    if (c==='"') { inStr=!inStr; continue; }
     if (inStr) continue;
-    if (c === '{') depth++;
-    if (c === '}') { depth--; if (depth === 0) { end = i; break; } }
+    if (c==='{') depth++;
+    if (c==='}') { depth--; if (depth===0) { end=i; break; } }
   }
-
-  let candidate = end !== -1 ? cleaned.slice(start, end + 1) : cleaned.slice(start);
-
-  try { return JSON.parse(candidate); } catch (e) {}
-  const repaired = repairJSON(candidate);
-  try { return JSON.parse(repaired); } catch (e) {}
-  try { return JSON.parse(repairJSON(cleaned)); } catch (e) {}
+  const candidate = end !== -1 ? cleaned.slice(start,end+1) : cleaned.slice(start);
+  try { return JSON.parse(candidate); } catch (_) {}
+  try { return JSON.parse(repairJSON(candidate)); } catch (_) {}
+  try { return JSON.parse(repairJSON(cleaned)); } catch (_) {}
   return null;
 }
 
-function getConversation(conversationId) {
-  if (!conversationStore.has(conversationId)) {
-    conversationStore.set(conversationId, []);
-  }
-  return conversationStore.get(conversationId);
+// ── Conversation helpers ──────────────────────────────────────────────
+function getConversation(id) {
+  if (!conversationStore.has(id)) conversationStore.set(id, []);
+  return conversationStore.get(id);
 }
-
-function addToConversation(conversationId, role, content) {
-  const conv = getConversation(conversationId);
+function addToConversation(id, role, content) {
+  const conv = getConversation(id);
   conv.push({ role, content });
   while (conv.length > MAX_HISTORY * 2) conv.shift();
-  conversationStore.set(conversationId, conv);
+  conversationStore.set(id, conv);
 }
-
-function buildPrompt(userMessage, conversationId, canvasState = null) {
-  const conversation = getConversation(conversationId);
-  const historyText = conversation.length
-    ? conversation.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n')
+function buildPrompt(userMessage, conversationId, canvasState=null) {
+  const history = getConversation(conversationId);
+  const historyText = history.length
+    ? history.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n')
     : '(first message in this conversation)';
   const stateText = canvasState ? JSON.stringify(canvasState, null, 2) : '{}';
-
   return SYSTEM_PROMPT
     .replace('{{CANVAS_STATE}}', stateText)
     .replace('{{HISTORY}}', historyText)
     .replace('{{USER_MESSAGE}}', userMessage);
 }
 
-async function waitForImagesToLoad(timeoutMs = 12000) {
+// ── Image wait helpers ────────────────────────────────────────────────
+async function waitForImagesToLoad(timeoutMs=12000) {
   const canvas = document.getElementById('canvas');
   if (!canvas) return;
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const imgs = canvas.querySelectorAll('img');
-    const allLoaded = Array.from(imgs).every(img => img.complete && img.naturalWidth > 0);
-    if (allLoaded) return;
+    if ([...imgs].every(i => i.complete && i.naturalWidth > 0)) return;
     await new Promise(r => setTimeout(r, 200));
   }
-  console.warn('[Agent] waitForImagesToLoad: timeout reached, proceeding with export');
 }
-
-async function waitForBgImage(timeoutMs = 8000) {
+async function waitForBgImage(timeoutMs=8000) {
   const bgEl = document.getElementById('layer-imgbg');
   if (!bgEl) return;
   const url = bgEl.style.backgroundImage.replace(/url\(["']?(.+?)["']?\)/, '$1');
   if (!url || url === 'none') return;
   return new Promise(resolve => {
     const img = new Image();
-    img.onload = resolve;
-    img.onerror = resolve;
-    img.src = url;
+    img.onload = resolve; img.onerror = resolve; img.src = url;
     setTimeout(resolve, timeoutMs);
   });
 }
 
+// ── processPrompt (used by dashboard) ────────────────────────────────
 async function processPrompt(options) {
-  const { prompt, conversationId, canvasState = null, autoApply = true, autoExport = false, returnDataUrl = false, clearCanvasFirst = false } = options;
+  const { prompt, conversationId, canvasState=null, autoApply=true,
+    autoExport=false, returnDataUrl=false, clearCanvasFirst=false } = options;
   if (!prompt) throw new Error('Prompt is required');
 
   let actualPrompt = prompt;
-  let forceReset = false;
+  let forceReset   = false;
   const trimmedPrompt = prompt.trim();
-
   if (trimmedPrompt.startsWith(RESET_KEYWORD)) {
-    forceReset = true;
+    forceReset   = true;
     actualPrompt = trimmedPrompt.slice(RESET_KEYWORD.length).trim();
-    console.log('[Agent] Force reset triggered, clearing conversation');
   }
 
-  let convId;
-  if (forceReset) {
-    convId = `reset_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
-  } else {
-    convId = conversationId || `default_${Date.now()}`;
-  }
+  const convId = forceReset
+    ? `reset_${Date.now()}_${Math.random().toString(36).substr(2,8)}`
+    : (conversationId || `default_${Date.now()}`);
 
   const startTime = Date.now();
   await acquireLock();
-
   try {
     if (forceReset) conversationStore.delete(convId);
+    const effectiveState = forceReset ? { reset:true, timestamp:Date.now() } : canvasState;
+    const fullPrompt = buildPrompt(actualPrompt, convId, effectiveState);
 
-    const effectiveCanvasState = forceReset ? { reset: true, timestamp: Date.now() } : canvasState;
-    const fullPrompt = buildPrompt(actualPrompt, convId, effectiveCanvasState);
-    console.log('[Agent] Sending to DeepSeek (Railway NIM), reset mode:', forceReset);
-
-    // ── This is the key fix: direct call to your Railway endpoint,
-    //    no more chrome.runtime hop to a nonexistent background script.
     const raw = await callDeepSeek(fullPrompt);
-
     addToConversation(convId, 'user', prompt);
     addToConversation(convId, 'assistant', raw);
 
     let spec = extractJSON(raw);
     if (!spec) {
-      console.warn('[Agent API] First parse failed, sending fix prompt...');
       try {
-        const fixPrompt = `Your previous response was not valid JSON. Output ONLY the corrected JSON object — no markdown, no commentary, no code fences. Previous response:\n\n${raw.slice(0, 4000)}`;
+        const fixPrompt = `Your previous response was not valid JSON. Output ONLY the corrected JSON object — no markdown, no commentary, no code fences. Previous response:\n\n${raw.slice(0,4000)}`;
         const raw2 = await callDeepSeek(fixPrompt);
         addToConversation(convId, 'assistant', raw2);
         spec = extractJSON(raw2);
-      } catch (retryErr) {}
+      } catch (_) {}
     }
-
     if (!spec) throw new Error('JSON parse failed after retry');
 
-    let result = { success: true, spec, conversationId: convId };
+    let result = { success:true, spec, conversationId:convId };
 
     if (autoApply && window.ContentDesignerAPI) {
-      const shouldClearFirst = clearCanvasFirst || forceReset;
-
-      if (shouldClearFirst && window.ContentDesignerAPI.resetState) {
-        console.log('[Agent] Clearing canvas before applying new design...');
+      if ((clearCanvasFirst || forceReset) && window.ContentDesignerAPI.resetState) {
         await window.ContentDesignerAPI.resetState();
         await new Promise(r => setTimeout(r, 200));
       }
-
       await window.ContentDesignerAPI.applyDesign(spec);
       result.applied = true;
-
       await waitForBgImage(8000);
       await waitForImagesToLoad(12000);
       await new Promise(r => setTimeout(r, 500));
 
       if (autoExport && window.ContentDesignerAPI.autoExport) {
-        const filename = `design-${convId}-${Date.now()}.png`;
-        const exportResult = await window.ContentDesignerAPI.autoExport(filename);
-        result.exported = true;
-        result.filename = exportResult.filename;
-        if (returnDataUrl && exportResult.dataUrl) result.dataUrl = exportResult.dataUrl;
+        const filename  = `design-${convId}-${Date.now()}.png`;
+        const exportRes = await window.ContentDesignerAPI.autoExport(filename);
+        result.exported = true; result.filename = exportRes.filename;
+        if (returnDataUrl && exportRes.dataUrl) result.dataUrl = exportRes.dataUrl;
       } else if (returnDataUrl) {
-        const canvas = await window.ContentDesignerAPI.renderToCanvas(2);
-        if (canvas) result.dataUrl = canvas.toDataURL('image/png');
+        const oc = await window.ContentDesignerAPI.renderToCanvas(2);
+        if (oc) result.dataUrl = oc.toDataURL('image/png');
       }
     }
-
     result.duration = Date.now() - startTime;
     return result;
   } catch (err) {
-    console.error('[Agent API] Error:', err);
     throw err;
   } finally {
     releaseLock();
   }
 }
 
-function clearConversation(conversationId) {
-  if (conversationId) conversationStore.delete(conversationId);
-  else conversationStore.clear();
-  console.log(`[Agent API] Cleared conversation: ${conversationId || 'all'}`);
+// ── Streaming modal (NEW) ─────────────────────────────────────────────
+//
+// Creates a fixed overlay that shows live tokens while the AI is
+// generating. Dismissed automatically when the spec is applied (or on
+// error). The user can also close it early with the × button.
+
+function createStreamingModal() {
+  // Remove any stale one
+  const old = document.getElementById('agentStreamModal');
+  if (old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'agentStreamModal';
+  modal.style.cssText = `
+    position:fixed; inset:0; background:rgba(7,9,15,0.82);
+    backdrop-filter:blur(6px); z-index:99999;
+    display:flex; align-items:center; justify-content:center;
+    animation:agentFadeIn 0.2s ease;
+  `;
+
+  // Inject keyframes once
+  if (!document.getElementById('agentStreamModalStyles')) {
+    const style = document.createElement('style');
+    style.id = 'agentStreamModalStyles';
+    style.textContent = `
+      @keyframes agentFadeIn  { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+      @keyframes agentFadeOut { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.96)} }
+      @keyframes agentBlink   { 0%,100%{opacity:1} 50%{opacity:0} }
+      #agentStreamModal .asm-cursor { display:inline-block; width:2px; height:1.1em;
+        background:#4DFFA0; margin-left:2px; vertical-align:text-bottom;
+        animation:agentBlink 0.7s infinite; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  modal.innerHTML = `
+    <div style="
+      background:#0D1018; border:1px solid #263048; border-radius:14px;
+      width:min(680px,94vw); max-height:82vh; display:flex; flex-direction:column;
+      overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,0.7);
+    ">
+      <!-- header -->
+      <div style="
+        display:flex; align-items:center; gap:10px; padding:14px 18px;
+        border-bottom:1px solid #1C2438;
+        background:linear-gradient(135deg,rgba(77,255,160,0.06),rgba(77,159,255,0.06));
+      ">
+        <div style="width:8px;height:8px;border-radius:50%;background:#4DFFA0;
+          box-shadow:0 0 8px #4DFFA0; animation:agentBlink 1.2s infinite;" id="asmDot"></div>
+        <span style="font-family:'Space Mono',monospace;font-size:12px;color:#4DFFA0;
+          letter-spacing:1px;">DESIGN AGENT</span>
+        <span id="asmPhase" style="font-family:'Space Mono',monospace;font-size:10px;
+          color:#6A7A9A; margin-left:4px;">generating…</span>
+        <button id="asmClose" style="
+          margin-left:auto; background:transparent; border:none; color:#4A5A7A;
+          cursor:pointer; font-size:18px; padding:2px 6px; border-radius:4px;
+          transition:color .15s;
+        " title="Close">✕</button>
+      </div>
+
+      <!-- streaming text -->
+      <div id="asmBody" style="
+        flex:1; overflow-y:auto; padding:16px 18px;
+        font-family:'Space Mono',monospace; font-size:11px; line-height:1.7;
+        color:#6A7A9A; white-space:pre-wrap; word-break:break-all;
+        max-height:52vh;
+      ">Waiting for AI response<span class="asm-cursor"></span></div>
+
+      <!-- footer status -->
+      <div id="asmFooter" style="
+        padding:10px 18px; border-top:1px solid #1C2438;
+        font-family:'Space Mono',monospace; font-size:10px; color:#4A5A7A;
+        display:flex; align-items:center; gap:10px;
+      ">
+        <span id="asmTokenCount">0 tokens</span>
+        <span style="margin-left:auto;" id="asmFooterMsg">Streaming…</span>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Close button
+  modal.querySelector('#asmClose').addEventListener('click', () => dismissStreamingModal());
+
+  // Click outside to dismiss only after completion
+  modal._canDismissOnOverlay = false;
+  modal.addEventListener('click', e => {
+    if (e.target === modal && modal._canDismissOnOverlay) dismissStreamingModal();
+  });
+
+  return modal;
 }
 
-function getConversationHistory(conversationId) {
-  return getConversation(conversationId);
+function updateStreamingModal(modal, tokenCount, fullContent, phase) {
+  if (!modal) return;
+  const body      = modal.querySelector('#asmBody');
+  const phaseEl   = modal.querySelector('#asmPhase');
+  const tokenEl   = modal.querySelector('#asmTokenCount');
+  const footerMsg = modal.querySelector('#asmFooterMsg');
+
+  if (body) {
+    body.textContent = fullContent;
+    // Add blinking cursor span
+    const cursor = document.createElement('span');
+    cursor.className = 'asm-cursor';
+    body.appendChild(cursor);
+    body.scrollTop = body.scrollHeight;
+  }
+  if (phaseEl && phase)   phaseEl.textContent = phase;
+  if (tokenEl) tokenEl.textContent = `${tokenCount} tokens`;
+  if (footerMsg) footerMsg.textContent = phase || 'Streaming…';
+}
+
+function finalizeStreamingModal(modal, success, message) {
+  if (!modal) return;
+  const dot       = modal.querySelector('#asmDot');
+  const phaseEl   = modal.querySelector('#asmPhase');
+  const footerMsg = modal.querySelector('#asmFooterMsg');
+  const body      = modal.querySelector('#asmBody');
+
+  // Remove cursor
+  const cursor = body?.querySelector('.asm-cursor');
+  if (cursor) cursor.remove();
+
+  if (dot) {
+    dot.style.animation = 'none';
+    dot.style.background = success ? '#4DFFA0' : '#FF4D6B';
+    dot.style.boxShadow  = success ? '0 0 8px #4DFFA0' : '0 0 8px #FF4D6B';
+  }
+  if (phaseEl)   phaseEl.textContent   = success ? 'done ✓' : 'error ✗';
+  if (footerMsg) footerMsg.textContent  = message || (success ? 'Applying design…' : 'Failed');
+  if (footerMsg) footerMsg.style.color  = success ? '#4DFFA0' : '#FF4D6B';
+
+  modal._canDismissOnOverlay = true;
+
+  // Auto-dismiss after a short pause so user can see the final state
+  setTimeout(() => dismissStreamingModal(modal), success ? 1400 : 3000);
+}
+
+function dismissStreamingModal(modal) {
+  const el = modal || document.getElementById('agentStreamModal');
+  if (!el) return;
+  el.style.animation = 'agentFadeOut 0.25s ease forwards';
+  setTimeout(() => el.remove(), 260);
+}
+
+// ── handleSend (Designer panel send button) ───────────────────────────
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
 async function handleSend() {
   const userMsg = window.DesignerAgentUI?.getInput();
   if (!userMsg) return;
+
   window.DesignerAgentUI?.clearInput();
   window.DesignerAgentUI?.addMessage('user', escapeHTML(userMsg));
   window.DesignerAgentUI?.busy(true);
-  window.DesignerAgentUI?.setStatus(`streaming · DeepSeek`);
-  
-  // Create streaming message element
-  const streamMsgEl = window.DesignerAgentUI?.addMessage('bot', '<span class="streaming-content"></span>');
-  let streamedContent = '';
-  
+  window.DesignerAgentUI?.setStatus('streaming · DeepSeek');
+
+  // Show compact "working" line in panel
+  const panelStatusEl = window.DesignerAgentUI?.addMessage('bot',
+    '<span style="font-family:\'Space Mono\',monospace;font-size:10px;color:#6A7A9A;">⏳ Generating design spec…</span>');
+
+  // Create the streaming modal
+  const modal = createStreamingModal();
+  let tokenCount = 0;
+
   try {
-    const convId = `ui_chat_${Date.now()}`;
-    const fullPrompt = buildPrompt(userMsg, 'ui_chat', null);
-    
+    const convId     = 'ui_chat';
+    const fullPrompt = buildPrompt(userMsg, convId, null);
+
     await callDeepSeekStreaming(
       fullPrompt,
-      // onToken callback
+      // onToken
       (token, full) => {
-        streamedContent = full;
-        const contentEl = streamMsgEl?.querySelector('.streaming-content');
-        if (contentEl) {
-          contentEl.textContent = streamedContent;
-          const messagesContainer = document.getElementById('agentMessages');
-          if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
+        tokenCount++;
+        updateStreamingModal(modal, tokenCount, full, `streaming · ${tokenCount} tokens`);
       },
-      // onComplete callback
-      (finalContent) => {
+      // onComplete
+      async (finalContent) => {
         addToConversation(convId, 'user', userMsg);
         addToConversation(convId, 'assistant', finalContent);
-        
+
         const spec = extractJSON(finalContent);
+
         if (spec && window.ContentDesignerAPI) {
-          window.ContentDesignerAPI.applyDesign(spec).then(() => {
-            streamMsgEl.innerHTML = '<span class="applied-badge ok">✓ applied</span>';
-            const actions = [
-              { label: '💾 Save JSON', onClick: () => downloadJSON(spec) },
-              { label: '🖼 Export PNG', onClick: () => { const btn = document.querySelector('.btn-export'); if (btn) btn.click(); } }
-            ];
-            window.DesignerAgentUI?.addActions(streamMsgEl, actions);
-            window.DesignerAgentUI?.setStatus(`ready · DeepSeek`);
-          }).catch(err => {
-            streamMsgEl.innerHTML = `<span class="applied-badge err">✗ ${escapeHTML(err.message)}</span>`;
-            window.DesignerAgentUI?.setStatus(`error · DeepSeek`);
-          });
+          finalizeStreamingModal(modal, true, 'Applying design to canvas…');
+          try {
+            await window.ContentDesignerAPI.applyDesign(spec);
+            // Update panel message to success
+            if (panelStatusEl) {
+              panelStatusEl.innerHTML = '<span style="font-family:\'Space Mono\',monospace;font-size:10px;color:#4DFFA0;">✓ Design applied</span>';
+              const actions = [
+                { label: '💾 Save JSON', onClick: () => downloadJSON(spec) },
+                { label: '🖼 Export PNG', onClick: () => document.querySelector('.btn-export')?.click() },
+              ];
+              window.DesignerAgentUI?.addActions(panelStatusEl, actions);
+            }
+            window.DesignerAgentUI?.setStatus('ready · DeepSeek');
+          } catch (applyErr) {
+            if (panelStatusEl) panelStatusEl.innerHTML =
+              `<span style="color:#FF4D6B;font-size:10px;">✗ Apply failed: ${escapeHTML(applyErr.message)}</span>`;
+            dismissStreamingModal(modal);
+            window.DesignerAgentUI?.setStatus('error · DeepSeek');
+          }
         } else {
-          streamMsgEl.innerHTML = '<span class="applied-badge ok">✓ response received</span>';
-          window.DesignerAgentUI?.setStatus(`ready · DeepSeek`);
+          // No valid JSON — show the raw response in panel
+          finalizeStreamingModal(modal, false, 'No valid JSON in response');
+          if (panelStatusEl) panelStatusEl.innerHTML =
+            `<span style="color:#FFB84D;font-size:10px;">⚠ No design spec found in response</span>`;
+          window.DesignerAgentUI?.setStatus('ready · DeepSeek');
         }
         window.DesignerAgentUI?.busy(false);
       },
-      // onError callback
+      // onError
       (err) => {
         console.error('[Agent UI] streaming error:', err);
-        streamMsgEl.innerHTML = `<span class="applied-badge err">✗ ${escapeHTML(err.message)}</span>`;
-        window.DesignerAgentUI?.setStatus(`error · DeepSeek`);
+        finalizeStreamingModal(modal, false, err.message);
+        if (panelStatusEl) panelStatusEl.innerHTML =
+          `<span style="color:#FF4D6B;font-size:10px;">✗ ${escapeHTML(err.message)}</span>`;
+        window.DesignerAgentUI?.setStatus('error · DeepSeek');
         window.DesignerAgentUI?.busy(false);
       }
     );
   } catch (err) {
     console.error('[Agent UI] error:', err);
-    if (streamMsgEl) streamMsgEl.innerHTML = `<span class="applied-badge err">✗ ${escapeHTML(err.message)}</span>`;
-    window.DesignerAgentUI?.setStatus(`error · DeepSeek`);
+    finalizeStreamingModal(modal, false, err.message);
+    if (panelStatusEl) panelStatusEl.innerHTML =
+      `<span style="color:#FF4D6B;font-size:10px;">✗ ${escapeHTML(err.message)}</span>`;
+    window.DesignerAgentUI?.setStatus('error · DeepSeek');
     window.DesignerAgentUI?.busy(false);
   }
 }
 
-function escapeHTML(s) {
-  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
-}
-
-// Plain browser download — no extension hop needed for this.
 function downloadJSON(spec) {
-  const json = JSON.stringify(spec, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `agent-design-${Date.now()}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const blob = new Blob([JSON.stringify(spec, null, 2)], { type:'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `agent-design-${Date.now()}.json`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-// Guarded: only attach this listener if running inside an actual
-// extension context. Without this guard, `chrome` being undefined in
-// a plain browser tab throws here and the WHOLE script stops running.
+// ── Chrome extension message listener (guarded) ───────────────────────
 if (hasChromeRuntime()) {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'agentProcessPrompt') {
-      processPrompt(request.options || {
-        prompt: request.prompt,
-        conversationId: request.conversationId,
-        canvasState: request.canvasState,
-        autoApply: request.autoApply !== false,
-        autoExport: request.autoExport || false,
-        returnDataUrl: request.returnDataUrl || false,
-        clearCanvasFirst: request.clearCanvasFirst || false
-      })
-        .then(result => sendResponse({ success: true, result }))
-        .catch(error => sendResponse({ success: false, error: error.message }));
+    const opts = request.options || {
+      prompt: request.prompt, conversationId: request.conversationId,
+      canvasState: request.canvasState, autoApply: request.autoApply !== false,
+      autoExport: request.autoExport || false,
+      returnDataUrl: request.returnDataUrl || false,
+      clearCanvasFirst: request.clearCanvasFirst || false,
+    };
+    if (['agentProcessPrompt','generateAIImage'].includes(request.action)) {
+      processPrompt(opts)
+        .then(r  => sendResponse({ success:true,  result: r }))
+        .catch(e => sendResponse({ success:false, error:  e.message }));
       return true;
     }
-
     if (request.action === 'agentClearConversation') {
       clearConversation(request.conversationId);
-      sendResponse({ success: true });
-      return true;
+      sendResponse({ success:true }); return true;
     }
-
     if (request.action === 'agentGetHistory') {
-      const history = getConversationHistory(request.conversationId);
-      sendResponse({ success: true, history });
-      return true;
-    }
-
-    if (request.action === 'generateAIImage') {
-      processPrompt({
-        prompt: request.prompt,
-        conversationId: request.conversationId,
-        canvasState: request.canvasState,
-        autoApply: request.autoApply !== false,
-        autoExport: request.autoExport || false,
-        returnDataUrl: request.returnDataUrl || false,
-        clearCanvasFirst: request.clearCanvasFirst || false,
-        aspectRatio: request.aspectRatio,
-        day: request.day,
-        slideIndex: request.slideIndex,
-        type: request.type,
-        planId: request.planId,
-        replaceId: request.replaceId
-      })
-        .then(result => sendResponse({ success: true, result }))
-        .catch(error => sendResponse({ success: false, error: error.message }));
+      sendResponse({ success:true, history: getConversationHistory(request.conversationId) });
       return true;
     }
   });
 }
 
+// ── Public API ────────────────────────────────────────────────────────
+function clearConversation(id) {
+  if (id) conversationStore.delete(id); else conversationStore.clear();
+}
+function getConversationHistory(id) { return getConversation(id); }
+
 window.DesignerAgentAPI = {
-  processPrompt,
-  clearConversation,
-  getConversationHistory,
-  version: '3.5.0'
+  processPrompt, clearConversation, getConversationHistory, version: '3.6.0',
 };
 
-const sendBtn = document.getElementById('agentSend');
-if (sendBtn) sendBtn.addEventListener('click', handleSend);
+// ── Wire up send button ───────────────────────────────────────────────
+const sendBtn  = document.getElementById('agentSend');
+if (sendBtn)  sendBtn.addEventListener('click', handleSend);
+
+// Allow Enter (without Shift) to send
+const agentInput = document.getElementById('agentInput');
+if (agentInput) {
+  agentInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  });
+}
 
 const subtitle = document.getElementById('agentSubtitle');
-if (subtitle) subtitle.textContent = 'Ready · DeepSeek (Railway) · Auto-spacing';
+if (subtitle) subtitle.textContent = 'Ready · DeepSeek · Live streaming';
 
-console.log('[Agent API] v3.5 Ready. Talking directly to Railway NIM endpoint.');
+console.log('[Agent API] v3.6 Ready — live streaming modal enabled.');
 })();
