@@ -1,7 +1,7 @@
 // api/chat.js
 // Fixed version using Web Response API (matching server.js apiHandler contract)
 
-const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1 ';
+const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
 
 const ALLOWED_MODELS = [
   'deepseek-ai/deepseek-v4-flash',
