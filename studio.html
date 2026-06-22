@@ -302,6 +302,18 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 <!-- ════════════════════ DASHBOARD TAB ════════════════════ -->
 <div id="tab-dashboard" class="tab-page active">
 
+  <!-- Model Selector Dropdown -->
+  <div style="position:absolute;top:60px;right:24px;z-index:150;display:flex;align-items:center;gap:8px;">
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">AI MODEL:</span>
+    <select id="modelSelectDashboard" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:11px;cursor:pointer;">
+      <option value="moonshotai/kimi-k2.6">moonshotai/kimi-k2.6</option>
+      <option value="nvidia/llama-3.1-nemoguard-8b-content-safety">nvidia/llama-3.1-nemoguard-8b-content-safety</option>
+      <option value="deepseek-ai/deepseek-v4-flash">deepseek-ai/deepseek-v4-flash</option>
+      <option value="deepseek-ai/deepseek-v4-pro" selected>deepseek-ai/deepseek-v4-pro</option>
+      <option value="mistralai/mistral-large-3-675b-instruct-2512">mistralai/mistral-large-3-675b-instruct-2512</option>
+    </select>
+  </div>
+
   <div class="header">
     <div class="header-title">Content <span>Dashboard</span></div>
     <span class="header-meta" id="planMeta">Loading...</span>
@@ -407,6 +419,19 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
     <div class="panel">
       <div class="topbar">
         <div class="topbar-title">Image Studio</div>
+        
+        <!-- Model Selector Dropdown for Designer -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--muted);">AI MODEL:</span>
+          <select id="modelSelectDesigner" style="background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:5px 8px;font-family:var(--mono);font-size:10px;cursor:pointer;">
+            <option value="moonshotai/kimi-k2.6">moonshotai/kimi-k2.6</option>
+            <option value="nvidia/llama-3.1-nemoguard-8b-content-safety">nvidia/llama-3.1-nemoguard-8b-content-safety</option>
+            <option value="deepseek-ai/deepseek-v4-flash">deepseek-ai/deepseek-v4-flash</option>
+            <option value="deepseek-ai/deepseek-v4-pro" selected>deepseek-ai/deepseek-v4-pro</option>
+            <option value="mistralai/mistral-large-3-675b-instruct-2512">mistralai/mistral-large-3-675b-instruct-2512</option>
+          </select>
+        </div>
+        
         <div class="topbar-row">
           <label>W</label><input type="number" id="canvasW" value="1080">
           <label>×</label><input type="number" id="canvasH" value="1350">
@@ -693,6 +718,119 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 <script src="agent.js"></script>
 <script src="dashboard.js"></script>
 <script>
+// Model selector persistence for Dashboard and Designer
+(function() {
+  const AVAILABLE_MODELS = [
+    'moonshotai/kimi-k2.6',
+    'nvidia/llama-3.1-nemoguard-8b-content-safety',
+    'deepseek-ai/deepseek-v4-flash',
+    'deepseek-ai/deepseek-v4-pro',
+    'mistralai/mistral-large-3-675b-instruct-2512',
+  ];
+  
+  function getCurrentModel() {
+    return localStorage.getItem('selectedModel') || 'deepseek-ai/deepseek-v4-pro';
+  }
+  
+  function setCurrentModel(model) {
+    if (AVAILABLE_MODELS.includes(model)) {
+      localStorage.setItem('selectedModel', model);
+    }
+  }
+  
+  // Initialize dropdowns
+  const dashSelect = document.getElementById('modelSelectDashboard');
+  const desSelect = document.getElementById('modelSelectDesigner');
+  const currentModel = getCurrentModel();
+  
+  if (dashSelect) dashSelect.value = currentModel;
+  if (desSelect) desSelect.value = currentModel;
+  
+  // Listen for changes
+  if (dashSelect) {
+    dashSelect.addEventListener('change', () => {
+      setCurrentModel(dashSelect.value);
+      if (desSelect) desSelect.value = dashSelect.value;
+    });
+  }
+  if (desSelect) {
+    desSelect.addEventListener('change', () => {
+      setCurrentModel(desSelect.value);
+      if (dashSelect) dashSelect.value = desSelect.value;
+    });
+  }
+})();
+
+// Debug Panel for F4
+(function() {
+  let debugPanelVisible = false;
+  
+  // Create debug panel HTML
+  const panel = document.createElement('div');
+  panel.id = 'debugPanel';
+  panel.style.cssText = 'display:none;position:fixed;top:0;right:0;width:400px;height:100%;background:#0D1018;border-left:1px solid #1C2438;z-index:10000;padding:16px;overflow-y:auto;font-family:"Space Mono",monospace;';
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 style="color:#4DFFA0;font-size:12px;margin:0;">🔍 DEBUG LOGS</h3>
+      <button id="closeDebugPanel" style="background:#161C2C;border:1px solid #1C2438;color:#DCE6F8;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:10px;font-family:inherit;">✕ CLOSE</button>
+    </div>
+    <div id="debugLogs" style="font-size:9px;color:#6A7A9A;line-height:1.6;">
+      <div style="color:#4A5A7A;">Press F4 to toggle this panel. Logs will appear here.</div>
+    </div>
+  `;
+  document.body.appendChild(panel);
+  
+  function debugLog(msg, type='info') {
+    const logs = document.getElementById('debugLogs');
+    if (!logs) return;
+    
+    const t = new Date().toLocaleTimeString('en',{ hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    const line = document.createElement('div');
+    line.style.marginBottom = '6px';
+    
+    let color = '#6A7A9A';
+    if (type === 'prompt') color = '#4D9FFF';
+    else if (type === 'tokens') color = '#4DFFA0';
+    else if (type === 'error') color = '#FF4D6B';
+    else if (type === 'success') color = '#4DFFA0';
+    else if (type === 'parse') color = '#FFB84D';
+    
+    line.innerHTML = `<span style="color:${color};">[${t}] ${msg}</span>`;
+    logs.appendChild(line);
+    logs.scrollTop = logs.scrollHeight;
+  }
+  
+  function clearDebugLogs() {
+    const logs = document.getElementById('debugLogs');
+    if (logs) logs.innerHTML = '';
+  }
+  
+  function toggleDebugPanel() {
+    debugPanelVisible = !debugPanelVisible;
+    panel.style.display = debugPanelVisible ? 'block' : 'none';
+  }
+  
+  // F4 key handler
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'F4') {
+      e.preventDefault();
+      toggleDebugPanel();
+    }
+    if (e.key === 'Escape' && debugPanelVisible) {
+      toggleDebugPanel();
+    }
+  });
+  
+  // Close button
+  document.getElementById('closeDebugPanel').addEventListener('click', () => {
+    toggleDebugPanel();
+  });
+  
+  // Expose globally for other scripts
+  window.debugLog = debugLog;
+  window.clearDebugLogs = clearDebugLogs;
+})();
+
 function switchTab(tab) {
   document.querySelectorAll('.tab-page').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));

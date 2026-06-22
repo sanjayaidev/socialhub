@@ -14,7 +14,15 @@
 
 // Local proxy — never call Railway directly from the browser.
 const LOCAL_API  = '/api/chat';
-const NIM_MODEL  = 'deepseek-ai/deepseek-v4-pro';
+
+function getSelectedModel() {
+  // Check for model selector in dashboard or designer, or fallback to localStorage
+  const dashSelect = document.getElementById('modelSelectDashboard');
+  const desSelect = document.getElementById('modelSelectDesigner');
+  if (dashSelect && dashSelect.value) return dashSelect.value;
+  if (desSelect && desSelect.value) return desSelect.value;
+  return localStorage.getItem('selectedModel') || 'deepseek-ai/deepseek-v4-pro';
+}
 
 // ── Chrome guard ──────────────────────────────────────────────────────
 function hasChromeRuntime() {
@@ -23,12 +31,13 @@ function hasChromeRuntime() {
 
 // ── Non-streaming call (used by processPrompt / dashboard) ───────────
 async function callDeepSeek(prompt) {
+  const currentModel = getSelectedModel();
   const response = await fetch(LOCAL_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       messages: [{ role: 'user', content: prompt }],
-      model: NIM_MODEL,
+      model: currentModel,
       stream: false,
       temperature: 0.7,
       max_tokens: 8192,
@@ -44,13 +53,14 @@ async function callDeepSeek(prompt) {
 
 // ── Streaming call (used by handleSend / Designer chat panel) ─────────
 async function callDeepSeekStreaming(prompt, onToken, onComplete, onError) {
+  const currentModel = getSelectedModel();
   try {
     const response = await fetch(LOCAL_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         messages: [{ role: 'user', content: prompt }],
-        model: NIM_MODEL,
+        model: currentModel,
         stream: true,
         temperature: 0.7,
         max_tokens: 8192,
