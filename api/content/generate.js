@@ -11,8 +11,19 @@
 // function fixes all three — server-to-server calls aren't subject to
 // CORS, and the URL now lives in one place.
 
-const NIM_ENDPOINT = 'https://nimrailway-production.up.railway.app/api/chat';
+const NIM_ENDPOINT = 'https://integrate.api.nvidia.com/v1/chat/completions';
 const DEFAULT_MODEL = 'deepseek-ai/deepseek-v4-pro';
+
+// Same 5-model list as /api/chat.js
+const ALLOWED_MODELS = [
+  'moonshotai/kimi-k2.6',
+  'nvidia/llama-3.1-nemoguard-8b-content-safety',
+  'deepseek-ai/deepseek-v4-flash',
+  'deepseek-ai/deepseek-v4-pro',
+  'mistralai/mistral-large-3-675b-instruct-2512',
+];
+
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -43,12 +54,25 @@ export default async function handler(req) {
       return json({ error: 'prompt (string) is required' }, 400);
     }
 
+    // Validate model against allowed list
+    const selectedModel = model || DEFAULT_MODEL;
+    if (!ALLOWED_MODELS.includes(selectedModel)) {
+      return json({ error: `Model "${selectedModel}" is not in the allowed list` }, 403);
+    }
+
+    if (!NVIDIA_API_KEY) {
+      return json({ error: 'NVIDIA_API_KEY environment variable is not set' }, 500);
+    }
+
     const upstream = await fetch(NIM_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${NVIDIA_API_KEY}`,
+      },
       body: JSON.stringify({
         messages: [{ role: 'user', content: prompt }],
-        model: model || DEFAULT_MODEL,
+        model: selectedModel,
         stream: false,
         temperature: temperature ?? 0.7,
         max_tokens: max_tokens ?? 4096,

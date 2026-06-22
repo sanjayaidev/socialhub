@@ -1,1 +1,1 @@
-Nothing should be ignored based on the provided file changes, as they only contain source files (.js, .html).
+Nothing should be ignored based on the provided file changes, as they only contain source code and configuration files (.js and .html files).
