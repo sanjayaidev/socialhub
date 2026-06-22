@@ -1,6 +1,6 @@
 # Content Planner - Railway Deployment
 
-A content planning application with Neon database integration, now optimized for Railway deployment.
+A content planning application with Neon database integration, deployed on railway
 
 ## Setup Instructions
 
