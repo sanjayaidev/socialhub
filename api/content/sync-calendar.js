@@ -19,7 +19,9 @@ function json(obj, status = 200) {
     headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
   });
 }
-
+function daysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
 function getPool() {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('Missing DATABASE_URL environment variable');
