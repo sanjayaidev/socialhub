@@ -1,1 +1,1 @@
-Nothing should be ignored based on the provided file changes, as they only contain source code and configuration files (.js and .html files).
+Nothing needs to be added to the .gitignore file based on the provided changes. The modified files (sidepanel.html and sidepanel.js) are source code files that should not be ignored.

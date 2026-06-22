@@ -1,15 +1,10 @@
-// sidepanel.js — v6.3 (streaming chat via /api/chat proxy, token-by-token display + F4 model selector)
+// sidepanel.js — v6.4 (streaming chat via /api/chat proxy, dropdown model selector + F4 debug panel)
 //
-// Changes from v6.2:
-//   - Added F4 key handler to open model selection modal
-//   - Model selector with 5 NVIDIA NIM models
-//   - Current model stored in localStorage and used across chat/generation
-//   - Chat panel now streams through /api/chat (Railway proxy already
-//     handles CORS server-side). Tokens appear character-by-character in
-//     the panel with a live cursor.
-//   - Fixed CORS issue: direct Railway fetch from browser sent an
-//     application/json preflight that Railway rejects. Now server-side.
-//   - Chat input supports Shift+Enter for newlines, Enter to send.
+// Changes from v6.3:
+//   - Replaced F4 modal with dropdown model selector in HTML
+//   - Added F4 debug panel showing logs: prompt sent, token count, errors, final output, parsing errors
+//   - Model selection via dropdown persists to localStorage
+//   - Chat panel streams through /api/chat with detailed logging
 
 let isRunning    = false;
 let stopRequested = false;
@@ -26,15 +21,47 @@ const AVAILABLE_MODELS = [
   'mistralai/mistral-large-3-675b-instruct-2512',
 ];
 
-// Get/set current model from localStorage
+// Get/set current model from localStorage and dropdown
 function getCurrentModel() {
+  const dropdown = document.getElementById('modelSelect');
+  if (dropdown && dropdown.value) {
+    return dropdown.value;
+  }
   return localStorage.getItem('selectedModel') || AVAILABLE_MODELS[3]; // default to deepseek-v4-pro
 }
 function setCurrentModel(model) {
   if (AVAILABLE_MODELS.includes(model)) {
     localStorage.setItem('selectedModel', model);
-    updateCurrentModelLabel();
+    const dropdown = document.getElementById('modelSelect');
+    if (dropdown) dropdown.value = model;
   }
+}
+
+// Debug logging for F4 panel
+function debugLog(msg, type='info') {
+  const panel = document.getElementById('debugPanel');
+  const logs = document.getElementById('debugLogs');
+  if (!logs) return;
+  
+  const t = new Date().toLocaleTimeString('en',{ hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  const line = document.createElement('div');
+  line.style.marginBottom = '6px';
+  
+  let color = 'var(--muted2)';
+  if (type === 'prompt') color = 'var(--accent2)';
+  else if (type === 'tokens') color = 'var(--accent)';
+  else if (type === 'error') color = 'var(--error)';
+  else if (type === 'success') color = 'var(--success)';
+  else if (type === 'parse') color = 'var(--warn)';
+  
+  line.innerHTML = `<span style="color:${color};">[${t}] ${msg}</span>`;
+  logs.appendChild(line);
+  logs.scrollTop = logs.scrollHeight;
+}
+
+function clearDebugLogs() {
+  const logs = document.getElementById('debugLogs');
+  if (logs) logs.innerHTML = '';
 }
 
 const MONTH_NAMES_FULL = [
@@ -585,6 +612,10 @@ async function sendChatMessage(userMsg) {
   appendMsg('user', userMsg);
   chatHistory.push({ role:'user', content: userMsg });
 
+  // Log prompt sent
+  debugLog(`📤 PROMPT SENT: "${userMsg.substring(0, 80)}${userMsg.length > 80 ? '...' : ''}"`, 'prompt');
+  debugLog(`📎 Model: ${getCurrentModel()}`, 'info');
+
   const botEl = appendMsg('bot');
   if (!botEl) { if(sendBtn) sendBtn.disabled=false; if(input) input.disabled=false; return; }
 
@@ -654,6 +685,7 @@ async function sendChatMessage(userMsg) {
   } catch (streamErr) {
     // ── Fallback: non-streaming via /api/content/generate ────────
     console.warn('[Chat] Streaming failed, falling back to non-streaming:', streamErr.message);
+    debugLog(`⚠️ Streaming error: ${streamErr.message}`, 'error');
     setStatus('streaming unavailable — fetching full response…', 'var(--warn)');
     setTokenBar(true, '● fetching (non-streaming)…');
 
@@ -675,6 +707,7 @@ async function sendChatMessage(userMsg) {
       setStatus('error · ' + fallbackErr.message, 'var(--error)');
       setTokenBar(false);
       chatHistory.push({ role:'assistant', content: fullContent });
+      debugLog(`❌ ERROR: ${fallbackErr.message}`, 'error');
       if (sendBtn) sendBtn.disabled = false;
       if (input)   input.disabled   = false;
       return;
@@ -686,9 +719,12 @@ async function sendChatMessage(userMsg) {
   chatHistory.push({ role:'assistant', content: fullContent });
 
   if (tokenCount > 0) {
-    setStatus(`done · ${tokenCount} tokens · DeepSeek v4 Pro`, 'var(--accent)');
+    debugLog(`✅ FINAL OUTPUT RECEIVED: ${tokenCount} tokens`, 'success');
+    debugLog(`📊 TOKEN COUNT: ${tokenCount}`, 'tokens');
+    setStatus(`done · ${tokenCount} tokens · ${getCurrentModel().split('/').pop()}`, 'var(--accent)');
   } else {
-    setStatus('done · DeepSeek v4 Pro', 'var(--accent)');
+    debugLog(`✅ FINAL OUTPUT RECEIVED (no token count)`, 'success');
+    setStatus('done · ' + getCurrentModel().split('/').pop(), 'var(--accent)');
   }
   setTokenBar(false);
 
