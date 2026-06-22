@@ -61,6 +61,64 @@ async function callDeepSeek(prompt) {
   return result.choices?.[0]?.message?.content || '';
 }
 
+// ── Streaming call to NIM with token-by-token callback ──
+async function callDeepSeekStreaming(prompt, onToken, onComplete, onError) {
+  try {
+    const response = await fetch(NIM_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: prompt }],
+        model: NIM_MODEL,
+        stream: true,
+        temperature: 0.7,
+        max_tokens: 8192,
+      }),
+    });
+    
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`NIM API error: ${response.status} - ${errText}`);
+    }
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '';
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n').filter(line => line.trim());
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+          
+          try {
+            const parsed = JSON.parse(data);
+            const token = parsed.choices?.[0]?.delta?.content || '';
+            if (token) {
+              fullContent += token;
+              if (onToken) onToken(token, fullContent);
+            }
+          } catch (e) {
+            // Skip malformed JSON chunks
+          }
+        }
+      }
+    }
+    
+    if (onComplete) onComplete(fullContent);
+    return fullContent;
+  } catch (err) {
+    if (onError) onError(err);
+    throw err;
+  }
+}
+
 const conversationStore = new Map();
 const MAX_HISTORY = 10;
 const RESET_KEYWORD = '[COMPLETE RESET]';
@@ -637,30 +695,65 @@ async function handleSend() {
   window.DesignerAgentUI?.clearInput();
   window.DesignerAgentUI?.addMessage('user', escapeHTML(userMsg));
   window.DesignerAgentUI?.busy(true);
-  window.DesignerAgentUI?.setStatus(`thinking · DeepSeek`);
-  window.DesignerAgentUI?.addTyping();
-
+  window.DesignerAgentUI?.setStatus(`streaming · DeepSeek`);
+  
+  // Create streaming message element
+  const streamMsgEl = window.DesignerAgentUI?.addMessage('bot', '<span class="streaming-content"></span>');
+  let streamedContent = '';
+  
   try {
-    const result = await processPrompt({
-      prompt: userMsg,
-      conversationId: 'ui_chat',
-      autoApply: true,
-      autoExport: false,
-      returnDataUrl: false
-    });
-
-    window.DesignerAgentUI?.removeTyping();
-    window.DesignerAgentUI?.addMessage('bot', '<span class="applied-badge ok">✓ applied</span>', [
-      { label: '💾 Save JSON', onClick: () => downloadJSON(result.spec) },
-      { label: '🖼 Export PNG', onClick: () => { const btn = document.querySelector('.btn-export'); if (btn) btn.click(); } }
-    ]);
-    window.DesignerAgentUI?.setStatus(`ready · DeepSeek`);
+    const convId = `ui_chat_${Date.now()}`;
+    const fullPrompt = buildPrompt(userMsg, 'ui_chat', null);
+    
+    await callDeepSeekStreaming(
+      fullPrompt,
+      // onToken callback
+      (token, full) => {
+        streamedContent = full;
+        const contentEl = streamMsgEl?.querySelector('.streaming-content');
+        if (contentEl) {
+          contentEl.textContent = streamedContent;
+          const messagesContainer = document.getElementById('agentMessages');
+          if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+      },
+      // onComplete callback
+      (finalContent) => {
+        addToConversation(convId, 'user', userMsg);
+        addToConversation(convId, 'assistant', finalContent);
+        
+        const spec = extractJSON(finalContent);
+        if (spec && window.ContentDesignerAPI) {
+          window.ContentDesignerAPI.applyDesign(spec).then(() => {
+            streamMsgEl.innerHTML = '<span class="applied-badge ok">✓ applied</span>';
+            const actions = [
+              { label: '💾 Save JSON', onClick: () => downloadJSON(spec) },
+              { label: '🖼 Export PNG', onClick: () => { const btn = document.querySelector('.btn-export'); if (btn) btn.click(); } }
+            ];
+            window.DesignerAgentUI?.addActions(streamMsgEl, actions);
+            window.DesignerAgentUI?.setStatus(`ready · DeepSeek`);
+          }).catch(err => {
+            streamMsgEl.innerHTML = `<span class="applied-badge err">✗ ${escapeHTML(err.message)}</span>`;
+            window.DesignerAgentUI?.setStatus(`error · DeepSeek`);
+          });
+        } else {
+          streamMsgEl.innerHTML = '<span class="applied-badge ok">✓ response received</span>';
+          window.DesignerAgentUI?.setStatus(`ready · DeepSeek`);
+        }
+        window.DesignerAgentUI?.busy(false);
+      },
+      // onError callback
+      (err) => {
+        console.error('[Agent UI] streaming error:', err);
+        streamMsgEl.innerHTML = `<span class="applied-badge err">✗ ${escapeHTML(err.message)}</span>`;
+        window.DesignerAgentUI?.setStatus(`error · DeepSeek`);
+        window.DesignerAgentUI?.busy(false);
+      }
+    );
   } catch (err) {
     console.error('[Agent UI] error:', err);
-    window.DesignerAgentUI?.removeTyping();
-    window.DesignerAgentUI?.addMessage('bot', `<span class="applied-badge err">✗ ${escapeHTML(err.message)}</span>`);
+    if (streamMsgEl) streamMsgEl.innerHTML = `<span class="applied-badge err">✗ ${escapeHTML(err.message)}</span>`;
     window.DesignerAgentUI?.setStatus(`error · DeepSeek`);
-  } finally {
     window.DesignerAgentUI?.busy(false);
   }
 }

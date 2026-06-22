@@ -122,6 +122,15 @@
       }
       messages.appendChild(el); messages.scrollTop = messages.scrollHeight; return el;
     },
+    addActions(msgEl, actions) {
+      if (!msgEl || !actions) return;
+      const existing = msgEl.querySelector('.agent-actions');
+      if (existing) existing.remove();
+      const actDiv = document.createElement('div'); actDiv.className = 'agent-actions';
+      actions.forEach(a => { const b = document.createElement('button'); b.className = 'btn'; b.textContent = a.label; b.addEventListener('click', a.onClick); actDiv.appendChild(b); });
+      msgEl.appendChild(actDiv);
+      messages.scrollTop = messages.scrollHeight;
+    },
     addTyping() {
       const el = document.createElement('div'); el.className = 'agent-msg bot'; el.id = 'agentTyping';
       el.innerHTML = '<div class="agent-timing"><span></span><span></span><span></span></div>';

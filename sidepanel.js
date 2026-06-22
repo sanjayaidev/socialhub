@@ -7,6 +7,10 @@ let totalPosts = 30;
 let allPostsData = [];
 const MONTH_NAMES_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
+// NIM endpoint for streaming chat
+const NIM_ENDPOINT = 'https://nimrailway-production.up.railway.app/api/chat';
+const NIM_MODEL = 'deepseek-ai/deepseek-v4-pro';
+
 function daysInSelectedMonth() {
   const monthName = document.getElementById('monthSelect')?.value || 'January';
   const year = parseInt(document.getElementById('yearInput')?.value) || new Date().getFullYear();
@@ -571,6 +575,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('dashBtn').addEventListener('click', openDashboard);
   document.getElementById('openDesignerBtn').addEventListener('click', openDesigner);
 
+  // Chat section event listeners
+  initChatPanel();
+
   document.getElementById('brandFields').style.display = 'none';
   document.getElementById('distributionFields').style.display = 'block';
   document.getElementById('singleTypeOnly').style.display = 'none';
@@ -578,3 +585,132 @@ document.addEventListener('DOMContentLoaded', () => {
   lockPostCountToMonth();
   updatePercentSum();
 });
+
+// ========== CHAT PANEL FUNCTIONS ==========
+const chatConversation = [];
+
+function addChatMessage(role, content) {
+  const container = document.getElementById('chatMessages');
+  if (!container) return;
+  
+  const msg = document.createElement('div');
+  msg.className = `chat-msg ${role}`;
+  
+  if (role === 'bot') {
+    msg.innerHTML = `<span class="streaming-content"></span>`;
+  } else {
+    msg.textContent = content;
+  }
+  
+  container.appendChild(msg);
+  container.scrollTop = container.scrollHeight;
+  return msg;
+}
+
+function updateStreamingContent(msgEl, content) {
+  if (!msgEl) return;
+  const contentEl = msgEl.querySelector('.streaming-content');
+  if (contentEl) {
+    contentEl.textContent = content;
+    const container = document.getElementById('chatMessages');
+    if (container) container.scrollTop = container.scrollHeight;
+  }
+}
+
+async function streamChatResponse(userMessage) {
+  const statusEl = document.getElementById('chatStatus');
+  if (statusEl) statusEl.textContent = 'streaming...';
+  
+  const userMsgEl = addChatMessage('user', userMessage);
+  const botMsgEl = addChatMessage('bot', '');
+  
+  chatConversation.push({ role: 'user', content: userMessage });
+  
+  try {
+    const response = await fetch(NIM_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: chatConversation.map(m => ({ role: m.role, content: m.content })),
+        model: NIM_MODEL,
+        stream: true,
+        temperature: 0.7,
+        max_tokens: 2048,
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '';
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n').filter(line => line.trim());
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+          
+          try {
+            const parsed = JSON.parse(data);
+            const token = parsed.choices?.[0]?.delta?.content || '';
+            if (token) {
+              fullContent += token;
+              updateStreamingContent(botMsgEl, fullContent);
+            }
+          } catch (e) {
+            // Skip malformed chunks
+          }
+        }
+      }
+    }
+    
+    chatConversation.push({ role: 'assistant', content: fullContent });
+    if (statusEl) statusEl.textContent = 'ready';
+    
+  } catch (err) {
+    console.error('Chat streaming error:', err);
+    updateStreamingContent(botMsgEl, `Error: ${err.message}`);
+    if (statusEl) statusEl.textContent = 'error';
+  }
+}
+
+function initChatPanel() {
+  const input = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('chatSendBtn');
+  
+  if (!input || !sendBtn) return;
+  
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendBtn.click();
+    }
+  });
+  
+  sendBtn.addEventListener('click', () => {
+    const message = input.value.trim();
+    if (!message) return;
+    
+    input.value = '';
+    input.style.height = 'auto';
+    sendBtn.disabled = true;
+    
+    streamChatResponse(message).then(() => {
+      sendBtn.disabled = false;
+    });
+  });
+  
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(100, input.scrollHeight) + 'px';
+  });
+}
