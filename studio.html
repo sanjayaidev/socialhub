@@ -31,11 +31,18 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 /* ════════════════════════════════════════════
    DASHBOARD (scoped under #tab-dashboard)
    ════════════════════════════════════════════ */
-#tab-dashboard .header{position:sticky;top:45px;z-index:100;background:rgba(7,9,15,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:16px;}
+#tab-dashboard .header{position:sticky;top:45px;z-index:100;background:rgba(7,9,15,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
 #tab-dashboard .header-title{font-family:var(--mono);font-size:15px;font-weight:700;color:#fff;}
 #tab-dashboard .header-title span{color:var(--accent);}
 #tab-dashboard .header-meta{font-size:11px;color:var(--muted2);margin-left:4px;}
-#tab-dashboard .header-actions{margin-left:auto;display:flex;gap:8px;}
+#tab-dashboard .header-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+
+/* Model Selector in Dashboard header */
+#tab-dashboard .model-selector-wrap{display:flex;align-items:center;gap:8px;margin-left:auto;}
+#tab-dashboard .model-selector-wrap label{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+#tab-dashboard .model-selector-wrap select{background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 10px;font-family:var(--mono);font-size:10px;cursor:pointer;min-width:180px;}
+#tab-dashboard .model-selector-wrap select:focus{outline:none;border-color:var(--accent);}
+#tab-dashboard .model-selector-wrap select option{background:var(--s2);color:var(--text);}
 
 #tab-dashboard .plan-selector{position:relative;z-index:10;padding:16px 24px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
 #tab-dashboard .plan-selector select{background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:11px;cursor:pointer;}
@@ -146,6 +153,14 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 #tab-designer .panel{background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;padding:12px;height:100%;}
 #tab-designer .topbar{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);}
 #tab-designer .topbar-title{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+
+/* Model Selector in Designer */
+#tab-designer .model-selector-wrap{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 8px;background:var(--s2);border-radius:4px;border:1px solid var(--border);}
+#tab-designer .model-selector-wrap label{font-family:var(--mono);font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+#tab-designer .model-selector-wrap select{flex:1;background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 8px;font-family:var(--mono);font-size:10px;cursor:pointer;min-width:0;}
+#tab-designer .model-selector-wrap select:focus{outline:none;border-color:var(--accent);}
+#tab-designer .model-selector-wrap select option{background:var(--s3);color:var(--text);}
+
 #tab-designer .topbar-row{display:flex;gap:6px;align-items:center;}
 #tab-designer .topbar-row label{font-size:10px;color:var(--muted);font-family:var(--mono);min-width:22px;}
 #tab-designer .topbar-row input[type="number"]{background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:4px 6px;width:70px;font-family:var(--mono);font-size:11px;}
@@ -292,6 +307,9 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 #tab-designer .resize-handle:hover{transform:scale(1.3);background:#4D9FFF !important;}
 #tab-designer #transform-rotate-handle:hover{transform:translateX(-50%) scale(1.2);background:#4DFFA0 !important;}
 #tab-designer #transform-delete-btn:hover{transform:scale(1.1);background:#ff4444 !important;}
+
+/* Loading spinner for model fetch */
+.model-loading{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-left:6px;}
 </style>
 </head>
 <body>
@@ -304,21 +322,19 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 <!-- ════════════════════ DASHBOARD TAB ════════════════════ -->
 <div id="tab-dashboard" class="tab-page active">
 
-  <!-- Model Selector Dropdown -->
-  <div style="position:absolute;top:60px;right:24px;z-index:150;display:flex;align-items:center;gap:8px;">
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">AI MODEL:</span>
-    <select id="modelSelectDashboard" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:11px;cursor:pointer;">
-      <option value="moonshotai/kimi-k2.6">moonshotai/kimi-k2.6</option>
-      <option value="nvidia/llama-3.1-nemoguard-8b-content-safety">nvidia/llama-3.1-nemoguard-8b-content-safety</option>
-      <option value="deepseek-ai/deepseek-v4-flash">deepseek-ai/deepseek-v4-flash</option>
-      <option value="deepseek-ai/deepseek-v4-pro" selected>deepseek-ai/deepseek-v4-pro</option>
-      <option value="mistralai/mistral-large-3-675b-instruct-2512">mistralai/mistral-large-3-675b-instruct-2512</option>
-    </select>
-  </div>
-
   <div class="header">
     <div class="header-title">Content <span>Dashboard</span></div>
     <span class="header-meta" id="planMeta">Loading...</span>
+    
+    <!-- Model Selector - moved into header with proper positioning -->
+    <div class="model-selector-wrap">
+      <label>🤖 Model</label>
+      <select id="modelSelectDashboard">
+        <option value="">Loading models...</option>
+      </select>
+      <span id="modelLoadingDash" class="model-loading" style="display:none;"></span>
+    </div>
+    
     <div class="header-actions">
       <button class="btn btn-primary" id="genAllBtn" disabled>⚡ Generate All Images</button>
       <button class="btn btn-stop" id="stopGenBtn" style="display:none;">■ Stop</button>
@@ -430,16 +446,13 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
       <div class="topbar">
         <div class="topbar-title">Image Studio</div>
         
-        <!-- Model Selector Dropdown for Designer -->
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <span style="font-family:var(--mono);font-size:9px;color:var(--muted);">AI MODEL:</span>
-          <select id="modelSelectDesigner" style="background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:5px 8px;font-family:var(--mono);font-size:10px;cursor:pointer;">
-            <option value="moonshotai/kimi-k2.6">moonshotai/kimi-k2.6</option>
-            <option value="nvidia/llama-3.1-nemoguard-8b-content-safety">nvidia/llama-3.1-nemoguard-8b-content-safety</option>
-            <option value="deepseek-ai/deepseek-v4-flash">deepseek-ai/deepseek-v4-flash</option>
-            <option value="deepseek-ai/deepseek-v4-pro" selected>deepseek-ai/deepseek-v4-pro</option>
-            <option value="mistralai/mistral-large-3-675b-instruct-2512">mistralai/mistral-large-3-675b-instruct-2512</option>
+        <!-- Model Selector for Designer -->
+        <div class="model-selector-wrap">
+          <label>🤖 Model</label>
+          <select id="modelSelectDesigner">
+            <option value="">Loading models...</option>
           </select>
+          <span id="modelLoadingDes" class="model-loading" style="display:none;"></span>
         </div>
         
         <div class="topbar-row">
@@ -728,54 +741,128 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 <script src="agent.js"></script>
 <script src="dashboard.js"></script>
 <script>
-// Model selector persistence for Dashboard and Designer
-(function() {
-  const AVAILABLE_MODELS = [
-    'moonshotai/kimi-k2.6',
-    'nvidia/llama-3.1-nemoguard-8b-content-safety',
-    'deepseek-ai/deepseek-v4-flash',
-    'deepseek-ai/deepseek-v4-pro',
-    'mistralai/mistral-large-3-675b-instruct-2512',
-  ];
-  
-  function getCurrentModel() {
-    return localStorage.getItem('selectedModel') || 'deepseek-ai/deepseek-v4-pro';
+// ============================================================
+// FETCH MODELS FROM /api/chat?list=models
+// ============================================================
+async function fetchAvailableModels() {
+  try {
+    const response = await fetch('/api/chat?list=models');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    return data.models || [];
+  } catch (err) {
+    console.error('[Model Fetch] Failed:', err);
+    // Fallback to known working models
+    return [
+      'deepseek-ai/deepseek-v4-flash',
+      'deepseek-ai/deepseek-v4-pro',
+      'meta/llama-3.1-70b-instruct',
+      'meta/llama-3.1-8b-instruct',
+      'meta/llama-3.2-3b-instruct',
+      'meta/llama-3.3-70b-instruct',
+      'mistralai/mistral-large-3-675b-instruct-2512',
+      'mistralai/mistral-small-4-119b-2603',
+      'mistralai/ministral-14b-instruct-2512',
+      'moonshotai/kimi-k2.6',
+      'abacusai/dracarys-llama-3.1-70b-instruct',
+    ];
   }
-  
-  function setCurrentModel(model) {
-    if (AVAILABLE_MODELS.includes(model)) {
-      localStorage.setItem('selectedModel', model);
-    }
-  }
-  
-  // Initialize dropdowns
+}
+
+function populateModelSelectors(models, currentModel) {
   const dashSelect = document.getElementById('modelSelectDashboard');
   const desSelect = document.getElementById('modelSelectDesigner');
-  const currentModel = getCurrentModel();
   
-  if (dashSelect) dashSelect.value = currentModel;
-  if (desSelect) desSelect.value = currentModel;
+  const options = models.map(m => 
+    `<option value="${m}" ${m === currentModel ? 'selected' : ''}>${m}</option>`
+  ).join('');
   
-  // Listen for changes
   if (dashSelect) {
-    dashSelect.addEventListener('change', () => {
-      setCurrentModel(dashSelect.value);
-      if (desSelect) desSelect.value = dashSelect.value;
-    });
+    dashSelect.innerHTML = options;
+    dashSelect.value = currentModel;
   }
   if (desSelect) {
-    desSelect.addEventListener('change', () => {
-      setCurrentModel(desSelect.value);
-      if (dashSelect) dashSelect.value = desSelect.value;
-    });
+    desSelect.innerHTML = options;
+    desSelect.value = currentModel;
+  }
+}
+
+function syncModelSelectors() {
+  const dashSelect = document.getElementById('modelSelectDashboard');
+  const desSelect = document.getElementById('modelSelectDesigner');
+  const currentModel = localStorage.getItem('selectedModel') || 'deepseek-ai/deepseek-v4-pro';
+  
+  if (dashSelect && dashSelect.value) {
+    localStorage.setItem('selectedModel', dashSelect.value);
+    if (desSelect) desSelect.value = dashSelect.value;
+  } else if (desSelect && desSelect.value) {
+    localStorage.setItem('selectedModel', desSelect.value);
+    if (dashSelect) dashSelect.value = desSelect.value;
+  }
+}
+
+// Initialize model selectors
+(async function initModels() {
+  const dashSelect = document.getElementById('modelSelectDashboard');
+  const desSelect = document.getElementById('modelSelectDesigner');
+  const loadingDash = document.getElementById('modelLoadingDash');
+  const loadingDes = document.getElementById('modelLoadingDes');
+  
+  // Show loading
+  if (loadingDash) loadingDash.style.display = 'inline-block';
+  if (loadingDes) loadingDes.style.display = 'inline-block';
+  
+  const models = await fetchAvailableModels();
+  const currentModel = localStorage.getItem('selectedModel') || 'deepseek-ai/deepseek-v4-pro';
+  
+  // Find if current model exists in fetched list, otherwise use first available
+  const validModel = models.includes(currentModel) ? currentModel : (models[0] || currentModel);
+  
+  populateModelSelectors(models, validModel);
+  
+  // Hide loading
+  if (loadingDash) loadingDash.style.display = 'none';
+  if (loadingDes) loadingDes.style.display = 'none';
+  
+  // Save to localStorage
+  localStorage.setItem('selectedModel', validModel);
+  
+  // Sync changes between selectors
+  if (dashSelect) {
+    dashSelect.addEventListener('change', syncModelSelectors);
+  }
+  if (desSelect) {
+    desSelect.addEventListener('change', syncModelSelectors);
   }
 })();
 
-// Debug Panel for F4
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab-page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+  if (tab === 'designer' && typeof scaleCanvas === 'function') {
+    requestAnimationFrame(scaleCanvas);
+  }
+}
+window.switchTab = switchTab;
+
+document.querySelectorAll('.tab-btn').forEach(btn =>
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab))
+);
+
+const initialTab = new URLSearchParams(location.search).get('tab') || 'dashboard';
+switchTab(initialTab);
+
+// ============================================================
+// DEBUG PANEL (F4)
+// ============================================================
 (function() {
   let debugPanelVisible = false;
   
-  // Create debug panel HTML
   const panel = document.createElement('div');
   panel.id = 'debugPanel';
   panel.style.cssText = 'display:none;position:fixed;top:0;right:0;width:400px;height:100%;background:#0D1018;border-left:1px solid #1C2438;z-index:10000;padding:16px;overflow-y:auto;font-family:"Space Mono",monospace;';
@@ -790,7 +877,7 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
   `;
   document.body.appendChild(panel);
   
-  function debugLog(msg, type='info') {
+  window.debugLog = function(msg, type='info') {
     const logs = document.getElementById('debugLogs');
     if (!logs) return;
     
@@ -808,19 +895,18 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
     line.innerHTML = `<span style="color:${color};">[${t}] ${msg}</span>`;
     logs.appendChild(line);
     logs.scrollTop = logs.scrollHeight;
-  }
+  };
   
-  function clearDebugLogs() {
+  window.clearDebugLogs = function() {
     const logs = document.getElementById('debugLogs');
     if (logs) logs.innerHTML = '';
-  }
+  };
   
   function toggleDebugPanel() {
     debugPanelVisible = !debugPanelVisible;
     panel.style.display = debugPanelVisible ? 'block' : 'none';
   }
   
-  // F4 key handler
   document.addEventListener('keydown', (e) => {
     if (e.key === 'F4') {
       e.preventDefault();
@@ -831,35 +917,10 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
     }
   });
   
-  // Close button
-  document.getElementById('closeDebugPanel').addEventListener('click', () => {
-    toggleDebugPanel();
-  });
-  
-  // Expose globally for other scripts
-  window.debugLog = debugLog;
-  window.clearDebugLogs = clearDebugLogs;
+  document.getElementById('closeDebugPanel').addEventListener('click', toggleDebugPanel);
 })();
 
-function switchTab(tab) {
-  document.querySelectorAll('.tab-page').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById(`tab-${tab}`).classList.add('active');
-  document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
-  if (tab === 'designer' && typeof scaleCanvas === 'function') {
-    // canvas-area was display:none — clientWidth was 0 last time
-    // designer.js computed scale, so recompute now that it's visible.
-    requestAnimationFrame(scaleCanvas);
-  }
-}
-window.switchTab = switchTab;
-
-document.querySelectorAll('.tab-btn').forEach(btn =>
-  btn.addEventListener('click', () => switchTab(btn.dataset.tab))
-);
-
-const initialTab = new URLSearchParams(location.search).get('tab') || 'dashboard';
-switchTab(initialTab);
+console.log('[Studio] Model selectors will fetch from /api/chat?list=models');
 </script>
 </body>
 </html>
