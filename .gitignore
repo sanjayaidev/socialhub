@@ -1,3 +1,1 @@
-(sidepanel.html and sidepanel.js are source files, no build artifacts, dependencies, or temp files detected)
-
-(empty - output nothing)
+Nothing needs to be added to .gitignore since only a single HTML file (`sidepanel.html`) was modified and no build artifacts, dependencies, or temporary files were detected in the changes.
