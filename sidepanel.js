@@ -739,8 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('dashBtn').addEventListener('click',  openDashboard);
   document.getElementById('openDesignerBtn').addEventListener('click', openDesigner);
 
-  // Build the streaming chat panel (replaces the static one in the HTML)
-  buildChatSection();
+  // Chat section removed per user request (bottom prompt box)
 
   // Init UI state
   document.getElementById('brandFields').style.display      = 'none';
