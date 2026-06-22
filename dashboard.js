@@ -117,7 +117,17 @@ async function loadPlan(key) {
   loadAIModeSettings();
   renderCalendar();
 }
+async function syncToCalendar() {
+  if (!currentPlanKey) { toast('No plan loaded', 'error'); return; }
+  try {
+    const result = await apiCall('/api/content/sync-calendar', 'POST', { planId: currentPlanKey });
+    toast(`✓ Synced ${result.synced} days to calendar (${result.month}/${result.year})`);
+  } catch (err) {
+    toast(`Sync failed: ${err.message}`, 'error');
+  }
+}
 
+document.getElementById('syncCalendarBtn').addEventListener('click', syncToCalendar);
 // ── Build image prompt string for the designer ──
 function buildDesignPrompt(post, slide = null, slideNum = null, totalSlides = null) {
   const type = post.type || 'single';
