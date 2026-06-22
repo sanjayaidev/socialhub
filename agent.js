@@ -81,10 +81,18 @@ async function callDeepSeekStreaming(prompt, onToken, onComplete, onError) {
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
       buffer = lines.pop(); // keep the incomplete trailing line for next chunk
+      
       for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const data = line.slice(6);
-        if (data === '[DONE]') continue;
+        const trimmedLine = line.trim();
+        if (!trimmedLine.startsWith('data:')) continue;
+        
+        // Strip 'data:' prefix and any leading whitespace
+        let data = trimmedLine.slice(5).trim();
+        if (!data || data === '[DONE]') continue;
+        
+        // Sanitize: remove any markdown code fences or extra text
+        data = data.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+        
         try {
           const parsed = JSON.parse(data);
           const token  = parsed.choices?.[0]?.delta?.content || '';
@@ -92,7 +100,23 @@ async function callDeepSeekStreaming(prompt, onToken, onComplete, onError) {
             fullContent += token;
             if (onToken) onToken(token, fullContent);
           }
-        } catch (_) { /* skip malformed */ }
+        } catch (parseErr) {
+          // Try to extract JSON from malformed data
+          const braceStart = data.indexOf('{');
+          const braceEnd = data.lastIndexOf('}');
+          if (braceStart !== -1 && braceEnd > braceStart) {
+            try {
+              const extracted = data.slice(braceStart, braceEnd + 1);
+              const parsed = JSON.parse(extracted);
+              const token  = parsed.choices?.[0]?.delta?.content || '';
+              if (token) {
+                fullContent += token;
+                if (onToken) onToken(token, fullContent);
+              }
+            } catch (_) { /* skip malformed */ }
+          }
+          // Otherwise skip this malformed line
+        }
       }
     }
     if (onComplete) onComplete(fullContent);
@@ -140,6 +164,7 @@ You must use the demo references for all design type as provided for clean detai
 🚨 CRITICAL OUTPUT RULE: You MUST output EXACTLY ONE valid JSON object representing a SINGLE design spec.
 DO NOT output an array of designs. DO NOT generate multiple days.
 The output must be a single { ... } object matching the COMPLETE JSON SCHEMA below.
+DO NOT wrap in markdown code fences. DO NOT include any explanatory text.
 ═══════════════════════════════════════════════════════════════
 VERTICAL PLACEMENT & OVERLAP PREVENTION (CRITICAL):
 ═══════════════════════════════════════════════════════════════
@@ -199,6 +224,10 @@ Dark/Abstract:
 ALWAYS pair imgBg with overlay ≥65 so text remains readable.
 
 ═══════════════════════════════════════════════════════════════
+EXAMPLE OUTPUT (this is the exact format - raw JSON, no markdown):
+═══════════════════════════════════════════════════════════════
+{"canvasW":1080,"canvasH":1350,"bg":{"type":"linear","c1":"#1a1a2e","c2":"#16213e","angle":135},"imgBg":{"src":"url","url":"https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1080&auto=format&fit=crop","size":"cover","pos":"center","opacity":30,"overlay":75},"icons":[{"src":"https://img.icons8.com/fluency/96/artificial-intelligence.png","x":20,"y":15,"size":100,"rot":-5,"opacity":90},{"src":"https://img.icons8.com/fluency/96/robot-2.png","x":80,"y":18,"size":90,"rot":10,"opacity":85}],"brands":[{"text":"@YOURBRAND","x":50,"y":94,"size":22,"color":"#4DFFA0","font":"Space Mono","weight":700,"align":"center","letterSpacing":3,"opacity":70}],"textBlocks":[{"type":"headline","text":"AI IS CHANGING EVERYTHING","x":50,"y":35,"rot":0,"size":72,"font":"Bebas Neue","weight":"700","color":"#ffffff","align":"center","lineH":0.95,"letterSpacing":2,"opacity":100,"textTransform":"uppercase"},{"type":"subtitle","text":"What you need to know in 2025","x":50,"y":48,"rot":0,"size":32,"font":"DM Sans","weight":"400","color":"#4DFFA0","align":"center","lineH":1.2,"opacity":90},{"type":"bullet","text":"• Generative AI tools\n• Automation everywhere\n• New job opportunities","x":50,"y":62,"rot":0,"size":28,"font":"DM Sans","weight":"400","color":"#e0e0e0","align":"left","lineH":1.4,"bulletStyle":"symbol","bulletColor":"#4DFFA0","bulletSize":24,"bulletGap":18,"bulletSymbol":"→"}],"logo":{"src":"none"}}
+═══════════════════════════════════════════════════════════════
 COMPLETE JSON SCHEMA:
 ═══════════════════════════════════════════════════════════════
 {
@@ -232,14 +261,23 @@ function repairJSON(s) {
   r = r.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (m, p) =>
     '"' + p.replace(/\n/g,'\\n').replace(/\r/g,'\\r').replace(/\t/g,'\\t') + '"');
   r = r.replace(/'\s*:/g,'":').replace(/:\s*'/g,':"');
+  // Remove any markdown code fence remnants
+  r = r.replace(/^```json\s*/, '').replace(/```\s*$/, '');
   return r;
 }
 function extractJSON(s) {
   if (!s) return null;
+  // First strip any markdown code fences and surrounding text
   let cleaned = s
     .replace(/```json\s*([\s\S]*?)```/gi, '$1')
     .replace(/```\s*([\s\S]*?)```/gi, '$1')
+    // Remove lines that are clearly not JSON (like "Here's the JSON:")
+    .split('\n')
+    .filter(line => !line.match(/^(here|this|output|json)/i) || line.trim().startsWith('{') || line.trim().startsWith('['))
+    .join('\n')
     .trim();
+  
+  // Try to find the first { and last } to extract JSON object
   const start = cleaned.indexOf('{');
   if (start === -1) return null;
   let depth=0, inStr=false, escape=false, end=-1;

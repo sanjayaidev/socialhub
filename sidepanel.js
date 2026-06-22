@@ -697,9 +697,16 @@ async function sendChatMessage(userMsg) {
         const lines = buffer.split('\n');
         buffer = lines.pop(); // keep the incomplete trailing line for next chunk
         for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') continue;
+          const trimmedLine = line.trim();
+          if (!trimmedLine.startsWith('data:')) continue;
+          
+          // Strip 'data:' prefix and any leading whitespace
+          let data = trimmedLine.slice(5).trim();
+          if (!data || data === '[DONE]') continue;
+          
+          // Sanitize: remove any markdown code fences or extra text
+          data = data.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+          
           try {
             const parsed = JSON.parse(data);
             const token  = parsed.choices?.[0]?.delta?.content || '';
@@ -713,7 +720,28 @@ async function sendChatMessage(userMsg) {
               setTokenBar(true, `● ${tokenCount} tokens · streaming…`);
               setStatus(`streaming · ${tokenCount} tokens`, 'var(--accent2)');
             }
-          } catch (_) { /* skip malformed SSE lines */ }
+          } catch (parseErr) {
+            // Try to extract JSON from malformed data
+            const braceStart = data.indexOf('{');
+            const braceEnd = data.lastIndexOf('}');
+            if (braceStart !== -1 && braceEnd > braceStart) {
+              try {
+                const extracted = data.slice(braceStart, braceEnd + 1);
+                const parsed = JSON.parse(extracted);
+                const token  = parsed.choices?.[0]?.delta?.content || '';
+                if (token) {
+                  fullContent += token;
+                  tokenCount++;
+                  botEl.textContent = fullContent;
+                  botEl.appendChild(cursor);
+                  document.getElementById('spMsgs').scrollTop = 9999;
+                  setTokenBar(true, `● ${tokenCount} tokens · streaming…`);
+                  setStatus(`streaming · ${tokenCount} tokens`, 'var(--accent2)');
+                }
+              } catch (_) { /* skip malformed */ }
+            }
+            // Otherwise skip this malformed line
+          }
         }
       }
     } else {
