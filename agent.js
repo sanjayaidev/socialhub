@@ -16,7 +16,6 @@
 const LOCAL_API  = '/api/chat';
 
 function getSelectedModel() {
-  // Check for model selector in dashboard or designer, or fallback to localStorage
   const dashSelect = document.getElementById('modelSelectDashboard');
   const desSelect = document.getElementById('modelSelectDesigner');
   if (dashSelect && dashSelect.value) return dashSelect.value;
