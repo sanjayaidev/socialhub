@@ -35,26 +35,42 @@ app.use('/utils', express.static(join(__dirname, 'utils')));
 const apiHandler = async (req, res, handlerPath) => {
   try {
     const handler = await import(handlerPath);
-    
+
     // Create a request object that matches what the handlers expect
     const handlerReq = {
       method: req.method,
+      query: req.query,        // ← NEW: needed for ?list=models
+      url: req.url,
       json: async () => req.body,
     };
-    
+
     const response = await handler.default(handlerReq);
-    
+
     // Extract status and headers from Response object
     const status = response.status || 200;
     response.headers.forEach((value, key) => {
       res.setHeader(key, value);
     });
-    
+    res.status(status);
+
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('text/event-stream') && response.body) {
+      // True streaming: write each chunk to the client as it arrives.
+      const reader = response.body.getReader();
+      req.on('close', () => { try { reader.cancel(); } catch (_) {} });
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(value);
+      }
+      return res.end();
+    }
+
     const text = await response.text();
-    res.status(status).send(text);
+    res.send(text);
   } catch (err) {
     console.error(`Error in ${handlerPath}:`, err);
-    res.status(500).json({ error: 'Internal server error' });
+    if (!res.headersSent) res.status(500).json({ error: 'Internal server error' });
   }
 };
 
