@@ -64,13 +64,12 @@ async function handleSaveEditedSlide() {
     const newDesignSpec = saveCurrentAsSpec();
     const oc = await renderToCanvas(2);
     const newDataUrl = oc.toDataURL('image/png');
-    await chrome.runtime.sendMessage({
-      action: 'slideDesignUpdated',
-      postId: currentEditContext.postId,
-      slideIndex: currentEditContext.slideIndex,
-      newDesignSpec,
-      newDataUrl
-    });
+    const payload = { postId: currentEditContext.postId, slideIndex: currentEditContext.slideIndex, newDesignSpec, newDataUrl };
+    if (hasChromeRuntime()) {
+      await chrome.runtime.sendMessage({ action: 'slideDesignUpdated', ...payload });
+    } else if (typeof window.onSlideDesignSaved === 'function') {
+      await window.onSlideDesignSaved(payload);
+    }
     setApiStatus('ready', 'Edit saved successfully');
     return { success: true };
   } catch (error) {
@@ -78,6 +77,7 @@ async function handleSaveEditedSlide() {
     return { success: false, error: error.message };
   }
 }
+
 function resizeCanvas() {
   CW = +document.getElementById('canvasW').value || 1080;
   CH = +document.getElementById('canvasH').value || 1350;
@@ -876,11 +876,11 @@ async function exportPNG() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    if (apiModeActive) chrome.runtime.sendMessage({ action:'designComplete', filename, success:true });
+    if (apiModeActive && hasChromeRuntime()) chrome.runtime.sendMessage({ action:'designComplete', filename, success:true });
   } catch (error) {
     console.error('Export error:', error);
     alert('Export failed: ' + error.message);
-    if (apiModeActive) chrome.runtime.sendMessage({ action:'designComplete', success:false, error:error.message });
+    if (apiModeActive && hasChromeRuntime()) chrome.runtime.sendMessage({ action:'designComplete', success:false, error:error.message });
   } finally {
     btn.textContent = '⬇ Export PNG'; btn.disabled = false;
     scaleCanvas();
