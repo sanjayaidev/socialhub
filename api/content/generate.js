@@ -66,14 +66,14 @@ export default async function handler(req) {
 
     const upstream = await fetch(NIM_ENDPOINT, {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${NVIDIA_API_KEY}`,
       },
       body: JSON.stringify({
         messages: [{ role: 'user', content: prompt }],
         model: selectedModel,
-        stream: false,
+        stream: true,
         temperature: temperature ?? 0.7,
         max_tokens: max_tokens ?? 4096,
       }),
@@ -84,6 +84,22 @@ export default async function handler(req) {
       return json({ error: `NIM API error: ${upstream.status} - ${errText}` }, 502);
     }
 
+    // Handle streaming response
+    const contentType = upstream.headers.get('content-type') || '';
+    if (contentType.includes('text/event-stream')) {
+      // Stream the SSE response directly back to the client
+      return new Response(upstream.body, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          ...CORS_HEADERS,
+        },
+      });
+    }
+
+    // Fallback for non-streaming responses
     const result = await upstream.json();
     const content = result.choices?.[0]?.message?.content || '';
     return json({ content });
