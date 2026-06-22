@@ -241,19 +241,30 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent2);}
     <textarea id="chatInput" rows="2" placeholder="Type your question..." style="flex:1;resize:none;"></textarea>
     <button class="btn" id="chatSendBtn" style="width:auto;margin:0;padding:0 16px;">SEND</button>
   </div>
+  
+  <!-- Model Selector Dropdown -->
+  <div class="field" style="margin-top:12px;">
+    <label>AI Model</label>
+    <select id="modelSelect" style="width:100%;">
+      <option value="moonshotai/kimi-k2.6">moonshotai/kimi-k2.6</option>
+      <option value="nvidia/llama-3.1-nemoguard-8b-content-safety">nvidia/llama-3.1-nemoguard-8b-content-safety</option>
+      <option value="deepseek-ai/deepseek-v4-flash">deepseek-ai/deepseek-v4-flash</option>
+      <option value="deepseek-ai/deepseek-v4-pro" selected>deepseek-ai/deepseek-v4-pro</option>
+      <option value="mistralai/mistral-large-3-675b-instruct-2512">mistralai/mistral-large-3-675b-instruct-2512</option>
+    </select>
+  </div>
+  
   <div class="chat-status" id="chatStatus" style="font-size:9px;color:var(--muted);margin-top:6px;font-family:var(--mono);">idle</div>
 </div>
 
-<!-- Model Selector Modal (F4) -->
-<div id="modelModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10000;align-items:center;justify-content:center;">
-  <div style="background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:500px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
-    <h3 style="font-family:var(--mono);color:var(--accent);margin-bottom:16px;font-size:14px;">🎯 SELECT MODEL</h3>
-    <p style="font-size:11px;color:var(--muted2);margin-bottom:16px;">Press F4 or ESC to close. Choose a model for chat and content generation.</p>
-    <div id="modelList" style="display:flex;flex-direction:column;gap:8px;"></div>
-    <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;">
-      <span id="currentModelLabel" style="font-size:10px;color:var(--muted);">Current: </span>
-      <button id="closeModelModal" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:8px 16px;border-radius:6px;cursor:pointer;font-size:11px;">CLOSE</button>
-    </div>
+<!-- Debug Panel (F4) -->
+<div id="debugPanel" style="display:none;position:fixed;top:0;right:0;width:400px;height:100%;background:var(--s1);border-left:1px solid var(--border);z-index:10000;padding:16px;overflow-y:auto;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h3 style="font-family:var(--mono);color:var(--accent);font-size:12px;">🔍 DEBUG LOGS</h3>
+    <button id="closeDebugPanel" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:10px;">✕ CLOSE</button>
+  </div>
+  <div id="debugLogs" style="font-family:var(--mono);font-size:9px;color:var(--muted2);line-height:1.6;">
+    <div style="color:var(--muted);">Press F4 to toggle this panel. Logs will appear here.</div>
   </div>
 </div>
 
