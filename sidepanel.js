@@ -291,11 +291,10 @@ CRITICAL: Output EXACTLY ${postTypes.length} post objects. No more, no less.
 
 POST TYPES (must match exactly): ${typesInfo}
 
-Every post must have: day (exact numbers), type, title, caption (150-300 chars with emojis), hashtags (15-20 array no #), image_prompt (detailed visual desc), hook, bullets (single only 3-item array), slides (carousel only: array of first/content/last each with title body image_prompt)
+Every post must have: day (exact numbers), type, title, caption (150-300 chars with emojis), hashtags (15-20 array no #), image_prompt (detailed visual desc), hook, bullets (single only 3-item array), audience (one of: client, student), platforms (array, any of: ig, yt, li), slides (carousel only: array of first/content/last each with title body image_prompt)
 
 OUTPUT: JSON array only. No markdown. Start with [ end with ].`;
 }
-
 // ── Generate content ideas using DeepSeek (via our /api/content/generate proxy) ──
 async function generateContentWithNIM(prompt, month, year, postTypes) {
   const BATCH_SIZE = 15;
