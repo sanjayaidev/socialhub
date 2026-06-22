@@ -53,6 +53,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent2);}
 .day-preview.carousel{background:rgba(255,107,77,0.2);}
 .day-preview.story{background:rgba(77,255,160,0.15);}
 .day-preview.reel{background:rgba(255,184,77,0.2);}
+.chat-messages{background:var(--s2);border-radius:8px;padding:10px;min-height:80px;}
+.chat-msg{margin-bottom:8px;font-size:11px;line-height:1.4;}
+.chat-msg.user{color:var(--accent2);text-align:right;}
+.chat-msg.bot{color:var(--text);}
+.chat-msg.system{color:var(--muted);font-style:italic;text-align:center;}
+.chat-msg .streaming-content{white-space:pre-wrap;font-family:var(--mono);font-size:9px;background:var(--s3);padding:6px;border-radius:4px;display:block;margin-top:4px;max-height:120px;overflow-y:auto;}
+.chat-input-row textarea{min-height:36px;resize:none;}
+.chat-status{font-family:var(--mono);font-size:9px;}
 </style>
 </head>
 <body>
@@ -216,6 +224,24 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent2);}
 
 <div class="log-card" id="logScroll">
   <div class="log-line">Ready to generate. Set your brand and distribution, then click Generate.</div>
+</div>
+
+<!-- ========== AI CHAT SECTION ========== -->
+<div class="section" style="margin-top:16px;">
+  <div class="section-title">
+    🤖 AI ASSISTANT CHAT
+    <span>live streaming</span>
+  </div>
+  
+  <div class="chat-messages" id="chatMessages" style="max-height:200px;overflow-y:auto;margin-bottom:12px;">
+    <div class="chat-msg system">Ask DeepSeek anything about your content plan...</div>
+  </div>
+  
+  <div class="chat-input-row" style="display:flex;gap:8px;">
+    <textarea id="chatInput" rows="2" placeholder="Type your question..." style="flex:1;resize:none;"></textarea>
+    <button class="btn" id="chatSendBtn" style="width:auto;margin:0;padding:0 16px;">SEND</button>
+  </div>
+  <div class="chat-status" id="chatStatus" style="font-size:9px;color:var(--muted);margin-top:6px;font-family:var(--mono);">idle</div>
 </div>
 
 <script src="sidepanel.js"></script>
