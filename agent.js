@@ -1,26 +1,29 @@
-// agent.js — Design Agent v3.6 (live streaming modal)
+// agent.js — Design Agent v3.7 (proxy-safe: all NIM calls via /api/chat)
 //
-// Changes from v3.5:
-//   - handleSend() now shows a dedicated streaming modal overlay on the
-//     canvas while tokens arrive, then auto-dismisses it when done.
-//   - The agent chat panel itself still shows a compact status line so
-//     the user can see activity even when the panel is closed.
-//   - Sidepanel streaming chat also routed through /api/content/generate
-//     (server-side proxy) to avoid CORS pre-flight rejections.
+// Changes from v3.6:
+//   - callDeepSeek and callDeepSeekStreaming now hit /api/chat (the
+//     server-side Railway proxy) instead of the Railway URL directly.
+//     Direct browser→Railway fetches trigger a CORS preflight on the
+//     application/json content-type header; Railway only handles POST
+//     /api/chat and rejects the OPTIONS preflight → "Failed to fetch".
+//     Routing through our own Next.js/Express handler is server-to-server
+//     so CORS never applies.
+//   - handleSend() shows a live streaming modal (v3.6 feature, kept).
 (function () {
 'use strict';
 
-const NIM_ENDPOINT = 'https://nimrailway-production.up.railway.app/api/chat';
-const NIM_MODEL    = 'deepseek-ai/deepseek-v4-pro';
+// Local proxy — never call Railway directly from the browser.
+const LOCAL_API  = '/api/chat';
+const NIM_MODEL  = 'deepseek-ai/deepseek-v4-pro';
 
 // ── Chrome guard ──────────────────────────────────────────────────────
 function hasChromeRuntime() {
   return typeof chrome !== 'undefined' && !!chrome.runtime;
 }
 
-// ── Streaming call ────────────────────────────────────────────────────
+// ── Non-streaming call (used by processPrompt / dashboard) ───────────
 async function callDeepSeek(prompt) {
-  const response = await fetch(NIM_ENDPOINT, {
+  const response = await fetch(LOCAL_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -33,15 +36,16 @@ async function callDeepSeek(prompt) {
   });
   if (!response.ok) {
     const errText = await response.text();
-    throw new Error(`NIM API error: ${response.status} - ${errText}`);
+    throw new Error(`API error: ${response.status} - ${errText}`);
   }
   const result = await response.json();
   return result.choices?.[0]?.message?.content || '';
 }
 
+// ── Streaming call (used by handleSend / Designer chat panel) ─────────
 async function callDeepSeekStreaming(prompt, onToken, onComplete, onError) {
   try {
-    const response = await fetch(NIM_ENDPOINT, {
+    const response = await fetch(LOCAL_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -54,7 +58,7 @@ async function callDeepSeekStreaming(prompt, onToken, onComplete, onError) {
     });
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`NIM API error: ${response.status} - ${errText}`);
+      throw new Error(`API error: ${response.status} - ${errText}`);
     }
 
     const reader  = response.body.getReader();
@@ -354,8 +358,6 @@ async function processPrompt(options) {
     }
     result.duration = Date.now() - startTime;
     return result;
-  } catch (err) {
-    throw err;
   } finally {
     releaseLock();
   }
@@ -641,7 +643,7 @@ function clearConversation(id) {
 function getConversationHistory(id) { return getConversation(id); }
 
 window.DesignerAgentAPI = {
-  processPrompt, clearConversation, getConversationHistory, version: '3.6.0',
+  processPrompt, clearConversation, getConversationHistory, version: '3.7.0',
 };
 
 // ── Wire up send button ───────────────────────────────────────────────
@@ -659,5 +661,5 @@ if (agentInput) {
 const subtitle = document.getElementById('agentSubtitle');
 if (subtitle) subtitle.textContent = 'Ready · DeepSeek · Live streaming';
 
-console.log('[Agent API] v3.6 Ready — live streaming modal enabled.');
+console.log('[Agent API] v3.7 Ready — all fetches via /api/chat proxy, CORS-safe.');
 })();
