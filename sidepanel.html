@@ -39,13 +39,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent2);}
 .progress-card{background:var(--s2);border-radius:10px;padding:12px;margin-bottom:16px;display:none;}
 .progress-bar{height:4px;background:var(--s3);border-radius:2px;overflow:hidden;margin:8px 0;}
 .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));width:0%;transition:width 0.3s;}
-.log-card{background:var(--s2);border-radius:10px;padding:12px;max-height:200px;overflow-y:auto;font-family:var(--mono);font-size:10px;}
+.log-card{background:var(--s2);border-radius:10px;padding:12px;max-height:250px;overflow-y:auto;font-family:var(--mono);font-size:10px;}
 .log-line{color:var(--muted2);margin-bottom:4px;border-left:2px solid var(--border);padding-left:8px;}
 .log-line.success{color:var(--accent);border-left-color:var(--accent);}
 .log-line.error{color:var(--error);border-left-color:var(--error);}
 .log-line.step{color:var(--accent2);border-left-color:var(--accent2);}
 .log-t{color:var(--muted);margin-right:8px;}
-.status-text{font-size:10px;color:var(--muted2);margin-top:8px;}
+.status-text{font-size:10px;color:var(--accent2);margin-top:8px;font-family:var(--mono);}
 .grid-preview{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-top:10px;}
 .day-preview{background:var(--s3);height:24px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--muted);}
 .day-preview.active{background:rgba(77,255,160,0.2);border:1px solid var(--accent);}
@@ -67,8 +67,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent2);}
 .ai-stream-header .status-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
 .ai-stream-header .status-dot.streaming{background:var(--accent);animation:pulse 1.5s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
-.ai-stream-content{font-family:var(--mono);font-size:10px;color:var(--text);line-height:1.6;min-height:60px;max-height:200px;overflow-y:auto;white-space:pre-wrap;}
-.ai-stream-content:empty::before{content:"Waiting for AI response...";color:var(--muted);font-style:italic;}
+.ai-stream-content{font-family:var(--mono);font-size:10px;color:var(--text);line-height:1.6;min-height:60px;max-height:400px;overflow-y:auto;white-space:pre-wrap;}
+.ai-stream-content:empty::before{content:"Day-by-day output will appear here during generation...";color:var(--muted);font-style:italic;}
 .ai-stream-actions{display:flex;gap:8px;margin-top:10px;}
 .ai-stream-actions button{flex:1;background:var(--s3);border:1px solid var(--border);color:var(--muted2);padding:6px;border-radius:6px;font-family:var(--mono);font-size:9px;cursor:pointer;}
 .ai-stream-actions button:hover{border-color:var(--accent2);color:var(--text);}
@@ -246,11 +246,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent2);}
 
 <!-- ========== PROGRESS & LOGS ========== -->
 <div class="progress-card" id="progressCard">
-  <div style="display:flex;justify-content:space-between;">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
     <span id="progressStatus">Ready</span>
     <span id="progressCount">0/30</span>
   </div>
   <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+  <div class="status-text" id="dayStatus">Waiting to start...</div>
 </div>
 
 <div class="log-card" id="logScroll">
