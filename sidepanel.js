@@ -301,8 +301,8 @@ async function generateContentWithNIM(prompt, month, year, postTypes) {
   const total = postTypes.length;
 
   const buildBatchPrompt = (batchPosts, startDay) => {
-    const batchTypes = batchPosts.map((p, i) => `Day ${startDay + i}: type ${p}`);
-    return `You are an expert Instagram content strategist AND copywriter.
+  const batchTypes = batchPosts.map((p, i) => `Day ${startDay + i}: type ${p}`);
+  return `You are an expert Instagram content strategist AND copywriter.
 CONTENT BRIEF: ${prompt.split('CONTENT BRIEF: ')[1]?.split('\nMONTH:')[0] || prompt}
 MONTH: ${month} ${year}
 
@@ -310,10 +310,10 @@ CRITICAL: Output EXACTLY ${batchPosts.length} post objects. No more, no less.
 
 POST TYPES (must match exactly): ${batchTypes.join(', ')}
 
-Every post must have: day (exact numbers), type, title, caption (150-300 chars with emojis), hashtags (15-20 array no #), image_prompt (detailed visual desc), hook, bullets (single only 3-item array), slides (carousel only: array of first/content/last each with title body image_prompt)
+Every post must have: day (exact numbers), type, title, caption (150-300 chars with emojis), hashtags (15-20 array no #), image_prompt (detailed visual desc), hook, bullets (single only 3-item array), audience (one of: client, student), platforms (array, any of: ig, yt, li), slides (carousel only: array of first/content/last each with title body image_prompt)
 
 OUTPUT: JSON array only. No markdown. Start with [ end with ].`;
-  };
+};
 
   if (total <= BATCH_SIZE) {
     log(`→ DeepSeek: generating ${total} posts...`, 'step');
@@ -444,6 +444,8 @@ async function startWorkflow() {
         hashtags: idea.hashtags || [],
         image_prompt: idea.image_prompt || '',
         bullets: idea.bullets || [],
+        audience: idea.audience || '',
+        platforms: idea.platforms || [],
         slides: (idea.slides || []).map(s => ({
           ...s,
           image_prompt: s.image_prompt || ''
