@@ -244,6 +244,19 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent2);}
   <div class="chat-status" id="chatStatus" style="font-size:9px;color:var(--muted);margin-top:6px;font-family:var(--mono);">idle</div>
 </div>
 
+<!-- Model Selector Modal (F4) -->
+<div id="modelModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10000;align-items:center;justify-content:center;">
+  <div style="background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:500px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+    <h3 style="font-family:var(--mono);color:var(--accent);margin-bottom:16px;font-size:14px;">🎯 SELECT MODEL</h3>
+    <p style="font-size:11px;color:var(--muted2);margin-bottom:16px;">Press F4 or ESC to close. Choose a model for chat and content generation.</p>
+    <div id="modelList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;">
+      <span id="currentModelLabel" style="font-size:10px;color:var(--muted);">Current: </span>
+      <button id="closeModelModal" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:8px 16px;border-radius:6px;cursor:pointer;font-size:11px;">CLOSE</button>
+    </div>
+  </div>
+</div>
+
 <script src="sidepanel.js"></script>
 </body>
 </html>

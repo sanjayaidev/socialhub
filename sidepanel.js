@@ -1,6 +1,9 @@
-// sidepanel.js — v6.2 (streaming chat via /api/chat proxy, token-by-token display)
+// sidepanel.js — v6.3 (streaming chat via /api/chat proxy, token-by-token display + F4 model selector)
 //
-// Changes from v6.1:
+// Changes from v6.2:
+//   - Added F4 key handler to open model selection modal
+//   - Model selector with 5 NVIDIA NIM models
+//   - Current model stored in localStorage and used across chat/generation
 //   - Chat panel now streams through /api/chat (Railway proxy already
 //     handles CORS server-side). Tokens appear character-by-character in
 //     the panel with a live cursor.
@@ -13,6 +16,27 @@ let stopRequested = false;
 let stats        = { done:0, errors:0 };
 let totalPosts   = 30;
 let allPostsData = [];
+
+// Available models (same list as /api/chat.js)
+const AVAILABLE_MODELS = [
+  'moonshotai/kimi-k2.6',
+  'nvidia/llama-3.1-nemoguard-8b-content-safety',
+  'deepseek-ai/deepseek-v4-flash',
+  'deepseek-ai/deepseek-v4-pro',
+  'mistralai/mistral-large-3-675b-instruct-2512',
+];
+
+// Get/set current model from localStorage
+function getCurrentModel() {
+  return localStorage.getItem('selectedModel') || AVAILABLE_MODELS[3]; // default to deepseek-v4-pro
+}
+function setCurrentModel(model) {
+  if (AVAILABLE_MODELS.includes(model)) {
+    localStorage.setItem('selectedModel', model);
+    updateCurrentModelLabel();
+  }
+}
+
 const MONTH_NAMES_FULL = [
   'January','February','March','April','May','June',
   'July','August','September','October','November','December'
@@ -62,7 +86,7 @@ async function apiCall(endpoint, method='POST', data={}) {
 async function callNIM(prompt, options={}) {
   const result = await apiCall('/api/content/generate', 'POST', {
     prompt,
-    model:       options.model       || 'deepseek-ai/deepseek-v4-pro',
+    model:       options.model       || getCurrentModel(),
     temperature: options.temperature || 0.7,
     max_tokens:  options.max_tokens  || 4096,
   });
@@ -580,12 +604,13 @@ async function sendChatMessage(userMsg) {
     // ── Try streaming via /api/chat ──────────────────────────────
     // The Railway /api/chat handler passes stream:true straight through,
     // which means the browser gets a proper text/event-stream response.
+    const currentModel = getCurrentModel();
     const response = await fetch('/api/chat', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         messages: chatHistory,
-        model:    'deepseek-ai/deepseek-v4-pro',
+        model:    currentModel,
         stream:   true,
         temperature: 0.7,
         max_tokens:  2048,
@@ -636,7 +661,7 @@ async function sendChatMessage(userMsg) {
       const result = await apiCall('/api/content/generate', 'POST', {
         prompt: chatHistory.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n\n')
           + '\n\nAssistant:',
-        model:       'deepseek-ai/deepseek-v4-pro',
+        model:       getCurrentModel(),
         temperature: 0.7,
         max_tokens:  2048,
       });
@@ -719,3 +744,81 @@ document.addEventListener('DOMContentLoaded', () => {
   lockPostCountToMonth();
   updatePercentSum();
 });
+
+// ── Model Selector Modal Functions ────────────────────────────────────
+function showModelModal() {
+  const modal = document.getElementById('modelModal');
+  const modelList = document.getElementById('modelList');
+  if (!modal || !modelList) return;
+  
+  const currentModel = getCurrentModel();
+  modelList.innerHTML = AVAILABLE_MODELS.map(model => {
+    const isCurrent = model === currentModel;
+    const shortName = model.split('/').pop();
+    return `
+      <button class="model-option" data-model="${model}" style="
+        background: ${isCurrent ? 'rgba(77,255,160,0.15)' : 'var(--s3)'};
+        border: ${isCurrent ? '1px solid var(--accent)' : '1px solid var(--border)'};
+        color: ${isCurrent ? 'var(--accent)' : 'var(--text)'};
+        padding: 12px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: var(--mono);
+        font-size: 11px;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      " onmouseover="this.style.background='${isCurrent ? 'rgba(77,255,160,0.15)' : 'var(--s2)'}'" onmouseout="this.style.background='${isCurrent ? 'rgba(77,255,160,0.15)' : 'var(--s3)'}'">
+        <span style="font-size:14px;">${isCurrent ? '✅' : '⚪'}</span>
+        <div>
+          <div style="font-weight:700;">${shortName}</div>
+          <div style="font-size:9px;color:var(--muted2);">${model}</div>
+        </div>
+      </button>
+    `;
+  }).join('');
+  
+  // Add click handlers
+  modelList.querySelectorAll('.model-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const selectedModel = btn.dataset.model;
+      setCurrentModel(selectedModel);
+      closeModal();
+    });
+  });
+  
+  updateCurrentModelLabel();
+  modal.style.display = 'flex';
+}
+
+function closeModal() {
+  const modal = document.getElementById('modelModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function updateCurrentModelLabel() {
+  const label = document.getElementById('currentModelLabel');
+  if (label) {
+    const current = getCurrentModel();
+    const shortName = current.split('/').pop();
+    label.textContent = `Current: ${shortName} (${current})`;
+  }
+}
+
+// Add event listeners for model modal
+document.getElementById('closeModelModal')?.addEventListener('click', closeModal);
+
+// F4 key to open model selector
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'F4') {
+    e.preventDefault();
+    showModelModal();
+  }
+  if (e.key === 'Escape') {
+    closeModal();
+  }
+});
+
+// Initialize model label
+updateCurrentModelLabel();

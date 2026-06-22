@@ -18,14 +18,13 @@
 
 const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
 
-// Curated 5-model list. Swap/add ids freely — these just need to be
-// valid NVIDIA NIM model ids your API key has access to.
+// Curated 5-model list from user's requirements.
 const ALLOWED_MODELS = [
-  'deepseek-ai/deepseek-v4-pro',
-  'deepseek-ai/deepseek-v4-flash',
   'moonshotai/kimi-k2.6',
+  'nvidia/llama-3.1-nemoguard-8b-content-safety',
+  'deepseek-ai/deepseek-v4-flash',
+  'deepseek-ai/deepseek-v4-pro',
   'mistralai/mistral-large-3-675b-instruct-2512',
-  'meta/llama-3.3-70b-instruct',
 ];
 
 function isAllowedModel(modelId) {

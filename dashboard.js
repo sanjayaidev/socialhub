@@ -1,4 +1,5 @@
-// dashboard.js v4.0 - webapp-only, talks to designer.js directly (no chrome.runtime)
+// dashboard.js v4.1 - webapp-only, talks to designer.js directly (no chrome.runtime)
+// Updated: Uses selected model from localStorage (shared with sidepanel)
 
 // ── State ──
 let allPlans = {};
@@ -9,6 +10,19 @@ let isGenerating = false;
 let stopGen = false;
 let editingDay = null;
 let aiModePerPost = {};
+
+// Available models (same list as /api/chat.js and sidepanel.js)
+const AVAILABLE_MODELS = [
+  'moonshotai/kimi-k2.6',
+  'nvidia/llama-3.1-nemoguard-8b-content-safety',
+  'deepseek-ai/deepseek-v4-flash',
+  'deepseek-ai/deepseek-v4-pro',
+  'mistralai/mistral-large-3-675b-instruct-2512',
+];
+
+function getCurrentModel() {
+  return localStorage.getItem('selectedModel') || AVAILABLE_MODELS[3]; // default to deepseek-v4-pro
+}
 
 // ── Helpers ──
 function toast(msg, type = 'success') {
@@ -36,7 +50,7 @@ async function apiCall(endpoint, method = 'POST', data = {}) {
 async function callNIM(prompt, options = {}) {
   const result = await apiCall('/api/content/generate', 'POST', {
     prompt,
-    model: options.model || 'deepseek-ai/deepseek-v4-pro',
+    model: options.model || getCurrentModel(),
     temperature: options.temperature || 0.7,
     max_tokens: options.max_tokens || 4096
   });
