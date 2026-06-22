@@ -1289,7 +1289,9 @@ function getCanvasState() {
     hasLogo: state.logo.src !== 'none'
   };
 }
-
+window.setDesignerEditContext = function(postId, slideIndex) {
+  currentEditContext = { postId, slideIndex };
+};
 window.ContentDesignerAPI = {
   applyDesign, 
   autoExport, 
