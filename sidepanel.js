@@ -267,30 +267,13 @@ function parseDeepSeekArray(raw) {
   throw new Error('Could not extract JSON array');
 }
 
-// ── NIM prompt builder ────────────────────────────────────────────────
-function buildNIMPrompt(brief, month, year, postTypes) {
-  const typesInfo = postTypes.map((t,i)=>`Day ${i+1}: ${t}`).join(', ');
-  return `You are an expert Instagram content strategist AND copywriter.
-CONTENT BRIEF: ${brief}
-MONTH: ${month} ${year}
-
-CRITICAL: Output EXACTLY ${postTypes.length} post objects. No more, no less.
-
-POST TYPES (must match exactly): ${typesInfo}
-
-Every post must have: day (exact numbers), type, title, caption (150-300 chars with emojis), hashtags (15-20 array no # prefix), image_prompt (detailed visual desc), hook, bullets (single only, 3-item array), audience (one of: client, student), platforms (array, any of: ig, yt, li), slides (carousel only: array of first/content/last each with title body image_prompt)
-
-OUTPUT: JSON array only. No markdown. Start with [ end with ].`;
-}
-
 // ── Content generation ────────────────────────────────────────────────
-async function generateContentWithNIM(prompt, month, year, postTypes) {
+async function generateContentWithNIM(brief, month, year, postTypes) {
   const BATCH_SIZE = 15;
   const total      = postTypes.length;
 
   const buildBatchPrompt = (batchPosts, startDay) => {
     const batchTypes = batchPosts.map((p,i)=>`Day ${startDay+i}: type ${p}`);
-    const brief = prompt.split('CONTENT BRIEF: ')[1]?.split('\nMONTH:')[0] || prompt;
     return `You are an expert Instagram content strategist AND copywriter.
 CONTENT BRIEF: ${brief}
 MONTH: ${month} ${year}
@@ -384,11 +367,10 @@ async function startWorkflow() {
   log('🚀 Content Planner — Generating with brand + distribution', 'success');
 
   try {
-    const nimPrompt = buildNIMPrompt(brief, month, year, postTypes);
     setProgress('Generating content ideas…', 0, totalPosts);
     log('→ Asking DeepSeek for all posts…', 'step');
 
-    const ideas = await generateContentWithNIM(nimPrompt, month, year, postTypes);
+    const ideas = await generateContentWithNIM(brief, month, year, postTypes);
     log(`✓ Got ${ideas.length} ideas from DeepSeek`, 'success');
 
     for (let i=0; i<ideas.length && !stopRequested; i++) {
@@ -637,13 +619,16 @@ async function sendChatMessage(userMsg) {
       streamOk = true;
       const reader  = response.body.getReader();
       const decoder = new TextDecoder();
+      let buffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream:true });
-        for (const line of chunk.split('\n')) {
+        buffer += decoder.decode(value, { stream:true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep the incomplete trailing line for next chunk
+        for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const data = line.slice(6).trim();
           if (data === '[DONE]') continue;

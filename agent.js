@@ -73,12 +73,15 @@ async function callDeepSeekStreaming(prompt, onToken, onComplete, onError) {
     const reader  = response.body.getReader();
     const decoder = new TextDecoder();
     let fullContent = '';
+    let buffer = '';
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      for (const line of chunk.split('\n').filter(l => l.trim())) {
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // keep the incomplete trailing line for next chunk
+      for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
         const data = line.slice(6);
         if (data === '[DONE]') continue;

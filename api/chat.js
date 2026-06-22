@@ -1,144 +1,89 @@
-// pages/api/chat.js
-//
-// Fixed version for Railway deployment with NVIDIA NIM free endpoints
-// Uses correct model list and proper Next.js API route format
+// api/chat.js
+// Fixed version using Web Response API (matching server.js apiHandler contract)
 
-const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
+const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1 ';
 
-// CORRECT model list for NVIDIA NIM free endpoints
 const ALLOWED_MODELS = [
-  // DeepSeek models (available on NIM)
   'deepseek-ai/deepseek-v4-flash',
   'deepseek-ai/deepseek-v4-pro',
-  
-  // Meta Llama models (free tier)
   'meta/llama-3.1-70b-instruct',
   'meta/llama-3.1-8b-instruct',
   'meta/llama-3.2-3b-instruct',
   'meta/llama-3.3-70b-instruct',
-  
-  // Mistral models (free tier)
   'mistralai/mistral-large-3-675b-instruct-2512',
   'mistralai/mistral-small-4-119b-2603',
   'mistralai/ministral-14b-instruct-2512',
-  
-  // Other valid models
   'moonshotai/kimi-k2.6',
   'abacusai/dracarys-llama-3.1-70b-instruct',
 ];
 
-function isAllowedModel(modelId) {
-  return ALLOWED_MODELS.includes(modelId);
+function isAllowedModel(modelId) { return ALLOWED_MODELS.includes(modelId); }
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+function json(obj, status = 200) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+  });
 }
 
-// Simple in-memory rate limiting for Railway (since we can't use Upstash)
-// This is per-instance, not global - good enough for personal use
+// Per-instance rate limit (fine for personal use)
 const rateLimitStore = new Map();
-
 function checkRateLimit(modelId) {
   const now = Date.now();
-  const windowMs = 60000; // 1 minute
-  const maxRequests = 40; // RPM limit for free tier
-  
-  const key = modelId;
-  if (!rateLimitStore.has(key)) {
-    rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
-    return { allowed: true, remaining: 39 };
+  const windowMs = 60000, maxRequests = 40;
+  if (!rateLimitStore.has(modelId)) {
+    rateLimitStore.set(modelId, { count: 1, resetTime: now + windowMs });
+    return { allowed: true };
   }
-  
-  const record = rateLimitStore.get(key);
-  
-  // Reset if window expired
-  if (now > record.resetTime) {
-    rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
-    return { allowed: true, remaining: 39 };
-  }
-  
-  // Check if over limit
-  if (record.count >= maxRequests) {
-    const retryAfter = Math.ceil((record.resetTime - now) / 1000);
-    return { allowed: false, retryAfter };
-  }
-  
-  // Increment count
-  record.count++;
-  return { allowed: true, remaining: maxRequests - record.count };
+  const r = rateLimitStore.get(modelId);
+  if (now > r.resetTime) { rateLimitStore.set(modelId, { count: 1, resetTime: now + windowMs }); return { allowed: true }; }
+  if (r.count >= maxRequests) return { allowed: false, retryAfter: Math.ceil((r.resetTime - now) / 1000) };
+  r.count++;
+  return { allowed: true };
 }
 
-export default async function handler(req, res) {
-  // Set CORS headers for Railway
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
-  // Handle preflight
+export default async function handler(req) {
   if (req.method === 'OPTIONS') {
-    return res.status(204).end();
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
   const apiKey = process.env.NVIDIA_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'NVIDIA_API_KEY environment variable is not set' });
-  }
+  if (!apiKey) return json({ error: 'NVIDIA_API_KEY environment variable is not set' }, 500);
 
-  // GET /api/chat?list=models -> return allowed models
+  // GET /api/chat?list=models
   if (req.method === 'GET') {
     if (req.query?.list === 'models') {
-      // Group by provider for better UI
       const byProvider = {};
-      ALLOWED_MODELS.forEach((modelId) => {
-        const provider = modelId.split('/')[0] || 'nvidia';
-        if (!byProvider[provider]) byProvider[provider] = [];
-        byProvider[provider].push(modelId);
+      ALLOWED_MODELS.forEach((m) => {
+        const p = m.split('/')[0] || 'nvidia';
+        (byProvider[p] ||= []).push(m);
       });
-      
-      return res.status(200).json({ 
-        models: ALLOWED_MODELS,
-        by_provider: byProvider 
-      });
+      return json({ models: ALLOWED_MODELS, by_provider: byProvider });
     }
-    return res.status(400).json({ error: 'Use GET ?list=models or POST a chat request' });
+    return json({ error: 'Use GET ?list=models or POST a chat request' }, 400);
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
-  const body = req.body;
-  const {
-    messages,
-    model = ALLOWED_MODELS[0],
-    stream = false,
-    temperature = 0.7,
-    max_tokens = 2048,
-  } = body || {};
+  const body = await req.json();
+  const { messages, model = ALLOWED_MODELS[0], stream = false, temperature = 0.7, max_tokens = 2048 } = body || {};
 
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: 'Messages array is required' });
-  }
+  if (!messages || !Array.isArray(messages)) return json({ error: 'Messages array is required' }, 400);
+  if (!isAllowedModel(model)) return json({ error: `Model "${model}" is not in the allowed list`, allowed_models: ALLOWED_MODELS }, 403);
 
-  if (!isAllowedModel(model)) {
-    return res.status(403).json({ 
-      error: `Model "${model}" is not in the allowed list`,
-      allowed_models: ALLOWED_MODELS 
-    });
-  }
-
-  // Apply rate limiting
-  const rateResult = checkRateLimit(model);
-  if (!rateResult.allowed) {
-    return res.status(429).json({
-      error: `Rate limit reached for model "${model}". Try again in ${rateResult.retryAfter} seconds.`,
-      retry_after_seconds: rateResult.retryAfter,
-    });
-  }
+  const rate = checkRateLimit(model);
+  if (!rate.allowed) return json({ error: `Rate limit reached for model "${model}". Try again in ${rate.retryAfter}s.`, retry_after_seconds: rate.retryAfter }, 429);
 
   const upstreamPayload = {
     model,
     messages: messages.map((m) => ({ role: m.role, content: m.content })),
-    temperature,
-    max_tokens,
-    top_p: 1,
+    temperature, max_tokens, top_p: 1,
     stream: Boolean(stream),
   };
 
@@ -146,82 +91,35 @@ export default async function handler(req, res) {
   try {
     upstream = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify(upstreamPayload),
     });
   } catch (err) {
-    return res.status(502).json({ 
-      error: 'Failed to reach NVIDIA API', 
-      details: err.message 
-    });
+    return json({ error: 'Failed to reach NVIDIA API', details: err.message }, 502);
   }
 
   if (!upstream.ok) {
     const rawText = await upstream.text();
     let details = rawText;
-    try {
-      details = JSON.parse(rawText);
-    } catch (_) {
-      // leave as raw text if not JSON
-    }
-    return res.status(upstream.status).json({ 
-      error: 'NVIDIA API returned an error', 
-      status: upstream.status, 
-      details 
-    });
+    try { details = JSON.parse(rawText); } catch (_) {}
+    return json({ error: 'NVIDIA API returned an error', status: upstream.status, details }, upstream.status);
   }
 
-  // Streaming: pipe NVIDIA's stream through to client
+  // Streaming: hand the upstream ReadableStream straight back as the
+  // Response body. server.js now pipes this chunk-by-chunk instead of
+  // buffering it (see the apiHandler fix below).
   if (upstreamPayload.stream && upstream.body) {
-    // For Node.js environment, we need to handle streaming differently
-    // Use the native Node.js stream approach
-    
-    const { Readable } = require('stream');
-    const stream = new Readable({
-      async read() {
-        try {
-          const reader = upstream.body.getReader();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-              this.push(null);
-              break;
-            }
-            this.push(value);
-          }
-        } catch (err) {
-          this.destroy(err);
-        }
-      }
+    return new Response(upstream.body, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+        ...CORS_HEADERS,
+      },
     });
-    
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    
-    // Pipe the stream to response
-    stream.pipe(res);
-    
-    // Handle client disconnect
-    req.on('close', () => {
-      stream.destroy();
-    });
-    
-    return;
   }
 
-  // Non-streaming: pass JSON straight through
   const data = await upstream.json();
-  return res.status(200).json(data);
+  return json(data);
 }
-
-// For backward compatibility with Vercel-like exports
-// but this is ignored in Railway's Node environment
-export const config = {
-  api: {
-    bodyParser: true,
-  },
-};
