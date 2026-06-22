@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Content Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Bebas+Neue&family=Playfair+Display:wght@400;700;900&family=Oswald:wght@400;600;700&family=Montserrat:wght@400;600;700;900&family=Raleway:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="html2canvas.min.js"></script>
+<style>
+:root {
+  --bg:#07090F; --s1:#0D1018; --s2:#111520; --s3:#161C2C;
+  --panel:#0F1420; --panel2:#141A28;
+  --border:#1C2438; --border2:#263048;
+  --accent:#4DFFA0; --accent2:#4D9FFF; --accent3:#FF6B4D;
+  --text:#DCE6F8; --muted:#4A5A7A; --muted2:#6A7A9A;
+  --success:#4DFFA0; --warn:#FFB84D; --error:#FF4D6B; --danger:#ef4444;
+  --mono:'Space Mono',monospace; --sans:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,#1C2A4A 1px,transparent 1px);background-size:28px 28px;opacity:0.3;pointer-events:none;z-index:0;}
+
+/* ── TAB SWITCHER ── */
+.tab-switcher{position:sticky;top:0;z-index:500;display:flex;background:var(--s1);border-bottom:1px solid var(--border);}
+.tab-btn{padding:12px 26px;background:transparent;border:none;color:var(--muted2);font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;border-bottom:2px solid transparent;}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-btn:hover{color:var(--text);}
+.tab-page{display:none;}
+.tab-page.active{display:block;}
+
+/* ════════════════════════════════════════════
+   DASHBOARD (scoped under #tab-dashboard)
+   ════════════════════════════════════════════ */
+#tab-dashboard .header{position:sticky;top:45px;z-index:100;background:rgba(7,9,15,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:16px;}
+#tab-dashboard .header-title{font-family:var(--mono);font-size:15px;font-weight:700;color:#fff;}
+#tab-dashboard .header-title span{color:var(--accent);}
+#tab-dashboard .header-meta{font-size:11px;color:var(--muted2);margin-left:4px;}
+#tab-dashboard .header-actions{margin-left:auto;display:flex;gap:8px;}
+
+#tab-dashboard .plan-selector{position:relative;z-index:1;padding:16px 24px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+#tab-dashboard .plan-selector select{background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:11px;cursor:pointer;}
+#tab-dashboard .plan-stats{display:flex;gap:16px;margin-left:auto;}
+#tab-dashboard .plan-stat{text-align:center;}
+#tab-dashboard .plan-stat .n{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent);}
+#tab-dashboard .plan-stat .l{font-size:10px;color:var(--muted2);margin-top:2px;}
+#tab-dashboard .plan-stat .n.blue{color:var(--accent2);}
+#tab-dashboard .plan-stat .n.orange{color:var(--accent3);}
+
+#tab-dashboard .gen-bar{position:relative;z-index:1;padding:12px 24px;background:rgba(77,255,160,0.04);border-bottom:1px solid rgba(77,255,160,0.1);display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+#tab-dashboard .gen-progress{flex:1;min-width:200px;height:4px;background:var(--s3);border-radius:2px;overflow:hidden;}
+#tab-dashboard .gen-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:2px;transition:width 0.5s;width:0%;}
+#tab-dashboard .gen-status{font-family:var(--mono);font-size:10px;color:var(--accent);min-width:120px;}
+
+#tab-dashboard .calendar{position:relative;z-index:1;padding:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+
+#tab-dashboard .day-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color 0.2s,transform 0.2s;}
+#tab-dashboard .day-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+#tab-dashboard .day-card.has-image{border-color:rgba(77,255,160,0.2);}
+#tab-dashboard .day-card.generating{border-color:var(--accent2);animation:cardPulse 1.5s infinite;}
+@keyframes cardPulse{0%,100%{box-shadow:0 0 0 0 rgba(77,159,255,0.3);}50%{box-shadow:0 0 0 4px rgba(77,159,255,0);}}
+
+#tab-dashboard .card-header{padding:10px 12px;background:var(--s2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+#tab-dashboard .card-day{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);}
+#tab-dashboard .card-type-badge{font-size:9px;padding:2px 8px;border-radius:3px;font-family:var(--mono);font-weight:700;text-transform:uppercase;}
+#tab-dashboard .badge-single{background:rgba(77,159,255,0.15);color:var(--accent2);}
+#tab-dashboard .badge-carousel{background:rgba(255,107,77,0.15);color:var(--accent3);}
+#tab-dashboard .badge-story{background:rgba(77,255,160,0.12);color:var(--accent);}
+#tab-dashboard .badge-reel-cover{background:rgba(255,184,77,0.15);color:var(--warn);}
+#tab-dashboard .card-status{margin-left:auto;font-size:9px;color:var(--muted);font-family:var(--mono);}
+#tab-dashboard .card-status.ready{color:var(--accent);}
+#tab-dashboard .card-status.generating{color:var(--accent2);}
+
+#tab-dashboard .card-preview{position:relative;background:var(--s3);min-height:140px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+#tab-dashboard .card-preview img{width:100%;height:auto;max-height:260px;object-fit:cover;display:block;}
+#tab-dashboard .card-preview.carousel-preview{display:flex;gap:2px;}
+#tab-dashboard .card-preview.carousel-preview img{flex:1;min-width:0;height:180px;object-fit:cover;}
+#tab-dashboard .preview-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;padding:24px;opacity:0.4;}
+#tab-dashboard .preview-placeholder .icon{font-size:28px;}
+#tab-dashboard .preview-placeholder .txt{font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center;}
+#tab-dashboard .preview-gen-overlay{position:absolute;inset:0;background:rgba(7,9,15,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;}
+#tab-dashboard .gen-spinner{width:32px;height:32px;border:2px solid var(--border2);border-top-color:var(--accent2);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#tab-dashboard .gen-overlay-text{font-family:var(--mono);font-size:10px;color:var(--accent2);text-align:center;max-width:160px;}
+
+#tab-dashboard .card-body{padding:12px;}
+#tab-dashboard .card-title{font-size:13px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:6px;}
+#tab-dashboard .card-caption{font-size:11px;color:var(--muted2);line-height:1.5;margin-bottom:8px;max-height:48px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;}
+#tab-dashboard .card-hashtags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;}
+#tab-dashboard .hashtag{font-size:9px;color:var(--accent2);font-family:var(--mono);opacity:0.7;}
+#tab-dashboard .card-prompt{font-size:10px;color:var(--muted);line-height:1.4;font-style:italic;padding:6px 8px;background:var(--s3);border-radius:4px;border-left:2px solid var(--border2);margin-bottom:10px;max-height:44px;overflow:hidden;cursor:pointer;}
+#tab-dashboard .card-prompt:hover{max-height:none;border-left-color:var(--accent2);}
+
+#tab-dashboard .card-actions{display:flex;gap:6px;flex-wrap:wrap;}
+#tab-dashboard .btn{background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:5px;font-family:var(--mono);font-size:9px;cursor:pointer;transition:all .15s;font-weight:700;}
+#tab-dashboard .btn:hover{background:var(--s2);border-color:var(--border2);}
+#tab-dashboard .btn:disabled{opacity:0.4;cursor:not-allowed;}
+#tab-dashboard .btn-generate{background:transparent;color:var(--accent2);border-color:rgba(77,159,255,0.3);}
+#tab-dashboard .btn-generate:hover{background:rgba(77,159,255,0.08);border-color:var(--accent2);}
+#tab-dashboard .btn-generate:disabled{color:var(--muted);border-color:var(--border);}
+#tab-dashboard .btn-edit-prompt{color:var(--muted2);}
+#tab-dashboard .btn-view-caption{color:var(--accent3);border-color:rgba(255,107,77,0.2);}
+#tab-dashboard .btn-download{color:var(--accent);border-color:rgba(77,255,160,0.2);}
+#tab-dashboard .btn-danger{color:var(--error);border-color:rgba(255,77,107,0.2);}
+
+#tab-dashboard .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
+#tab-dashboard .modal-overlay.open{display:flex;}
+#tab-dashboard .modal{background:var(--s1);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:600px;max-height:80vh;overflow-y:auto;}
+#tab-dashboard .modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+#tab-dashboard .modal-title{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:700;}
+#tab-dashboard .modal-close{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;}
+#tab-dashboard .modal-body{padding:20px;display:flex;flex-direction:column;gap:14px;}
+#tab-dashboard .modal-label{font-family:var(--mono);font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+#tab-dashboard .modal-textarea{width:100%;background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:10px 12px;font-family:var(--sans);font-size:12px;resize:vertical;min-height:80px;outline:none;line-height:1.6;}
+#tab-dashboard .modal-textarea:focus{border-color:var(--accent2);}
+#tab-dashboard .modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+
+#tab-dashboard .btn-primary{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700;}
+#tab-dashboard .btn-primary:hover{background:#3AEEAA;}
+#tab-dashboard .btn-primary:disabled{background:var(--s3);color:var(--muted);border-color:var(--border);}
+#tab-dashboard .btn-stop{background:transparent;color:var(--error);border-color:rgba(255,77,107,0.3);}
+#tab-dashboard .btn-stop:hover{background:rgba(255,77,107,0.08);border-color:var(--error);}
+
+#tab-dashboard .empty-state{position:relative;z-index:1;text-align:center;padding:80px 24px;color:var(--muted);}
+#tab-dashboard .empty-state h2{font-family:var(--mono);font-size:20px;color:var(--muted2);margin-bottom:12px;}
+
+#tab-dashboard .slides-list{display:flex;flex-direction:column;gap:4px;margin-top:6px;}
+#tab-dashboard .slide-item{display:flex;align-items:center;gap:6px;padding:4px 6px;background:var(--s3);border-radius:4px;font-size:10px;color:var(--muted2);}
+#tab-dashboard .slide-num{font-family:var(--mono);font-size:9px;color:var(--accent);min-width:20px;}
+#tab-dashboard .slide-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#tab-dashboard .slide-status{font-size:9px;color:var(--muted);}
+#tab-dashboard .slide-status.done{color:var(--accent);}
+
+#tab-dashboard .toast{position:fixed;bottom:24px;right:24px;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:10px 16px;font-family:var(--mono);font-size:11px;z-index:2000;transform:translateY(20px);opacity:0;transition:all 0.3s;}
+#tab-dashboard .toast.show{transform:translateY(0);opacity:1;}
+#tab-dashboard .toast.success{border-color:rgba(77,255,160,0.4);color:var(--accent);}
+#tab-dashboard .toast.error{border-color:rgba(255,77,107,0.4);color:var(--error);}
+
+/* ════════════════════════════════════════════
+   DESIGNER (scoped under #tab-designer)
+   ════════════════════════════════════════════ */
+#tab-designer.active{height:calc(100vh - 45px);overflow:hidden;}
+#tab-designer .app{display:grid;grid-template-columns:360px 1fr;height:100%;}
+
+#tab-designer .panel{background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;padding:12px;height:100%;}
+#tab-designer .topbar{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+#tab-designer .topbar-title{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+#tab-designer .topbar-row{display:flex;gap:6px;align-items:center;}
+#tab-designer .topbar-row label{font-size:10px;color:var(--muted);font-family:var(--mono);min-width:22px;}
+#tab-designer .topbar-row input[type="number"]{background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:4px 6px;width:70px;font-family:var(--mono);font-size:11px;}
+#tab-designer .btn{background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s;}
+#tab-designer .btn:hover{background:var(--panel2);border-color:var(--accent);}
+#tab-designer .btn-primary{background:var(--accent);color:#0A0D14;border-color:var(--accent);font-weight:700;}
+#tab-designer .btn-primary:hover{background:#3de08a;}
+#tab-designer .btn-danger{background:transparent;color:var(--danger);border-color:rgba(239,68,68,.3);}
+#tab-designer .btn-export{background:var(--accent2);color:#fff;border-color:var(--accent2);font-weight:700;}
+#tab-designer #presetButtons{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
+
+#tab-designer .preset-bar{display:flex;flex-direction:column;gap:6px;padding:8px;background:rgba(77,255,160,0.04);border:1px solid rgba(77,255,160,0.15);border-radius:6px;}
+#tab-designer .preset-bar .lbl{font-size:9px;color:var(--accent);font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;}
+#tab-designer .preset-row{display:flex;gap:6px;align-items:center;}
+#tab-designer .preset-row select{flex:1;background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:5px 6px;font-family:var(--mono);font-size:10px;cursor:pointer;}
+#tab-designer .preset-row select:focus{outline:none;border-color:var(--accent);}
+#tab-designer .preset-btns{display:flex;gap:4px;}
+#tab-designer .preset-btns .btn{flex:1;font-size:9px;padding:5px 6px;}
+
+#tab-designer .layer{background:var(--panel2);border:1px solid var(--border);border-radius:6px;margin-bottom:8px;overflow:hidden;}
+#tab-designer .layer-head{display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;background:var(--s3);user-select:none;}
+#tab-designer .layer-num{font-family:var(--mono);font-size:9px;color:var(--accent);background:rgba(77,255,160,.1);padding:2px 6px;border-radius:3px;font-weight:700;}
+#tab-designer .layer-title{flex:1;font-family:var(--mono);font-size:11px;font-weight:600;}
+#tab-designer .layer-arrow{color:var(--muted2);font-size:10px;transition:transform .2s;}
+#tab-designer .layer.open .layer-arrow{transform:rotate(90deg);}
+#tab-designer .layer-body{display:none;padding:10px;flex-direction:column;gap:8px;}
+#tab-designer .layer.open .layer-body{display:flex;}
+#tab-designer .field{display:flex;flex-direction:column;gap:3px;}
+#tab-designer .field-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+#tab-designer .lbl{font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.5px;text-transform:uppercase;}
+#tab-designer input[type="text"],#tab-designer input[type="number"],#tab-designer input[type="url"],#tab-designer select,#tab-designer textarea{
+  background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:5px 7px;font-family:'DM Sans',sans-serif;font-size:12px;width:100%;
+}
+#tab-designer input:focus,#tab-designer select:focus,#tab-designer textarea:focus{outline:none;border-color:var(--accent);}
+#tab-designer textarea{resize:vertical;min-height:50px;font-family:'DM Sans',sans-serif;}
+#tab-designer input[type="color"]{background:var(--s3);border:1px solid var(--border);height:28px;padding:2px;cursor:pointer;border-radius:3px;}
+#tab-designer input[type="file"]{font-size:10px;color:var(--muted2);}
+#tab-designer .range-row{display:flex;align-items:center;gap:8px;}
+#tab-designer .range-row input[type="range"]{flex:1;}
+#tab-designer .range-val{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:44px;text-align:right;}
+#tab-designer .radio-row{display:flex;gap:4px;flex-wrap:wrap;}
+#tab-designer .radio-btn{flex:1;padding:5px 8px;background:var(--s3);border:1px solid var(--border);border-radius:3px;font-family:var(--mono);font-size:10px;text-align:center;cursor:pointer;color:var(--muted2);}
+#tab-designer .radio-btn.active{background:var(--accent);color:#0A0D14;border-color:var(--accent);font-weight:700;}
+#tab-designer .item-card{background:var(--s3);border:1px solid var(--border);border-radius:4px;padding:8px;position:relative;margin-bottom:6px;}
+#tab-designer .item-card .del{position:absolute;top:6px;right:6px;background:rgba(239,68,68,.1);border:none;color:var(--danger);width:20px;height:20px;border-radius:3px;cursor:pointer;font-size:11px;}
+#tab-designer .divider{height:1px;background:var(--border);margin:8px 0;}
+#tab-designer .hint{font-size:11px;color:var(--muted2);text-align:center;padding:12px;}
+#tab-designer .add-row{display:flex;gap:4px;flex-wrap:wrap;}
+#tab-designer .add-row .btn{flex:1;font-size:9px;padding:6px 4px;}
+
+#tab-designer .canvas-area{background:#07090F;overflow:auto;display:flex;align-items:center;justify-content:center;position:relative;padding:24px;height:100%;}
+#tab-designer #canvasWrap{position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+#tab-designer #canvas{position:relative;width:1080px;height:1350px;background:#0A0A14;overflow:hidden;transform-origin:top left;}
+#tab-designer .canvas-layer{position:absolute;inset:0;pointer-events:none;}
+#tab-designer #layer-bg{z-index:1;}
+#tab-designer #layer-imgbg{z-index:2;}
+#tab-designer #layer-imgbg-overlay{z-index:3;background:rgba(0,0,0,0);}
+#tab-designer #layer-main{z-index:4;display:flex;align-items:center;justify-content:center;}
+#tab-designer #layer-icons{z-index:5;}
+#tab-designer #layer-text{z-index:6;}
+#tab-designer #layer-brand{z-index:8;}
+#tab-designer #layer-logo{z-index:99;pointer-events:none;}
+#tab-designer #canvasInfo{position:absolute;bottom:12px;left:12px;font-family:var(--mono);font-size:10px;color:var(--muted2);background:rgba(0,0,0,.5);padding:4px 8px;border-radius:3px;}
+
+#tab-designer #apiBar{display:none;position:fixed;top:57px;right:12px;background:var(--panel);border:1px solid var(--accent);border-radius:6px;padding:8px 12px;z-index:1000;box-shadow:0 8px 24px rgba(0,0,0,.5);}
+#tab-designer .api-status{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;}
+#tab-designer .api-dot{width:8px;height:8px;border-radius:50%;background:var(--muted2);}
+#tab-designer .api-dot.idle{background:var(--muted2);}
+#tab-designer .api-dot.active{background:#FF9F4D;animation:pulse 1s infinite;}
+#tab-designer .api-dot.ready{background:var(--accent);}
+@keyframes pulse{50%{opacity:.4;}}
+#tab-designer #testApiBtn{display:none;}
+
+#tab-designer .agent-toggle{
+  position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;color:#0A0D14;font-size:24px;cursor:pointer;z-index:9998;
+  box-shadow:0 8px 24px rgba(77,255,160,.3);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .2s;
+}
+#tab-designer .agent-toggle:hover{transform:scale(1.08);}
+#tab-designer .agent-toggle .badge{
+  position:absolute;top:-2px;right:-2px;width:14px;height:14px;border-radius:50%;
+  background:var(--danger);border:2px solid var(--bg);
+}
+#tab-designer .agent-panel{
+  position:fixed;bottom:90px;right:20px;width:380px;height:560px;
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
+  z-index:9999;display:none;flex-direction:column;overflow:hidden;
+}
+#tab-designer .agent-panel.open{display:flex;animation:slideUp .25s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+#tab-designer .agent-header{
+  padding:14px 16px;background:linear-gradient(135deg,rgba(77,255,160,.1),rgba(77,159,255,.1));
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;
+}
+#tab-designer .agent-avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:16px;color:#0A0D14;font-weight:700;
+}
+#tab-designer .agent-title{flex:1;}
+#tab-designer .agent-title h4{font-family:var(--mono);font-size:12px;letter-spacing:1px;}
+#tab-designer .agent-title p{font-size:10px;color:var(--muted);margin-top:2px;}
+#tab-designer .agent-close{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px 8px;}
+#tab-designer .agent-close:hover{color:var(--danger);}
+#tab-designer .agent-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
+#tab-designer .agent-msg{max-width:85%;padding:8px 12px;border-radius:10px;font-size:12px;line-height:1.5;word-wrap:break-word;}
+#tab-designer .agent-msg.user{align-self:flex-end;background:var(--accent2);color:#fff;border-bottom-right-radius:3px;}
+#tab-designer .agent-msg.bot{align-self:flex-start;background:var(--s3);color:var(--text);border-bottom-left-radius:3px;}
+#tab-designer .agent-msg.system{align-self:center;background:transparent;color:var(--muted);font-size:10px;font-family:var(--mono);text-align:center;padding:4px;}
+#tab-designer .agent-msg.bot .applied-badge{display:inline-block;margin-top:6px;font-size:9px;color:var(--accent);font-family:var(--mono);letter-spacing:1px;}
+#tab-designer .agent-msg.bot .applied-badge.ok{color:var(--accent);}
+#tab-designer .agent-msg.bot .applied-badge.err{color:var(--danger);}
+#tab-designer .agent-actions{display:flex;gap:4px;margin-top:6px;}
+#tab-designer .agent-actions .btn{font-size:9px;padding:3px 8px;}
+#tab-designer .agent-typing{display:flex;gap:3px;padding:8px 12px;}
+#tab-designer .agent-timing span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:blink 1.4s infinite;}
+#tab-designer .agent-timing span:nth-child(2){animation-delay:.2s;}
+#tab-designer .agent-timing span:nth-child(3){animation-delay:.4s;}
+@keyframes blink{0%,60%,100%{opacity:.3;}30%{opacity:1;}}
+#tab-designer .agent-input-wrap{padding:10px;border-top:1px solid var(--border);background:var(--panel2);display:flex;gap:6px;}
+#tab-designer .agent-input-wrap textarea{flex:1;min-height:38px;max-height:120px;resize:none;font-size:12px;padding:8px;}
+#tab-designer .agent-send{background:var(--accent);color:#0A0D14;border:none;border-radius:6px;padding:0 14px;cursor:pointer;font-weight:700;font-family:var(--mono);font-size:11px;}
+#tab-designer .agent-send:disabled{opacity:.4;cursor:not-allowed;}
+#tab-designer .agent-input-wrap textarea:focus{outline:none;border-color:var(--accent);}
+#tab-designer .agent-status{font-size:9px;color:var(--muted);font-family:var(--mono);text-align:center;padding:4px;background:var(--bg);}
+
+#tab-designer #layer-icons img,
+#tab-designer #layer-main img,
+#tab-designer #layer-text > div {
+  transition: outline 0.1s ease;
+}
+#tab-designer #layer-icons img:hover,
+#tab-designer #layer-main img:hover,
+#tab-designer #layer-text > div:hover {
+  outline: 2px solid rgba(77, 255, 160, 0.5);
+  outline-offset: 2px;
+  cursor: move;
+}
+#tab-designer .resize-handle:hover{transform:scale(1.3);background:#4D9FFF !important;}
+#tab-designer #transform-rotate-handle:hover{transform:translateX(-50%) scale(1.2);background:#4DFFA0 !important;}
+#tab-designer #transform-delete-btn:hover{transform:scale(1.1);background:#ff4444 !important;}
+</style>
+</head>
+<body>
+
+<div class="tab-switcher">
+  <button class="tab-btn active" data-tab="dashboard">📋 Dashboard</button>
+  <button class="tab-btn" data-tab="designer">🎨 Designer</button>
+</div>
+
+<!-- ════════════════════ DASHBOARD TAB ════════════════════ -->
+<div id="tab-dashboard" class="tab-page active">
+
+  <div class="header">
+    <div class="header-title">Content <span>Dashboard</span></div>
+    <span class="header-meta" id="planMeta">Loading...</span>
+    <div class="header-actions">
+      <button class="btn btn-primary" id="genAllBtn" disabled>⚡ Generate All Images</button>
+      <button class="btn btn-stop" id="stopGenBtn" style="display:none;">■ Stop</button>
+      <button class="btn btn-primary" id="saveDbBtn" style="background:var(--accent2);">💾 Save Images to DB</button>
+      <button class="btn" id="refreshBtn">↻ Refresh</button>
+      <button class="btn btn-danger" id="deletePlanBtn" title="Delete entire plan">🗑 Delete Plan</button>
+    </div>
+  </div>
+
+  <div class="plan-selector">
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">PLAN</span>
+    <select id="planSelect"></select>
+    <div class="plan-stats">
+      <div class="plan-stat"><div class="n" id="statTotal">0</div><div class="l">Posts</div></div>
+      <div class="plan-stat"><div class="n blue" id="statImages">0</div><div class="l">Images</div></div>
+      <div class="plan-stat"><div class="n orange" id="statPending">0</div><div class="l">Pending</div></div>
+    </div>
+  </div>
+
+  <div class="gen-bar" id="genBar" style="display:none;">
+    <span class="gen-status" id="genStatus">Ready</span>
+    <div class="gen-progress"><div class="gen-progress-fill" id="genProgressFill"></div></div>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted2);" id="genFraction">0/0</span>
+  </div>
+
+  <div class="calendar" id="calendar">
+    <div class="empty-state">
+      <h2>No plan loaded</h2>
+      <p>Generate ideas in the side panel first, then come back here.</p>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="editModalTitle">Edit Image Prompt</span>
+        <button class="modal-close" id="editModalClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <div class="modal-label">Post Type</div>
+          <select id="editTypeSelect" style="background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px 10px;font-family:var(--mono);font-size:11px;width:100%;">
+            <option value="single">Single Post (1080×1080)</option>
+            <option value="carousel">Carousel (1080×1350)</option>
+            <option value="story">Story (1080×1920)</option>
+            <option value="reel-cover">Reel Cover (1080×1920)</option>
+          </select>
+        </div>
+        <div>
+          <div class="modal-label">Image Prompt (sent to AI designer)</div>
+          <textarea class="modal-textarea" id="editPromptInput" rows="5" placeholder="Describe the visual: colors, mood, composition, elements..."></textarea>
+        </div>
+        <div>
+          <div class="modal-label">Caption</div>
+          <textarea class="modal-textarea" id="editCaptionInput" rows="3"></textarea>
+        </div>
+        <div>
+          <div class="modal-label">Hashtags (comma separated, no #)</div>
+          <textarea class="modal-textarea" id="editHashtagsInput" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="editModalCancel">Cancel</button>
+        <button class="btn btn-primary" id="editModalSave">Save Changes</button>
+        <button class="btn btn-generate" id="editModalGenerate">Save + Generate Image</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="captionModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="captionModalTitle">Caption &amp; Hashtags</span>
+        <button class="modal-close" id="captionModalClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <div class="modal-label">Caption</div>
+          <textarea class="modal-textarea" id="captionModalText" rows="6" readonly></textarea>
+        </div>
+        <div>
+          <div class="modal-label">Hashtags</div>
+          <textarea class="modal-textarea" id="captionModalHashtags" rows="3" readonly></textarea>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-view-caption" id="copyCaptionBtn">Copy Caption</button>
+          <button class="btn btn-view-caption" id="copyHashtagsBtn">Copy Hashtags</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<!-- ════════════════════ DESIGNER TAB ════════════════════ -->
+<div id="tab-designer" class="tab-page">
+  <div class="app">
+    <div class="panel">
+      <div class="topbar">
+        <div class="topbar-title">Image Studio</div>
+        <div class="topbar-row">
+          <label>W</label><input type="number" id="canvasW" value="1080">
+          <label>×</label><input type="number" id="canvasH" value="1350">
+          <button class="btn" id="resetBtn" style="margin-left:auto;">↺ Reset</button>
+          <button class="btn btn-export" id="exportBtn">⬇ Export PNG</button>
+          <button class="btn" id="testApiBtn" style="display:none;">🧪 Test API</button>
+        </div>
+        <div id="presetButtons"></div>
+
+        <div class="preset-bar">
+          <div class="lbl">⚡ Presets</div>
+          <button id="viewSavedPresetsBtn" style="padding:4px 10px;border-radius:4px;font-family:var(--mono);font-size:10px;background:var(--accent);border:none;color:#000;cursor:pointer;margin-left:8px;">📚 View Saved Presets</button>
+          <div class="preset-row">
+            <select id="presetCategory" title="Category">
+              <option value="">— Category —</option>
+              <option value="carousel-first">Carousel · First Slide</option>
+              <option value="carousel-content">Carousel · Content Slide</option>
+              <option value="carousel-end">Carousel · End Slide</option>
+              <option value="single-post">Single Post</option>
+              <option value="product-showcase">Product Showcase</option>
+              <option value="educational">Educational / Tips</option>
+              <option value="quote-card">Quote Card</option>
+              <option value="story">Story (9:16 · 1080×1920)</option>
+              <option value="reel-cover">Reel Cover (9:16 · 1080×1920)</option>
+            </select>
+          </div>
+          <div class="preset-row">
+            <select id="presetSelect" title="Preset" disabled>
+              <option value="">— Pick a category first —</option>
+            </select>
+          </div>
+          <div class="preset-btns">
+            <button class="btn btn-primary" id="applyPresetBtn">✓ Apply</button>
+            <button class="btn" id="savePresetBtn">+ Save Current</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="layer open" id="layer1">
+        <div class="layer-head" data-layer="layer1"><span class="layer-num">1</span><span class="layer-title">Background</span><span class="layer-arrow">▶</span></div>
+        <div class="layer-body">
+          <div class="field"><label class="lbl">Type</label>
+            <div class="radio-row" id="bgTypeRow">
+              <div class="radio-btn active" data-val="solid">Solid</div>
+              <div class="radio-btn" data-val="linear">Linear</div>
+              <div class="radio-btn" data-val="radial">Radial</div>
+            </div>
+          </div>
+          <div id="bgSolidFields" style="display:flex;flex-direction:column;gap:6px;">
+            <div class="field"><label class="lbl">Color</label><input type="color" id="bgColor" value="#0A0A14"></div>
+          </div>
+          <div id="bgGradFields" style="display:none;flex-direction:column;gap:6px;">
+            <div class="field-row">
+              <div class="field"><label class="lbl">Color 1</label><input type="color" id="bgC1" value="#1a0533"></div>
+              <div class="field"><label class="lbl">Color 2</label><input type="color" id="bgC2" value="#0d1f4a"></div>
+            </div>
+            <div class="field"><label class="lbl">Color 3 (opt)</label><input type="color" id="bgC3" value="#0a1a0a"></div>
+          </div>
+          <div id="angleField" style="display:none;"><div class="field"><label class="lbl">Angle °</label><input type="number" id="bgAngle" value="135" min="0" max="360"></div></div>
+          <div class="field"><label class="lbl">Stop Positions (%)</label>
+            <div class="field-row">
+              <input type="number" id="bgS1" value="0" min="0" max="100">
+              <input type="number" id="bgS2" value="50" min="0" max="100">
+              <input type="number" id="bgS3" value="100" min="0" max="100">
+            </div>
+          </div>
+          <div id="radialShapeField" style="display:none;">
+            <div class="field"><label class="lbl">Radial Shape</label>
+              <div class="radio-row" id="radShapeRow">
+                <div class="radio-btn active" data-shape="circle">Circle</div>
+                <div class="radio-btn" data-shape="ellipse">Ellipse</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="layer" id="layer2">
+        <div class="layer-head" data-layer="layer2"><span class="layer-num">2</span><span class="layer-title">Background Image</span><span class="layer-arrow">▶</span></div>
+        <div class="layer-body">
+          <div class="field"><label class="lbl">Source</label>
+            <div class="radio-row" id="imgSrcTypeRow">
+              <div class="radio-btn active" data-src="url">URL</div>
+              <div class="radio-btn" data-src="file">File</div>
+              <div class="radio-btn" data-src="none">None</div>
+            </div>
+          </div>
+          <div id="imgUrlField"><div class="field"><label class="lbl">Image URL</label><input type="url" id="bgImgUrl" placeholder="https://..."></div></div>
+          <div id="imgFileField" style="display:none;"><div class="field"><label class="lbl">Upload File</label><input type="file" id="bgImgFile" accept="image/*"></div></div>
+          <div class="field"><label class="lbl">Size</label>
+            <div class="radio-row" id="imgSizeRow">
+              <div class="radio-btn active" data-size="cover">Cover</div>
+              <div class="radio-btn" data-size="contain">Contain</div>
+              <div class="radio-btn" data-size="100% 100%">Stretch</div>
+            </div>
+          </div>
+          <div class="field"><label class="lbl">Position</label>
+            <select id="bgImgPos">
+              <option>center</option><option>top</option><option>bottom</option>
+              <option>left</option><option>right</option>
+              <option>top left</option><option>top right</option>
+              <option>bottom left</option><option>bottom right</option>
+            </select>
+          </div>
+          <div class="field"><label class="lbl">Opacity</label>
+            <div class="range-row"><input type="range" id="bgImgOpacity" min="0" max="100" value="100"><span class="range-val">100%</span></div>
+          </div>
+          <div class="field"><label class="lbl">Overlay (darken)</label>
+            <div class="range-row"><input type="range" id="bgImgOverlay" min="0" max="100" value="0"><span class="range-val">0%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="layer" id="layer3">
+        <div class="layer-head" data-layer="layer3"><span class="layer-num">3</span><span class="layer-title">Main Image</span><span class="layer-arrow">▶</span></div>
+        <div class="layer-body">
+          <div class="field"><label class="lbl">Source</label>
+            <div class="radio-row" id="mainImgSrcRow">
+              <div class="radio-btn active" data-src="url">URL</div>
+              <div class="radio-btn" data-src="file">File</div>
+              <div class="radio-btn" data-src="none">None</div>
+            </div>
+          </div>
+          <div id="mainImgUrlField"><div class="field"><label class="lbl">URL</label><input type="url" id="mainImgUrl" placeholder="https://..."></div></div>
+          <div id="mainImgFileField" style="display:none;"><div class="field"><label class="lbl">Upload</label><input type="file" id="mainImgFile" accept="image/*"></div></div>
+          <div class="field-row">
+            <div class="field"><label class="lbl">Width %</label><input type="number" id="mainImgW" value="80" min="1" max="200"></div>
+            <div class="field"><label class="lbl">Max Height %</label><input type="number" id="mainImgH" value="70" min="1" max="200"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label class="lbl">Vertical Position %</label><input type="number" id="mainImgY" value="50" min="0" max="100"></div>
+            <div class="field"><label class="lbl">Horizontal Position %</label><input type="number" id="mainImgX" value="50" min="0" max="100"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label class="lbl">Rotation °</label><input type="number" id="mainImgRot" value="0" min="-180" max="180"></div>
+            <div class="field"><label class="lbl">Opacity</label><input type="number" id="mainImgOpacity" value="100" min="0" max="100"></div>
+          </div>
+          <div class="field"><label class="lbl">Blend Mode</label>
+            <select id="mainImgBlend">
+              <option>normal</option><option>multiply</option><option>screen</option>
+              <option>overlay</option><option>darken</option><option>lighten</option>
+              <option>hard-light</option><option>soft-light</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="layer" id="layer4">
+        <div class="layer-head" data-layer="layer4"><span class="layer-num">4</span><span class="layer-title">Icons & Small Images</span><span class="layer-arrow">▶</span></div>
+        <div class="layer-body">
+          <button class="btn btn-primary" id="addIconBtn" style="width:100%;">+ Add Icon / Image</button>
+          <div id="iconList"></div>
+        </div>
+      </div>
+
+      <div class="layer" id="layer5">
+        <div class="layer-head" data-layer="layer5"><span class="layer-num">5</span><span class="layer-title">Brand Text Elements</span><span class="layer-arrow">▶</span></div>
+        <div class="layer-body">
+          <button class="btn btn-primary" id="addBrandBtn" style="width:100%;">+ Add Brand Element</button>
+          <div id="brandList"></div>
+        </div>
+      </div>
+
+      <div class="layer" id="layer6">
+        <div class="layer-head" data-layer="layer6"><span class="layer-num">6</span><span class="layer-title">Text Content</span><span class="layer-arrow">▶</span></div>
+        <div class="layer-body">
+          <div class="add-row">
+            <button class="btn" data-block-type="headline">+ Headline</button>
+            <button class="btn" data-block-type="title">+ Title</button>
+            <button class="btn" data-block-type="subtitle">+ Subtitle</button>
+            <button class="btn" data-block-type="body">+ Body</button>
+            <button class="btn" data-block-type="bullet">+ Bullets</button>
+          </div>
+          <div class="field-row" style="margin-top:6px;">
+            <div class="field"><label class="lbl">Zone Pad H</label><input type="number" id="textPadX" value="60"></div>
+            <div class="field"><label class="lbl">Zone Pad V</label><input type="number" id="textPadY" value="60"></div>
+          </div>
+          <div class="field"><label class="lbl">Vertical Align (legacy flex)</label>
+            <div class="radio-row" id="textVAlignRow">
+              <div class="radio-btn active" data-valign="flex-start">Top</div>
+              <div class="radio-btn" data-valign="center">Mid</div>
+              <div class="radio-btn" data-valign="flex-end">Bottom</div>
+            </div>
+          </div>
+          <div id="textBlockList"></div>
+        </div>
+      </div>
+
+      <div class="layer" id="layer7">
+        <div class="layer-head" data-layer="layer7"><span class="layer-num">7</span><span class="layer-title">Logo</span><span class="layer-arrow">▶</span></div>
+        <div class="layer-body">
+          <div class="field"><label class="lbl">Source</label>
+            <div class="radio-row" id="logoSrcRow">
+              <div class="radio-btn active" data-src="url">URL</div>
+              <div class="radio-btn" data-src="file">File</div>
+              <div class="radio-btn" data-src="none">None</div>
+            </div>
+          </div>
+          <div id="logoUrlField"><div class="field"><label class="lbl">URL</label><input type="url" id="logoUrl" placeholder="https://..."></div></div>
+          <div id="logoFileField" style="display:none;"><div class="field"><label class="lbl">Upload</label><input type="file" id="logoFile" accept="image/*"></div></div>
+          <div class="field-row">
+            <div class="field"><label class="lbl">Width (px)</label><input type="number" id="logoW" value="200"></div>
+            <div class="field"><label class="lbl">Height (auto=0)</label><input type="number" id="logoH" value="0"></div>
+          </div>
+          <div class="field"><label class="lbl">Anchor Corner</label>
+            <div class="radio-row" id="logoAnchorRow">
+              <div class="radio-btn" data-anchor="tl">↖ TL</div>
+              <div class="radio-btn" data-anchor="tr">↗ TR</div>
+              <div class="radio-btn active" data-anchor="bl">↙ BL</div>
+              <div class="radio-btn" data-anchor="br">↘ BR</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label class="lbl">Margin X (px)</label><input type="number" id="logoMX" value="50"></div>
+            <div class="field"><label class="lbl">Margin Y (px)</label><input type="number" id="logoMY" value="50"></div>
+          </div>
+          <div class="field"><label class="lbl">Opacity</label>
+            <div class="range-row"><input type="range" id="logoOpacity" min="0" max="100" value="100"><span class="range-val">100%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-area">
+      <div id="canvasWrap">
+        <div id="canvas">
+          <div id="layer-bg" class="canvas-layer"></div>
+          <div id="layer-imgbg" class="canvas-layer"></div>
+          <div id="layer-imgbg-overlay" class="canvas-layer"></div>
+          <div id="layer-main" class="canvas-layer"></div>
+          <div id="layer-icons" class="canvas-layer"></div>
+          <div id="layer-text" class="canvas-layer"></div>
+          <div id="layer-brand" class="canvas-layer"></div>
+          <div id="layer-logo" class="canvas-layer"></div>
+        </div>
+      </div>
+      <div id="canvasInfo">Scale: 100% · 1080×1350px</div>
+    </div>
+  </div>
+
+  <div id="apiBar">
+    <div class="api-status">
+      <div id="apiDot" class="api-dot idle"></div>
+      <span id="apiStatusText">Idle</span>
+    </div>
+  </div>
+
+  <button class="agent-toggle" id="agentToggle" title="AI Design Agent">
+    ✦
+    <span class="badge" id="agentBadge" style="display:none;"></span>
+  </button>
+
+  <div class="agent-panel" id="agentPanel">
+    <div class="agent-header">
+      <div class="agent-avatar">✦</div>
+      <div class="agent-title">
+        <h4>DESIGN AGENT</h4>
+        <p id="agentSubtitle">Ready</p>
+      </div>
+      <input type="hidden" id="agentProvider" value="deepseek">
+      <div style="background:var(--s3);border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-family:var(--mono);font-size:9px;color:var(--accent);">
+        🔍 DeepSeek · Creative Design AI
+      </div>
+      <button class="agent-close" id="agentClose" title="Close">✕</button>
+    </div>
+    <div class="agent-messages" id="agentMessages">
+      <div class="agent-msg system">Hi — I can design anything. Try:<br>
+        <em>"Make a carousel cover about AI tools"</em><br>
+        <em>"Apply the neon-cyber preset"</em><br>
+        <em>"Make the headline bigger and green"</em>
+      </div>
+    </div>
+    <div class="agent-status" id="agentStatus">idle</div>
+    <div class="agent-input-wrap">
+      <textarea id="agentInput" placeholder="Describe a design change..." rows="1"></textarea>
+      <button class="agent-send" id="agentSend">SEND</button>
+    </div>
+  </div>
+</div>
+
+<script src="designer.js"></script>
+<script src="controller.js"></script>
+<script src="presets.js"></script>
+<script src="agent.js"></script>
+<script src="dashboard.js"></script>
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab-page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+  if (tab === 'designer' && typeof scaleCanvas === 'function') {
+    // canvas-area was display:none — clientWidth was 0 last time
+    // designer.js computed scale, so recompute now that it's visible.
+    requestAnimationFrame(scaleCanvas);
+  }
+}
+window.switchTab = switchTab;
+
+document.querySelectorAll('.tab-btn').forEach(btn =>
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab))
+);
+
+const initialTab = new URLSearchParams(location.search).get('tab') || 'dashboard';
+switchTab(initialTab);
+</script>
+</body>
+</html>
