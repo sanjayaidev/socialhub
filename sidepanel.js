@@ -5,7 +5,23 @@ let stopRequested = false;
 let stats = { done: 0, errors: 0 };
 let totalPosts = 30;
 let allPostsData = [];
+const MONTH_NAMES_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
+function daysInSelectedMonth() {
+  const monthName = document.getElementById('monthSelect')?.value || 'January';
+  const year = parseInt(document.getElementById('yearInput')?.value) || new Date().getFullYear();
+  const monthIdx = MONTH_NAMES_FULL.indexOf(monthName); // 0-11
+  if (monthIdx === -1) return 30;
+  return new Date(year, monthIdx + 1, 0).getDate(); // day 0 of next month = last day of this month
+}
+
+function lockPostCountToMonth() {
+  const days = daysInSelectedMonth();
+  const input = document.getElementById('postCount');
+  if (input) input.value = days;
+  totalPosts = days;
+  updateDayPreviewGrid();
+}
 // ── Helper functions ──
 function log(msg, type = 'info') {
   const scroll = document.getElementById('logScroll');
@@ -541,7 +557,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('reelVal').textContent = e.target.value + '%';
     updatePercentSum();
   });
-
+  document.getElementById('monthSelect').addEventListener('change', lockPostCountToMonth);
+  document.getElementById('yearInput').addEventListener('input', lockPostCountToMonth);
   document.getElementById('postCount').addEventListener('input', () => updateDayPreviewGrid());
   document.getElementById('singleTypeSelect').addEventListener('change', () => updateDayPreviewGrid());
 
@@ -558,5 +575,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('distributionFields').style.display = 'block';
   document.getElementById('singleTypeOnly').style.display = 'none';
   document.getElementById('imgbbKeyField').style.display = 'none';
+  lockPostCountToMonth();
   updatePercentSum();
 });
