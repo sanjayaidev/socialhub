@@ -3,18 +3,14 @@
 // POST /api/content/generate { prompt, model?, max_tokens?, temperature? }
 //   -> { content: "<model text response>" }
 //
-// This is a thin server-side proxy in front of the Railway NIM endpoint.
-// The browser used to call Railway directly (see old sidepanel.js /
-// agent.js), which is fragile: it's subject to CORS preflight, it leaks
-// the Railway URL to every client, and any change to that URL means
-// editing multiple front-end files. Routing through our own serverless
-// function fixes all three — server-to-server calls aren't subject to
-// CORS, and the URL now lives in one place.
+// Server-side proxy in front of the NVIDIA NIM endpoint.
+// Uses stream:false so the response is always plain JSON — the client
+// (callNIM in sidepanel.js) calls response.json() and expects { content }.
+// Streaming belongs in /api/chat.js only.
 
-const NIM_ENDPOINT = 'https://integrate.api.nvidia.com/v1/chat/completions';
+const NIM_ENDPOINT  = 'https://integrate.api.nvidia.com/v1/chat/completions';
 const DEFAULT_MODEL = 'deepseek-ai/deepseek-v4-pro';
 
-// Same 5-model list as /api/chat.js
 const ALLOWED_MODELS = [
   'moonshotai/kimi-k2.6',
   'nvidia/llama-3.1-nemoguard-8b-content-safety',
@@ -26,7 +22,7 @@ const ALLOWED_MODELS = [
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
@@ -54,7 +50,6 @@ export default async function handler(req) {
       return json({ error: 'prompt (string) is required' }, 400);
     }
 
-    // Validate model against allowed list
     const selectedModel = model || DEFAULT_MODEL;
     if (!ALLOWED_MODELS.includes(selectedModel)) {
       return json({ error: `Model "${selectedModel}" is not in the allowed list` }, 403);
@@ -67,15 +62,15 @@ export default async function handler(req) {
     const upstream = await fetch(NIM_ENDPOINT, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type':  'application/json',
         'Authorization': `Bearer ${NVIDIA_API_KEY}`,
       },
       body: JSON.stringify({
-        messages: [{ role: 'user', content: prompt }],
-        model: selectedModel,
-        stream: true,
+        messages:    [{ role: 'user', content: prompt }],
+        model:       selectedModel,
+        stream:      false,         // must be false — callNIM() expects { content }, not SSE
         temperature: temperature ?? 0.7,
-        max_tokens: max_tokens ?? 4096,
+        max_tokens:  max_tokens  ?? 4096,
       }),
     });
 
@@ -84,25 +79,10 @@ export default async function handler(req) {
       return json({ error: `NIM API error: ${upstream.status} - ${errText}` }, 502);
     }
 
-    // Handle streaming response
-    const contentType = upstream.headers.get('content-type') || '';
-    if (contentType.includes('text/event-stream')) {
-      // Stream the SSE response directly back to the client
-      return new Response(upstream.body, {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-          ...CORS_HEADERS,
-        },
-      });
-    }
-
-    // Fallback for non-streaming responses
-    const result = await upstream.json();
+    const result  = await upstream.json();
     const content = result.choices?.[0]?.message?.content || '';
     return json({ content });
+
   } catch (err) {
     console.error('generate.js error:', err);
     return json({ error: String(err?.message || err) }, 500);
