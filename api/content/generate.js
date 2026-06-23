@@ -9,7 +9,7 @@
 // Streaming belongs in /api/chat.js only.
 
 const NIM_ENDPOINT  = 'https://integrate.api.nvidia.com/v1/chat/completions';
-const DEFAULT_MODEL = 'deepseek-ai/deepseek-v4-pro';
+const DEFAULT_MODEL = 'moonshotai/kimi-k2.6';
 
 const ALLOWED_MODELS = [
   'moonshotai/kimi-k2.6',

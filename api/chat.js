@@ -4,6 +4,7 @@
 const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
 
 const ALLOWED_MODELS = [
+  'moonshotai/kimi-k2.6',
   'deepseek-ai/deepseek-v4-flash',
   'deepseek-ai/deepseek-v4-pro',
   'meta/llama-3.1-70b-instruct',
@@ -13,7 +14,7 @@ const ALLOWED_MODELS = [
   'mistralai/mistral-large-3-675b-instruct-2512',
   'mistralai/mistral-small-4-119b-2603',
   'mistralai/ministral-14b-instruct-2512',
-  'moonshotai/kimi-k2.6',
+  'nvidia/llama-3.1-nemoguard-8b-content-safety',
   'abacusai/dracarys-llama-3.1-70b-instruct',
 ];
 
