@@ -12,6 +12,14 @@ let stats        = { done:0, errors:0 };
 let totalPosts   = 30;
 let allPostsData = [];
 
+// Get number of days in a given month/year
+function getDaysInMonth(monthName, year) {
+  const yr          = parseInt(year) || new Date().getFullYear();
+  const idx         = MONTH_NAMES_FULL.indexOf(monthName);
+  if (idx === -1) return 30;
+  return new Date(yr, idx + 1, 0).getDate();
+}
+
 // Available models (same list as /api/chat.js)
 const AVAILABLE_MODELS = [
   'moonshotai/kimi-k2.6',
@@ -79,9 +87,12 @@ function daysInSelectedMonth() {
 }
 
 function lockPostCountToMonth() {
+  const month = document.getElementById('monthSelect')?.value || 'June';
+  const year  = document.getElementById('yearInput')?.value  || new Date().getFullYear();
+  const daysInMonth = getDaysInMonth(month, year);
   const input = document.getElementById('postCount');
-  if (input) input.value = 30;
-  totalPosts = 30;
+  if (input) input.value = daysInMonth;
+  totalPosts = daysInMonth;
   updateDayPreviewGrid();
 }
 
@@ -474,9 +485,11 @@ async function startWorkflow() {
   const brief = document.getElementById('promptInput')?.value.trim();
   if (!brief) { alert('Please enter a content brief.'); return; }
 
-  totalPosts  = 30; // Full 30-day generation (one day at a time)
+  // Calculate total posts based on selected month/year
   const month = document.getElementById('monthSelect')?.value || 'June';
   const year  = document.getElementById('yearInput')?.value  || '2026';
+  totalPosts  = getDaysInMonth(month, year);
+  
   const dist  = getDistribution();
   let postTypes;
 
