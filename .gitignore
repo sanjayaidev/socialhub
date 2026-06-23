@@ -1,1 +1,3 @@
-Nothing needs to be added to .gitignore since only source files (.js files) are being modified and there are no build artifacts, dependencies, or temporary files in the changes.
+```
+node_modules/
+```
