@@ -99,9 +99,10 @@ export default async function handler(req) {
           return json({ ok: true, planId });
         }
 
+        const newPlanId = `plan_${month}_${year}_${Date.now()}`;
         const created = await pool.query(
-          'insert into plans (month, year) values ($1, $2) returning id',
-          [month, year]
+          'insert into plans (id, month, year) values ($1, $2, $3) returning id',
+          [newPlanId, month, year]
         );
         const newPlanId = created.rows[0].id;
         await upsertPostsForPlan(pool, newPlanId, posts);
