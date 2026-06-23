@@ -452,7 +452,7 @@ async function startWorkflow() {
         bullets:      idea.bullets      || [],
         audience:     idea.audience     || '',
         platforms:    idea.platforms    || [],
-        slides: (idea.slides || []).map(s => ({ ...s, image_prompt: s.image_prompt || '' })),
+        slides: (Array.isArray(idea.slides) ? idea.slides : Object.values(idea.slides || {})).map(s => ({ ...s, image_prompt: s.image_prompt || '' })),
         cta:          idea.cta          || '',
         tag:          idea.tag          || '',
         images:       [],
