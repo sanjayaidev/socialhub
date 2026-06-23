@@ -6,28 +6,23 @@
 //         ALL posts under the given planId with the supplied array
 //         (full replace, not a merge — matches how sidepanel.js /
 //         dashboard.js always send the complete current post list).
-
 import { Pool } from '@neondatabase/serverless';
-
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
-
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
     status,
     headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
   });
 }
-
 function getPool() {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('Missing DATABASE_URL environment variable');
   return new Pool({ connectionString: url, ssl: 'require' });
 }
-
 async function listPlans() {
   const pool = getPool();
   try {
@@ -47,7 +42,6 @@ async function listPlans() {
     await pool.end();
   }
 }
-
 async function upsertPostsForPlan(pool, planId, posts) {
   // Full replace: delete existing posts for this plan, reinsert the
   // supplied array. Simpler and matches the "always send the whole
@@ -68,25 +62,21 @@ async function upsertPostsForPlan(pool, planId, posts) {
     );
   }
 }
-
 export default async function handler(req) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
-
   try {
     if (req.method === 'GET') {
       const plans = await listPlans();
       return json(plans);
     }
-
     if (req.method === 'POST') {
       const body = await req.json();
       const { month, year, posts, planId } = body || {};
       if (!month || !year || !Array.isArray(posts)) {
         return json({ error: 'month, year, and posts[] are required' }, 400);
       }
-
       const pool = getPool();
       try {
         if (planId) {
@@ -98,20 +88,17 @@ export default async function handler(req) {
           await upsertPostsForPlan(pool, planId, posts);
           return json({ ok: true, planId });
         }
-
         const newPlanId = `plan_${month}_${year}_${Date.now()}`;
-        const created = await pool.query(
-          'insert into plans (id, month, year) values ($1, $2, $3) returning id',
+        await pool.query(
+          'insert into plans (id, month, year) values ($1, $2, $3)',
           [newPlanId, month, year]
         );
-        const newPlanId = created.rows[0].id;
         await upsertPostsForPlan(pool, newPlanId, posts);
         return json({ ok: true, planId: newPlanId }, 201);
       } finally {
         await pool.end();
       }
     }
-
     return json({ error: 'Method not allowed' }, 405);
   } catch (err) {
     console.error('plans.js error:', err);
