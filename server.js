@@ -1,12 +1,23 @@
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Log API key status on startup (for debugging)
+if (process.env.NVIDIA_API_KEY) {
+  console.log('✓ NVIDIA_API_KEY is configured');
+} else {
+  console.warn('⚠ WARNING: NVIDIA_API_KEY is not set in environment variables');
+}
 
 // Middleware
 app.use(express.json());

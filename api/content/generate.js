@@ -56,8 +56,11 @@ export default async function handler(req) {
     }
 
     if (!NVIDIA_API_KEY) {
+      console.error('❌ NVIDIA_API_KEY is not set');
       return json({ error: 'NVIDIA_API_KEY environment variable is not set' }, 500);
     }
+
+    console.log(`📡 NIM API Request: model=${selectedModel}, prompt_length=${prompt.length}`);
 
     const upstream = await fetch(NIM_ENDPOINT, {
       method: 'POST',
@@ -74,8 +77,11 @@ export default async function handler(req) {
       }),
     });
 
+    console.log(`📊 NIM API Response: status=${upstream.status}`);
+
     if (!upstream.ok) {
       const errText = await upstream.text();
+      console.error(`❌ NIM API error: ${upstream.status} - ${errText}`);
       return json({ error: `NIM API error: ${upstream.status} - ${errText}` }, 502);
     }
 

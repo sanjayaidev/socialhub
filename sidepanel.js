@@ -99,25 +99,63 @@ function log(msg, type='info') {
 
 // ── API helpers ───────────────────────────────────────────────────────
 async function apiCall(endpoint, method='POST', data={}) {
-  const response = await fetch(endpoint, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: method !== 'GET' ? JSON.stringify(data) : undefined,
-  });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return await response.json();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60-second timeout
+  
+  try {
+    const response = await fetch(endpoint, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: method !== 'GET' ? JSON.stringify(data) : undefined,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error');
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+    
+    return await response.json();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Request timed out after 60 seconds');
+    }
+    throw err;
+  }
 }
 
 // All NIM calls go through the server-side proxy to avoid CORS pre-flight
 async function callNIM(prompt, options={}) {
-  const result = await apiCall('/api/content/generate', 'POST', {
-    prompt,
-    model:       options.model       || getCurrentModel(),
-    temperature: options.temperature || 0.7,
-    max_tokens:  options.max_tokens  || 4096,
-  });
-  if (result?.error) throw new Error(result.error);
-  return result?.content || '';
+  debugLog(`⏳ Starting API call to /api/content/generate...`, 'info');
+  const startTime = Date.now();
+  
+  try {
+    const result = await apiCall('/api/content/generate', 'POST', {
+      prompt,
+      model:       options.model       || getCurrentModel(),
+      temperature: options.temperature || 0.7,
+      max_tokens:  options.max_tokens  || 4096,
+    });
+    
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+    debugLog(`✅ API response received in ${elapsed}s`, 'success');
+    
+    if (result?.error) {
+      debugLog(`❌ API returned error: ${result.error}`, 'error');
+      throw new Error(result.error);
+    }
+    
+    const tokenCount = result?.content?.length || 0;
+    debugLog(`📊 Response size: ${tokenCount} chars`, 'tokens');
+    
+    return result?.content || '';
+  } catch (err) {
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+    debugLog(`❌ API call failed after ${elapsed}s: ${err.message}`, 'error');
+    throw err;
+  }
 }
 
 // ── Progress ──────────────────────────────────────────────────────────
@@ -343,7 +381,8 @@ OUTPUT: JSON object only (no array wrapper). No markdown. Start with { end with 
     setProgress(`Generating Day ${day}/${total}…`, stats.done, total);
 
     try {
-      const raw = await callNIM(buildDayPrompt(postType, day), { model:'deepseek-ai/deepseek-v4-pro', max_tokens:4096 });
+      const raw = await callNIM(buildDayPrompt(postType, day), { model: getCurrentModel(), max_tokens:4096 });
+      debugLog(`📡 Sending request with model: ${getCurrentModel()}`, 'prompt');
       const idea = parseSingleObject(raw);
       idea.day = day;
       idea.type = postType;
