@@ -329,10 +329,20 @@ OUTPUT: JSON object only (no array wrapper). No markdown. Start with { end with 
 
   // Parse single object response (for day-by-day generation)
   const parseSingleObject = (raw) => {
+    debugLog(`📥 Raw API response (${raw.length} chars): ${raw.slice(0, 200)}...`, 'response');
+    
+    // Check for common error patterns first
+    if (raw.toLowerCase().includes('error:') || raw.toLowerCase().includes('api key') || raw.toLowerCase().includes('rate limit')) {
+      debugLog(`⚠️ Response contains error keywords`, 'error');
+      throw new Error('API returned error: ' + raw.slice(0, 150));
+    }
+    
     let cleaned = raw
       .replace(/```json\s*([\s\S]*?)```/gi,'$1')
       .replace(/```\s*([\s\S]*?)```/gi,'$1')
       .trim();
+    
+    debugLog(`🧹 After markdown cleanup (${cleaned.length} chars): ${cleaned.slice(0, 200)}...`, 'response');
     
     // Fix unescaped newlines inside strings
     let fixed='', inStr=false, esc=false;
@@ -350,8 +360,16 @@ OUTPUT: JSON object only (no array wrapper). No markdown. Start with { end with 
     }
     cleaned = fixed;
     
+    debugLog(`🔧 After newline escaping (${cleaned.length} chars): ${cleaned.slice(0, 200)}...`, 'response');
+    
     const start = cleaned.indexOf('{');
-    if (start===-1) throw new Error('No JSON object found');
+    if (start===-1) {
+      debugLog(`❌ No '{' found in response. First 300 chars: ${cleaned.slice(0, 300)}`, 'error');
+      throw new Error('No JSON object found - response may be empty or malformed');
+    }
+    
+    debugLog(`✅ Found '{' at position ${start}`, 'response');
+    
     let depth=0, inStr2=false, escape=false;
     for (let i=start; i<cleaned.length; i++) {
       const c=cleaned[i];
@@ -364,11 +382,16 @@ OUTPUT: JSON object only (no array wrapper). No markdown. Start with { end with 
         depth--;
         if (depth===0) {
           const slice = cleaned.slice(start,i+1);
-          try { return JSON.parse(slice); } catch(e) { throw new Error('JSON parse failed: '+e.message); }
+          debugLog(`📦 Extracted JSON (${slice.length} chars): ${slice.slice(0, 150)}...`, 'response');
+          try { return JSON.parse(slice); } catch(e) { 
+            debugLog(`❌ JSON parse error: ${e.message}`, 'error');
+            throw new Error('JSON parse failed: '+e.message); 
+          }
         }
       }
     }
-    throw new Error('Could not extract JSON object');
+    debugLog(`❌ Could not find matching '}' for JSON object`, 'error');
+    throw new Error('Could not extract JSON object - incomplete response');
   };
 
   log(`→ Starting day-by-day generation for ${total} days…`, 'step');
@@ -403,7 +426,10 @@ OUTPUT: JSON object only (no array wrapper). No markdown. Start with { end with 
       await new Promise(r => setTimeout(r, 300));
     } catch (err) {
       log(`✗ Day ${day} failed: ${err.message}`, 'error');
-      debugLog(`❌ Day ${day} error: ${err.message}`, 'error');
+      debugLog(`❌ Day ${day} error details:`, 'error');
+      debugLog(`   - Error name: ${err.name}`, 'error');
+      debugLog(`   - Error message: ${err.message}`, 'error');
+      debugLog(`   - Stack: ${err.stack || 'N/A'}`, 'error');
       // Continue to next day instead of stopping
       stats.errors++;
       // Update progress to show we're moving past this day
