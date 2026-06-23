@@ -752,8 +752,9 @@ async function fetchAvailableModels() {
     return data.models || [];
   } catch (err) {
     console.error('[Model Fetch] Failed:', err);
-    // Fallback to known working models
+    // Fallback to known working models (Kimi first as default)
     return [
+      'moonshotai/kimi-k2.6',
       'deepseek-ai/deepseek-v4-flash',
       'deepseek-ai/deepseek-v4-pro',
       'meta/llama-3.1-70b-instruct',
@@ -763,7 +764,6 @@ async function fetchAvailableModels() {
       'mistralai/mistral-large-3-675b-instruct-2512',
       'mistralai/mistral-small-4-119b-2603',
       'mistralai/ministral-14b-instruct-2512',
-      'moonshotai/kimi-k2.6',
       'abacusai/dracarys-llama-3.1-70b-instruct',
     ];
   }
@@ -787,17 +787,27 @@ function populateModelSelectors(models, currentModel) {
   }
 }
 
-function syncModelSelectors() {
+function syncModelSelectors(source) {
   const dashSelect = document.getElementById('modelSelectDashboard');
   const desSelect = document.getElementById('modelSelectDesigner');
-  const currentModel = localStorage.getItem('selectedModel') || 'deepseek-ai/deepseek-v4-pro';
   
-  if (dashSelect && dashSelect.value) {
-    localStorage.setItem('selectedModel', dashSelect.value);
-    if (desSelect) desSelect.value = dashSelect.value;
-  } else if (desSelect && desSelect.value) {
-    localStorage.setItem('selectedModel', desSelect.value);
-    if (dashSelect) dashSelect.value = desSelect.value;
+  // Determine which select was changed and use it as the source of truth
+  let selectedValue;
+  if (source === 'dashboard' && dashSelect) {
+    selectedValue = dashSelect.value;
+  } else if (source === 'designer' && desSelect) {
+    selectedValue = desSelect.value;
+  } else {
+    // Fallback: use whichever has a value
+    selectedValue = (dashSelect && dashSelect.value) ? dashSelect.value : 
+                    (desSelect && desSelect.value) ? desSelect.value : 
+                    localStorage.getItem('selectedModel') || 'moonshotai/kimi-k2.6';
+  }
+  
+  if (selectedValue) {
+    localStorage.setItem('selectedModel', selectedValue);
+    if (dashSelect) dashSelect.value = selectedValue;
+    if (desSelect) desSelect.value = selectedValue;
   }
 }
 
@@ -813,7 +823,7 @@ function syncModelSelectors() {
   if (loadingDes) loadingDes.style.display = 'inline-block';
   
   const models = await fetchAvailableModels();
-  const currentModel = localStorage.getItem('selectedModel') || 'deepseek-ai/deepseek-v4-pro';
+  const currentModel = localStorage.getItem('selectedModel') || 'moonshotai/kimi-k2.6';
   
   // Find if current model exists in fetched list, otherwise use first available
   const validModel = models.includes(currentModel) ? currentModel : (models[0] || currentModel);
@@ -829,10 +839,10 @@ function syncModelSelectors() {
   
   // Sync changes between selectors
   if (dashSelect) {
-    dashSelect.addEventListener('change', syncModelSelectors);
+    dashSelect.addEventListener('change', () => syncModelSelectors('dashboard'));
   }
   if (desSelect) {
-    desSelect.addEventListener('change', syncModelSelectors);
+    desSelect.addEventListener('change', () => syncModelSelectors('designer'));
   }
 })();
 
