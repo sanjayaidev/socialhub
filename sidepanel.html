@@ -174,13 +174,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent2);}
   <div class="field">
     <label>Model for Content Generation</label>
     <select id="modelSelect" style="width:100%;">
-      <option value="moonshotai/kimi-k2.6">Kimi K2.6 (moonshotai)</option>
+      <option value="moonshotai/kimi-k2.6" selected>Kimi K2.6 (moonshotai) - Default</option>
       <option value="nvidia/llama-3.1-nemoguard-8b-content-safety">Llama 3.1 Nemoguard (NVIDIA)</option>
       <option value="deepseek-ai/deepseek-v4-flash">DeepSeek V4 Flash</option>
-      <option value="deepseek-ai/deepseek-v4-pro" selected>DeepSeek V4 Pro (default)</option>
+      <option value="deepseek-ai/deepseek-v4-pro">DeepSeek V4 Pro</option>
       <option value="mistralai/mistral-large-3-675b-instruct-2512">Mistral Large 3 (675B)</option>
     </select>
-    <div style="font-size:9px;color:var(--muted);margin-top:4px;">Default: DeepSeek V4 Pro. Change model for different response styles.</div>
+    <div style="font-size:9px;color:var(--muted);margin-top:4px;">Default: Kimi K2.6. Change model for different response styles.</div>
   </div>
 </div>
 

@@ -9,7 +9,7 @@
 let isRunning    = false;
 let stopRequested = false;
 let stats        = { done:0, errors:0 };
-let totalPosts   = 2;
+let totalPosts   = 30;
 let allPostsData = [];
 
 // Available models (same list as /api/chat.js)
@@ -27,7 +27,7 @@ function getCurrentModel() {
   if (dropdown && dropdown.value) {
     return dropdown.value;
   }
-  return localStorage.getItem('selectedModel') || AVAILABLE_MODELS[3]; // default to deepseek-v4-pro
+  return localStorage.getItem('selectedModel') || AVAILABLE_MODELS[0]; // default to kimi-k2.6
 }
 function setCurrentModel(model) {
   if (AVAILABLE_MODELS.includes(model)) {
@@ -80,8 +80,8 @@ function daysInSelectedMonth() {
 
 function lockPostCountToMonth() {
   const input = document.getElementById('postCount');
-  if (input) input.value = 2;
-  totalPosts = 2;
+  if (input) input.value = 30;
+  totalPosts = 30;
   updateDayPreviewGrid();
 }
 
@@ -217,7 +217,7 @@ function updatePercentSum() {
 }
 
 function updateDayPreviewGrid() {
-  const total    = 2; // hardcoded to 2 days
+  const total    = 30; // Full 30-day month
   const useDist  = document.getElementById('useDistribution').checked;
   const grid     = document.getElementById('dayPreviewGrid');
   if (!grid) return;
@@ -307,14 +307,16 @@ function parseDeepSeekArray(raw) {
 }
 
 // ── Content generation ────────────────────────────────────────────────
-// New flow: Generate one day at a time instead of batches
+// New flow: Generate one day at a time with full 30-day context
+// Each day starts a new chat with previous titles as negative prompts
 
 async function generateContentWithNIM(brief, month, year, postTypes) {
   const total = postTypes.length;
   const allIdeas = [];
+  const generatedTitles = []; // Track titles from previous days
 
-  const buildDayPrompt = (postType, dayNum) => {
-    return `You are an expert Instagram content strategist AND copywriter.
+  const buildDayPrompt = (postType, dayNum, previousTitles) => {
+    let prompt = `You are an expert Instagram content strategist AND copywriter.
 CONTENT BRIEF: ${brief}
 MONTH: ${month} ${year}
 DAY: ${dayNum}
@@ -323,8 +325,22 @@ POST TYPE: ${postType}
 CRITICAL: Output EXACTLY 1 post object for Day ${dayNum}.
 
 Every post must have: day (exact number ${dayNum}), type (${postType}), title, caption (150-300 chars with emojis), hashtags (15-20 array no # prefix), image_prompt (detailed visual desc), hook, bullets (single only 3-item array), audience (one of: client, student), platforms (array, any of: ig, yt, li), slides (carousel only: array of first/content/last each with title body image_prompt)
+`;
+
+    // Add negative prompt if there are previous titles
+    if (previousTitles && previousTitles.length > 0) {
+      prompt += `
+IMPORTANT: Do NOT regenerate or repeat these topics/titles that were already generated for previous days:
+${previousTitles.map((t, i) => `  - Day ${i+1}: ${t}`).join('\n')}
+
+Create a completely NEW and UNIQUE topic/title for Day ${dayNum} that is different from all the above.`;
+    }
+
+    prompt += `
 
 OUTPUT: JSON object only (no array wrapper). No markdown. Start with { end with }.`;
+    
+    return prompt;
   };
 
   // Parse single object response (for day-by-day generation)
@@ -404,11 +420,17 @@ OUTPUT: JSON object only (no array wrapper). No markdown. Start with { end with 
     setProgress(`Generating Day ${day}/${total}…`, stats.done, total);
 
     try {
-      const raw = await callNIM(buildDayPrompt(postType, day), { model: getCurrentModel(), max_tokens:4096 });
+      // Pass previous titles as negative prompt to avoid repetition
+      const raw = await callNIM(buildDayPrompt(postType, day, generatedTitles), { model: getCurrentModel(), max_tokens:4096 });
       debugLog(`📡 Sending request with model: ${getCurrentModel()}`, 'prompt');
       const idea = parseSingleObject(raw);
       idea.day = day;
       idea.type = postType;
+      
+      // Track this title for future negative prompts
+      if (idea.title) {
+        generatedTitles.push(idea.title);
+      }
       
       log(`✓ Day ${day} complete: "${idea.title?.slice(0,40) || 'Untitled'}"`, 'success');
       allIdeas.push(idea);
@@ -452,7 +474,7 @@ async function startWorkflow() {
   const brief = document.getElementById('promptInput')?.value.trim();
   if (!brief) { alert('Please enter a content brief.'); return; }
 
-  totalPosts  = 2; // hardcoded to 2 days
+  totalPosts  = 30; // Full 30-day generation (one day at a time)
   const month = document.getElementById('monthSelect')?.value || 'June';
   const year  = document.getElementById('yearInput')?.value  || '2026';
   const dist  = getDistribution();
@@ -487,11 +509,11 @@ async function startWorkflow() {
   document.getElementById('stopBtn').style.display = 'block';
   document.getElementById('progressCard').style.display = 'block';
   setProgress('Starting…', 0, totalPosts);
-  log('🚀 Content Planner — Generating 2 days (test mode)', 'success');
+  log(`🚀 Content Planner — Generating ${totalPosts} days with Kimi (one day at a time)…`, 'success');
 
   try {
     setProgress('Generating content ideas day-by-day…', 0, totalPosts);
-    log('→ Starting day-by-day generation with DeepSeek…', 'step');
+    log(`→ Starting day-by-day generation with Kimi (moonshotai/kimi-k2.6)…`, 'step');
     
     // Clear AI stream box at start
     if (window.updateAIStream) {
@@ -648,7 +670,7 @@ function buildChatSection() {
         <button class="sp-send" id="spSend">SEND</button>
       </div>
     </div>
-    <div class="sp-chat-status" id="spStatus">idle · DeepSeek v4 Pro</div>
+    <div class="sp-chat-status" id="spStatus">idle · Kimi K2.6</div>
   `;
 
   wireChat();
