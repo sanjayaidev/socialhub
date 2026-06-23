@@ -9,7 +9,7 @@
 let isRunning    = false;
 let stopRequested = false;
 let stats        = { done:0, errors:0 };
-let totalPosts   = 30;
+let totalPosts   = 2;
 let allPostsData = [];
 
 // Available models (same list as /api/chat.js)
@@ -74,15 +74,14 @@ function daysInSelectedMonth() {
   const monthName = document.getElementById('monthSelect')?.value || 'January';
   const year      = parseInt(document.getElementById('yearInput')?.value) || new Date().getFullYear();
   const idx       = MONTH_NAMES_FULL.indexOf(monthName);
-  if (idx === -1) return 30;
+  if (idx === -1) return 2;
   return new Date(year, idx + 1, 0).getDate();
 }
 
 function lockPostCountToMonth() {
-  const days  = daysInSelectedMonth();
   const input = document.getElementById('postCount');
-  if (input) input.value = days;
-  totalPosts = days;
+  if (input) input.value = 2;
+  totalPosts = 2;
   updateDayPreviewGrid();
 }
 
@@ -180,14 +179,14 @@ function updatePercentSum() {
 }
 
 function updateDayPreviewGrid() {
-  const total    = parseInt(document.getElementById('postCount').value) || 30;
+  const total    = 2; // hardcoded to 2 days
   const useDist  = document.getElementById('useDistribution').checked;
   const grid     = document.getElementById('dayPreviewGrid');
   if (!grid) return;
   grid.innerHTML = '';
   if (!useDist) {
     const singleType = document.getElementById('singleTypeSelect').value;
-    for (let i=1; i<=Math.min(total,30); i++) {
+    for (let i=1; i<=total; i++) {
       const div = document.createElement('div');
       div.className = `day-preview ${singleType==='carousel'?'carousel':(singleType==='story'?'story':(singleType==='reel-cover'?'reel':'single'))}`;
       div.textContent = i;
@@ -388,7 +387,7 @@ async function startWorkflow() {
   const brief = document.getElementById('promptInput')?.value.trim();
   if (!brief) { alert('Please enter a content brief.'); return; }
 
-  totalPosts  = parseInt(document.getElementById('postCount')?.value) || 30;
+  totalPosts  = 2; // hardcoded to 2 days
   const month = document.getElementById('monthSelect')?.value || 'June';
   const year  = document.getElementById('yearInput')?.value  || '2026';
   const dist  = getDistribution();
@@ -423,7 +422,7 @@ async function startWorkflow() {
   document.getElementById('stopBtn').style.display = 'block';
   document.getElementById('progressCard').style.display = 'block';
   setProgress('Starting…', 0, totalPosts);
-  log('🚀 Content Planner — Generating with brand + distribution', 'success');
+  log('🚀 Content Planner — Generating 2 days (test mode)', 'success');
 
   try {
     setProgress('Generating content ideas day-by-day…', 0, totalPosts);
@@ -434,8 +433,6 @@ async function startWorkflow() {
       window.updateAIStream('', true);
     }
 
-    // generateContentWithNIM now handles day-by-day generation and saves each day
-    // as it completes. The allPostsData array is populated inside the function.
     const ideas = await generateContentWithNIM(brief, month, year, postTypes);
     log(`✓ Generated ${ideas.length} days of content`, 'success');
 
@@ -668,8 +665,6 @@ async function sendChatMessage(userMsg) {
 
   try {
     // ── Try streaming via /api/chat ──────────────────────────────
-    // The Railway /api/chat handler passes stream:true straight through,
-    // which means the browser gets a proper text/event-stream response.
     const currentModel = getCurrentModel();
     const response = await fetch('/api/chat', {
       method:  'POST',
@@ -695,16 +690,14 @@ async function sendChatMessage(userMsg) {
 
         buffer += decoder.decode(value, { stream:true });
         const lines = buffer.split('\n');
-        buffer = lines.pop(); // keep the incomplete trailing line for next chunk
+        buffer = lines.pop();
         for (const line of lines) {
           const trimmedLine = line.trim();
           if (!trimmedLine.startsWith('data:')) continue;
           
-          // Strip 'data:' prefix and any leading whitespace
           let data = trimmedLine.slice(5).trim();
           if (!data || data === '[DONE]') continue;
           
-          // Sanitize: remove any markdown code fences or extra text
           data = data.replace(/^```json\s*/, '').replace(/```\s*$/, '');
           
           try {
@@ -713,7 +706,6 @@ async function sendChatMessage(userMsg) {
             if (token) {
               fullContent += token;
               tokenCount++;
-              // Update bot message live (cursor stays at end)
               botEl.textContent = fullContent;
               botEl.appendChild(cursor);
               document.getElementById('spMsgs').scrollTop = 9999;
@@ -721,7 +713,6 @@ async function sendChatMessage(userMsg) {
               setStatus(`streaming · ${tokenCount} tokens`, 'var(--accent2)');
             }
           } catch (parseErr) {
-            // Try to extract JSON from malformed data
             const braceStart = data.indexOf('{');
             const braceEnd = data.lastIndexOf('}');
             if (braceStart !== -1 && braceEnd > braceStart) {
@@ -740,7 +731,6 @@ async function sendChatMessage(userMsg) {
                 }
               } catch (_) { /* skip malformed */ }
             }
-            // Otherwise skip this malformed line
           }
         }
       }
@@ -781,7 +771,7 @@ async function sendChatMessage(userMsg) {
   }
 
   // ── Done ─────────────────────────────────────────────────────────
-  cursor.remove(); // remove blinking cursor
+  cursor.remove();
   chatHistory.push({ role:'assistant', content: fullContent });
 
   if (tokenCount > 0) {
@@ -835,8 +825,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('dashBtn').addEventListener('click',  openDashboard);
   document.getElementById('openDesignerBtn').addEventListener('click', openDesigner);
 
-  // Chat section removed per user request (bottom prompt box)
-
   // AI Stream Response Box functionality
   const clearStreamBtn = document.getElementById('clearStreamBtn');
   const copyStreamBtn = document.getElementById('copyStreamBtn');
@@ -864,7 +852,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Expose function for streaming updates (used by day-by-day generation)
   window.updateAIStream = function(content, isStreaming = false) {
     if (aiStreamContent) aiStreamContent.textContent = content;
     if (streamStatusDot) {
@@ -873,7 +860,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
   
-  // Expose function to append to AI stream (for day-by-day accumulation)
   window.appendAIStream = function(content) {
     if (aiStreamContent) {
       const current = aiStreamContent.textContent || '';
@@ -882,7 +868,6 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         aiStreamContent.textContent = content;
       }
-      // Auto-scroll to bottom
       aiStreamContent.scrollTop = aiStreamContent.scrollHeight;
     }
   };
@@ -930,7 +915,6 @@ function showModelModal() {
     `;
   }).join('');
   
-  // Add click handlers
   modelList.querySelectorAll('.model-option').forEach(btn => {
     btn.addEventListener('click', () => {
       const selectedModel = btn.dataset.model;
@@ -957,10 +941,8 @@ function updateCurrentModelLabel() {
   }
 }
 
-// Add event listeners for model modal
 document.getElementById('closeModelModal')?.addEventListener('click', closeModal);
 
-// F4 key to open model selector
 document.addEventListener('keydown', (e) => {
   if (e.key === 'F4') {
     e.preventDefault();
@@ -971,5 +953,4 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Initialize model label
 updateCurrentModelLabel();
