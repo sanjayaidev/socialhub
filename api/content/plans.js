@@ -48,11 +48,13 @@ async function upsertPostsForPlan(pool, planId, posts) {
   // currentPosts array" pattern used by the frontend.
   await pool.query('delete from daily_posts where plan_id = $1', [planId]);
   for (const post of posts) {
+    const postId = `post_${planId}_day${post.day}_${Date.now()}`;
     await pool.query(
       `insert into daily_posts
-        (plan_id, day, type, metadata, status)
-       values ($1,$2,$3,$4,$5)`,
+        (id, plan_id, day, type, metadata, status)
+       values ($1,$2,$3,$4,$5,$6)`,
       [
+        postId,
         planId,
         post.day,
         post.type || 'single',
